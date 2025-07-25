@@ -1,0 +1,32 @@
+body {
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* Hero Section Styling */
+.hero-section {
+    position: relative;
+    background: url('../../images/landingHeroes.jpg') no-repeat center center;
+    background-size: cover;
+    min-height: 100vh;
+}
+
+.hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+}
+
+/* Features Section Styling */
+.features-container {
+    margin-top: -180px;
+    position: relative;
+    z-index: 2;
+}

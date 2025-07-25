@@ -1,0 +1,50 @@
+nav {
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* Navigation Logo Styling */
+.navbar-brand img {
+    max-height: 70px;
+    width: auto;
+    object-fit: contain;
+    margin: -8px 0;
+}
+
+/* Brand Text Color */
+.navbar-brand .brand-text {
+    color: #7cb947;
+}
+
+.navbar-brand .brand-text .brand-primary {
+    color: #1e3c80;
+}
+
+.nav-item .nav-1 {
+    transition: all 0.3s ease;
+    margin-right: 2px;
+}
+
+.nav-item .nav-1:hover {
+    background-color: #1e3c80;
+    padding: 8px 16px;
+    border-radius: 4px;
+    color: white;
+    text-decoration: underline;
+}
+
+.nav-item .nav-2 {
+    transition: all 0.3s ease;
+    background-color: #7cb947;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    text-decoration: none;
+}
+
+.nav-item .nav-2:hover {
+    text-decoration: underline;
+    background-color: #7cb947;
+    padding: 8px 16px;
+    border-radius: 4px;
+    color: white;
+}
