@@ -15,16 +15,16 @@
                     <a class="nav-link fw-medium px-3" href="{{ url('/') }}">Home</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link fw-medium px-3" href="#features">Features</a>
+                    <a class="nav-link fw-medium px-3" href="{{ url('/features') }}">Features</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link fw-medium px-3" href="#about">About</a>
+                    <a class="nav-link fw-medium px-3" href="{{ url('/about') }}">About</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link fw-medium px-3" href="#pricing">Pricing</a>
+                    <a class="nav-link fw-medium px-3" href="{{ url('/pricing') }}">Pricing</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link fw-medium px-3" href="#contact">Contact</a>
+                    <a class="nav-link fw-medium px-3" href="{{ url('/news') }}">News</a>
                 </li>
             </ul>
 

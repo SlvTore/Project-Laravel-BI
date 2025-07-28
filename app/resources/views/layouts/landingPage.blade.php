@@ -14,6 +14,7 @@
     <!-- Temporarily comment out custom CSS -->
 <link rel="stylesheet" href="{{ asset('css/partials/nav/navbar.css') }}">
 <link rel="stylesheet" href="{{ asset('css/landing/landing.css') }}">
+<link rel="stylesheet" href="{{ asset('css/landing/pages.css') }}">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

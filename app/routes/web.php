@@ -4,19 +4,23 @@ use App\Http\Controllers\SetupWizardController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('landing.welcome');
 })->name('home');
 
+Route::get('/features', function () {
+    return view('landing.features');
+})->name('features');
+
 Route::get('/about', function () {
-    return view('about');
+    return view('landing.about');
 })->name('about');
 
-Route::get('/Pricing', function () {
-    return view('pricing');
+Route::get('/pricing', function () {
+    return view('landing.pricing');
 })->name('pricing');
 
-Route::get('/News', function () {
-    return view('news');
+Route::get('/news', function () {
+    return view('landing.news');
 })->name('news');
 
 

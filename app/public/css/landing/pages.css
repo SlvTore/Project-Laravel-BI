@@ -1,0 +1,389 @@
+/* Features Page Styles */
+.hero-section-features {
+    position: relative;
+    background: linear-gradient(135deg, #1e3c80 0%, #7cb947 100%);
+    min-height: 100vh;
+}
+
+.features-grid {
+    background-color: #fff;
+}
+
+.feature-card-detailed {
+    background: white;
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    border: 1px solid #f1f3f4;
+}
+
+.feature-card-detailed:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+}
+
+.feature-icon-large {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.feature-icon-large i {
+    font-size: 2.5rem;
+}
+
+.feature-list {
+    list-style: none;
+    padding: 0;
+}
+
+.feature-list li {
+    padding: 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.advanced-features {
+    background-color: #f8f9fa;
+}
+
+.advanced-feature-list {
+    list-style: none;
+    padding: 0;
+}
+
+.advanced-feature-list li {
+    padding: 0.75rem 0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 1.1rem;
+}
+
+.advanced-feature-list i {
+    font-size: 1.5rem;
+}
+
+/* About Page Styles */
+.hero-section-about {
+    position: relative;
+    background: linear-gradient(135deg, #1e3c80 0%, #7cb947 100%);
+    min-height: 100vh;
+}
+
+.mission-card, .vision-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.mission-card:hover, .vision-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.team-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.team-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.team-image img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border: 4px solid #f1f3f4;
+    transition: border-color 0.3s ease;
+}
+
+.team-card:hover .team-image img {
+    border-color: #7cb947;
+}
+
+.social-links .btn {
+    width: 40px;
+    height: 40px;
+    margin: 0 0.25rem;
+}
+
+.value-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.value-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+/* Pricing Page Styles */
+.hero-section-pricing {
+    position: relative;
+    background: linear-gradient(135deg, #1e3c80 0%, #7cb947 100%);
+    min-height: 100vh;
+}
+
+.pricing-toggle .btn-group {
+    background: rgba(255,255,255,0.1);
+    border-radius: 50px;
+    padding: 0.25rem;
+}
+
+.pricing-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    border: 2px solid transparent;
+}
+
+.pricing-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+}
+
+.pricing-card-featured {
+    border-color: #7cb947;
+    transform: scale(1.05);
+}
+
+.pricing-card-featured:hover {
+    transform: scale(1.05) translateY(-5px);
+}
+
+.popular-badge {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #7cb947 0%, #1e3c80 100%);
+    color: white;
+    padding: 0.5rem 2rem;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.price-display {
+    margin: 2rem 0;
+}
+
+.price {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.currency {
+    font-size: 1.5rem;
+    color: #7cb947;
+    font-weight: 600;
+}
+
+.amount {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #1e3c80;
+}
+
+.period {
+    font-size: 1.2rem;
+    color: #666;
+}
+
+.comparison-table {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.comparison-table th {
+    background: linear-gradient(135deg, #1e3c80 0%, #7cb947 100%);
+    color: white;
+    font-weight: 600;
+    padding: 1.5rem 1rem;
+    border: none;
+}
+
+.comparison-table td {
+    padding: 1.25rem 1rem;
+    border: none;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.featured-col {
+    background: rgba(124, 185, 71, 0.1) !important;
+}
+
+/* News Page Styles */
+.hero-section-news {
+    position: relative;
+    background: linear-gradient(135deg, #1e3c80 0%, #7cb947 100%);
+    min-height: 100vh;
+}
+
+.featured-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.featured-badge {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+}
+
+.category-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.news-card {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.news-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.news-image {
+    position: relative;
+    overflow: hidden;
+}
+
+.news-image img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.news-card:hover .news-image img {
+    transform: scale(1.05);
+}
+
+.news-category {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+}
+
+.news-content {
+    padding: 1.5rem;
+}
+
+.news-title {
+    font-size: 1.25rem;
+    color: #1e3c80;
+    line-height: 1.4;
+}
+
+.news-excerpt {
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.read-more {
+    color: #7cb947;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.read-more:hover {
+    color: #1e3c80;
+}
+
+.newsletter-form .form-control:focus {
+    border-color: rgba(255,255,255,0.5);
+    box-shadow: 0 0 0 0.2rem rgba(255,255,255,0.25);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .feature-card-detailed,
+    .mission-card,
+    .vision-card,
+    .team-card,
+    .value-card,
+    .pricing-card,
+    .category-card,
+    .news-card {
+        padding: 1.5rem;
+    }
+
+    .hero-content h1 {
+        font-size: 2.5rem;
+    }
+
+    .pricing-card-featured {
+        transform: none;
+    }
+
+    .pricing-card-featured:hover {
+        transform: translateY(-5px);
+    }
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.feature-card-detailed,
+.mission-card,
+.vision-card,
+.team-card,
+.value-card,
+.pricing-card,
+.category-card,
+.news-card {
+    animation: fadeInUp 0.6s ease-out;
+}
