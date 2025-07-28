@@ -212,54 +212,58 @@
 <section class="testimonial-section py-5">
     <div class="container">
         <h2 class="text-center fw-bold mb-5" style="color: #1e3c80">Apa Kata Klien Kami</h2>
-        <div class="testimonial-slider">
-            <button class="testimonial-nav prev-btn">
-                <i class="bi bi-chevron-left"></i>
-            </button>
-            <div class="testimonial-container">
-                <div class="testimonial-card active">
-                    <img src="https://via.placeholder.com/80x80/f8f9fa/6c757d?text=User" alt="Customer" class="testimonial-avatar">
-                    <div class="stars mb-3">
-                        <i class="bi bi-star-fill" style="color: #ffc107"></i>
-                        <i class="bi bi-star-fill" style="color: #ffc107"></i>
-                        <i class="bi bi-star-fill" style="color: #ffc107"></i>
-                        <i class="bi bi-star-fill" style="color: #ffc107"></i>
-                        <i class="bi bi-star-fill" style="color: #ffc107"></i>
+        <div class="swiper testimonial-swiper">
+            <div class="swiper-wrapper">
+                <div class="swiper-slide">
+                    <div class="testimonial-card">
+                        <img src= {{ asset('images/man1.jpg') }} alt="Customer" class="testimonial-avatar">
+                        <div class="stars mb-3">
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                        </div>
+                        <p class="testimonial-text">"Traction Tracker benar-benar mengubah cara kami melihat bisnis. Sekarang semua keputusan berbasis data yang akurat."</p>
+                        <h5 class="fw-bold" style="color: #1e3c80">Sarah Johnson</h5>
+                        <p class="text-muted">CEO, TechStart Indonesia</p>
                     </div>
-                    <p class="testimonial-text">"Traction Tracker benar-benar mengubah cara kami melihat bisnis. Sekarang semua keputusan berbasis data yang akurat."</p>
-                    <h5 class="fw-bold" style="color: #1e3c80">Sarah Johnson</h5>
-                    <p class="text-muted">CEO, TechStart Indonesia</p>
                 </div>
-                <div class="testimonial-card">
-                    <img src="https://via.placeholder.com/80x80/f8f9fa/6c757d?text=User" alt="Customer" class="testimonial-avatar">
-                    <div class="stars mb-3">
-                        <i class="bi bi-star-fill" style="color: #ffc107"></i>
-                        <i class="bi bi-star-fill" style="color: #ffc107"></i>
-                        <i class="bi bi-star-fill" style="color: #ffc107"></i>
-                        <i class="bi bi-star-fill" style="color: #ffc107"></i>
-                        <i class="bi bi-star-fill" style="color: #ffc107"></i>
+                <div class="swiper-slide">
+                    <div class="testimonial-card">
+                        <img src= {{ asset('images/man2.jpg') }} alt="Customer" class="testimonial-avatar">
+                        <div class="stars mb-3">
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                        </div>
+                        <p class="testimonial-text">"Platform yang sangat user-friendly. Tim kami dapat langsung menggunakan tanpa training yang rumit."</p>
+                        <h5 class="fw-bold" style="color: #1e3c80">Ahmad Rahman</h5>
+                        <p class="text-muted">Founder, Digital Commerce Co</p>
                     </div>
-                    <p class="testimonial-text">"Platform yang sangat user-friendly. Tim kami dapat langsung menggunakan tanpa training yang rumit."</p>
-                    <h5 class="fw-bold" style="color: #1e3c80">Ahmad Rahman</h5>
-                    <p class="text-muted">Founder, Digital Commerce Co</p>
                 </div>
-                <div class="testimonial-card">
-                    <img src="https://via.placeholder.com/80x80/f8f9fa/6c757d?text=User" alt="Customer" class="testimonial-avatar">
-                    <div class="stars mb-3">
-                        <i class="bi bi-star-fill" style="color: #ffc107"></i>
-                        <i class="bi bi-star-fill" style="color: #ffc107"></i>
-                        <i class="bi bi-star-fill" style="color: #ffc107"></i>
-                        <i class="bi bi-star-fill" style="color: #ffc107"></i>
-                        <i class="bi bi-star-fill" style="color: #ffc107"></i>
+                <div class="swiper-slide">
+                    <div class="testimonial-card">
+                        <img src= {{ asset('images/woman1.jpg') }} alt="Customer" class="testimonial-avatar">
+                        <div class="stars mb-3">
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                        </div>
+                        <p class="testimonial-text">"ROI kami meningkat 150% dalam 6 bulan setelah menggunakan Traction Tracker. Luar biasa!"</p>
+                        <h5 class="fw-bold" style="color: #1e3c80">Maria Gonzales</h5>
+                        <p class="text-muted">Marketing Director, Growth Hub</p>
                     </div>
-                    <p class="testimonial-text">"ROI kami meningkat 150% dalam 6 bulan setelah menggunakan Traction Tracker. Luar biasa!"</p>
-                    <h5 class="fw-bold" style="color: #1e3c80">Maria Gonzales</h5>
-                    <p class="text-muted">Marketing Director, Growth Hub</p>
                 </div>
             </div>
-            <button class="testimonial-nav next-btn">
-                <i class="bi bi-chevron-right"></i>
-            </button>
+            <div class="swiper-pagination"></div>
+
+            <div class="swiper-button-prev"></div>
+            <div class="swiper-button-next"></div>
         </div>
     </div>
 </section>
@@ -271,7 +275,7 @@
             <div class="row">
                 <div class="col-lg-8 mx-auto">
                     <div class="contact-form-wrapper bg-white rounded shadow-lg p-5">
-                        <h2 class="text-center fw-bold mb-4" style="color: #1e3c80">Hubungi Kami</h2>
+                        <h1 class="text-center fw-bold mb-4" style="color: #1e3c80">Hubungi Kami</h1>
                         <p class="text-center text-muted mb-4">Siap memulai transformasi digital bisnis Anda? Tim ahli kami siap membantu!</p>
                         <form class="contact-form">
                             <div class="row">

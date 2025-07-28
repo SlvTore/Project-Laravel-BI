@@ -7,6 +7,19 @@ Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
+Route::get('/about', function () {
+    return view('about');
+})->name('about');
+
+Route::get('/Pricing', function () {
+    return view('pricing');
+})->name('pricing');
+
+Route::get('/News', function () {
+    return view('news');
+})->name('news');
+
+
 // Setup wizard routes - hanya untuk authenticated users
 Route::middleware(['auth'])->group(function () {
     Route::get('/setup', [SetupWizardController::class, 'index'])->name('setup.wizard');

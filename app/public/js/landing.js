@@ -1,4 +1,42 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Navbar scroll behavior
+    initNavbarScrollBehavior();
+
+    // Navbar scroll behavior
+    function initNavbarScrollBehavior() {
+        const navbar = document.getElementById('mainNavbar');
+        if (!navbar) return;
+
+        function updateNavbar() {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+            if (scrollTop > 50) {
+                navbar.classList.add('navbar-scrolled');
+                navbar.classList.remove('navbar-top');
+            } else {
+                navbar.classList.remove('navbar-scrolled');
+                navbar.classList.add('navbar-top');
+            }
+        }
+
+        // Initial check
+        updateNavbar();
+
+        // Add scroll listener
+        let ticking = false;
+        function requestTick() {
+            if (!ticking) {
+                requestAnimationFrame(updateNavbar);
+                ticking = true;
+            }
+        }
+
+        window.addEventListener('scroll', () => {
+            requestTick();
+            ticking = false;
+        }, { passive: true });
+    }
+
     // Initialize parallax backgrounds
     initParallaxBackgrounds();
 
@@ -221,4 +259,37 @@ document.addEventListener('DOMContentLoaded', function() {
             img.src = src;
         });
     }
+
+     // Inisialisasi Testimonial Swiper
+    const testimonialSwiper = new Swiper('.testimonial-swiper', {
+        // Optional parameters
+        effect: 'coverflow',
+        grabCursor: true,
+        centeredSlides: true,
+        slidesPerView: 'auto',
+        loop: true,
+        autoplay: {
+            delay: 5000,
+            disableOnInteraction: false,
+        },
+        coverflowEffect: {
+            rotate: 50,
+            stretch: 0,
+            depth: 100,
+            modifier: 1,
+            slideShadows: true,
+        },
+
+        // If we need pagination
+        pagination: {
+            el: '.swiper-pagination',
+            clickable: true,
+        },
+
+        // Navigation arrows
+        navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev',
+        },
+    });
 });
