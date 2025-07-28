@@ -32,9 +32,73 @@ Route::middleware(['auth'])->group(function () {
 
 // Dashboard routes - require authentication and setup completion
 Route::middleware(['auth', 'setup.completed'])->group(function () {
+    // Main Dashboard
     Route::get('/dashboard', function () {
-        return view('dashboard');
+        return view('dashboard-main.index');
     })->name('dashboard');
+
+    // Dashboard - Main/Overview
+    Route::get('/dashboard/main', function () {
+        return view('dashboard-main.index');
+    })->name('dashboard.main');
+
+    // Dashboard - Metrics
+    Route::get('/dashboard/metrics', function () {
+        return view('dashboard-metrics.index');
+    })->name('dashboard.metrics');
+
+    // Dashboard - Users
+    Route::get('/dashboard/users', function () {
+        return view('dashboard-users.index');
+    })->name('dashboard.users');
+
+    // Dashboard - Settings
+    Route::get('/dashboard/settings', function () {
+        return view('dashboard-settings.index');
+    })->name('dashboard.settings');
+
+    // Dashboard - Feeds (placeholder)
+    Route::get('/dashboard/feeds', function () {
+        return view('dashboard-main.index')->with('page_title', 'Data Feeds');
+    })->name('dashboard.feeds');
+
+    // Dashboard - Notifications (placeholder)
+    Route::get('/dashboard/notifications', function () {
+        return view('dashboard-main.index')->with('page_title', 'Notifications');
+    })->name('dashboard.notifications');
+
+    // Dashboard - Help (placeholder)
+    Route::get('/dashboard/help', function () {
+        return view('dashboard-main.index')->with('page_title', 'Help & Support');
+    })->name('dashboard.help');
+
+    // Profile routes
+    Route::get('/profile', function () {
+        return view('profile.show');
+    })->name('profile.show');
+
+    Route::get('/profile/edit', function () {
+        return view('profile.edit');
+    })->name('profile.edit');
+
+    Route::patch('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/password', [App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('password.update');
+    Route::delete('/profile', [App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+// Redirect authenticated users to appropriate page
+Route::middleware(['auth'])->group(function () {
+    Route::get('/app', function () {
+        $user = auth()->user();
+
+        // Jika setup belum completed, redirect ke wizard
+        if (!$user->setup_completed) {
+            return redirect()->route('setup.wizard');
+        }
+
+        // Jika sudah completed, redirect ke dashboard
+        return redirect()->route('dashboard');
+    })->name('app');
 });
 
 require __DIR__.'/auth.php';

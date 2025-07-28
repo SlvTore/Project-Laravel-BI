@@ -1,0 +1,486 @@
+/* ==========================================================================
+   REGISTER PAGE STYLES
+   ========================================================================== */
+
+/* Body and HTML Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+}
+
+/* Container Setup */
+.auth-container {
+    height: 100vh;
+    width: 100%;
+    position: relative;
+}
+
+.auth-container .row {
+    height: 100vh;
+    margin: 0;
+}
+
+/* ==========================================================================
+   VIDEO SECTION STYLES
+   ========================================================================== */
+
+.video-section {
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+}
+
+.video-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        135deg,
+        rgba(124, 185, 71, 0.8) 0%,
+        rgba(30, 60, 128, 0.8) 100%
+    );
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.video-content {
+    text-align: center;
+    color: white;
+    z-index: 3;
+    padding: 40px;
+    max-width: 600px;
+}
+
+/* Quote Section */
+.quote-section {
+    position: relative;
+}
+
+.quote {
+    margin: 0;
+    font-style: italic;
+}
+
+.quote-icon {
+    font-size: 3rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 20px;
+    display: block;
+}
+
+.quote-text {
+    font-size: 1.5rem;
+    font-weight: 300;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.quote-author {
+    font-size: 1rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+    font-style: normal;
+}
+
+/* ==========================================================================
+   FORM SECTION STYLES
+   ========================================================================== */
+
+.form-section {
+    height: 100vh;
+    background: linear-gradient(
+        135deg,
+        rgba(248, 249, 250, 1) 0%,
+        rgba(255, 255, 255, 1) 100%
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+
+    /* Keyframe Animation from right to 100% for register page */
+    animation: slideInFromRight 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* Keyframe Animation - Slide from right */
+@keyframes slideInFromRight {
+    0% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.form-wrapper {
+    width: 100%;
+    max-width: 360px;
+    padding: 20px 15px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    box-shadow:
+        0 15px 30px rgba(0, 0, 0, 0.1),
+        0 8px 16px rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Brand Section */
+.brand-section {
+    margin-bottom: 15px;
+}
+
+.brand-logo {
+    width: 45px;
+    height: 45px;
+    object-fit: contain;
+}
+
+.brand-title {
+    color: #1e3c80;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.brand-subtitle {
+    color: #6c757d;
+    font-size: 0.85rem;
+    font-weight: 400;
+    margin: 0;
+}
+
+/* ==========================================================================
+   FORM STYLES
+   ========================================================================== */
+
+.auth-form {
+    width: 100%;
+}
+
+/* Floating Form Controls */
+.form-floating {
+    position: relative;
+    margin-bottom: 0.6rem;
+}
+
+.form-floating .form-control {
+    height: 46px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    padding: 14px 12px 4px 12px;
+    background-color: #fff;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.form-floating .form-control:focus {
+    border-color: #7cb947;
+    box-shadow: 0 0 0 0.2rem rgba(124, 185, 71, 0.15);
+    outline: none;
+}
+
+.form-floating .form-control:not(:placeholder-shown) {
+    border-color: #7cb947;
+}
+
+.form-floating .form-control.is-invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15);
+}
+
+/* Floating Labels */
+.form-floating label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 14px 12px 4px 12px;
+    overflow: hidden;
+    text-align: start;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    pointer-events: none;
+    border: 2px solid transparent;
+    transform-origin: 0 0;
+    transition: opacity 0.1s ease-in-out, transform 0.1s ease-in-out;
+    color: #6c757d;
+    font-size: 0.85rem;
+    font-weight: 400;
+}
+
+.form-floating .form-control:focus ~ label,
+.form-floating .form-control:not(:placeholder-shown) ~ label {
+    opacity: 0.65;
+    transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
+    color: #7cb947;
+    font-weight: 500;
+}
+
+/* Submit Button */
+.btn-auth {
+    height: 46px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #7cb947 0%, #1e3c80 100%);
+    border: none;
+    color: white;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(124, 185, 71, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-auth:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(124, 185, 71, 0.4);
+    background: linear-gradient(135deg, #6da53c 0%, #1a3470 100%);
+}
+
+.btn-auth:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 10px rgba(124, 185, 71, 0.25);
+}
+
+.btn-auth i {
+    margin-right: 8px;
+}
+
+/* Form Links */
+.login-link {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+.login-link a {
+    color: #7cb947;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.login-link a:hover {
+    color: #1e3c80;
+}
+
+.terms-text {
+    font-size: 0.7rem;
+    color: #9ca3af;
+    line-height: 1.2;
+    margin: 0;
+}
+
+.terms-text a {
+    color: #7cb947;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.terms-text a:hover {
+    color: #1e3c80;
+}
+
+/* Error Messages */
+.invalid-feedback {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #dc3545;
+    font-weight: 500;
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN
+   ========================================================================== */
+
+/* Tablet Landscape */
+@media (max-width: 1024px) {
+    .form-wrapper {
+        max-width: 360px;
+        padding: 30px 25px;
+    }
+
+    .quote-text {
+        font-size: 1.3rem;
+    }
+
+    .brand-title {
+        font-size: 1.6rem;
+    }
+}
+
+/* Tablet Portrait */
+@media (max-width: 768px) {
+    .auth-container .row {
+        flex-direction: column-reverse;
+    }
+
+    .video-section {
+        height: 40vh;
+    }
+
+    .form-section {
+        height: 60vh;
+        padding: 20px;
+        /* Adjust animation for mobile - still from right */
+        animation: slideInFromRightMobile 1s ease-out forwards;
+    }
+
+    @keyframes slideInFromRightMobile {
+        0% {
+            transform: translateX(50%);
+            opacity: 0;
+        }
+        100% {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    .form-wrapper {
+        max-width: 100%;
+        padding: 25px 20px;
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .quote-text {
+        font-size: 1.1rem;
+    }
+
+    .quote-icon {
+        font-size: 2rem;
+    }
+
+    .brand-title {
+        font-size: 1.4rem;
+    }
+
+    .form-floating .form-control {
+        height: 54px;
+        font-size: 0.95rem;
+    }
+
+    .btn-auth {
+        height: 54px;
+        font-size: 1rem;
+    }
+}
+
+/* Mobile Portrait */
+@media (max-width: 480px) {
+    .video-section {
+        height: 35vh;
+    }
+
+    .form-section {
+        height: 65vh;
+    }
+
+    .form-wrapper {
+        padding: 20px 15px;
+        border-radius: 12px;
+    }
+
+    .brand-logo {
+        width: 50px;
+        height: 50px;
+    }
+
+    .brand-title {
+        font-size: 1.3rem;
+    }
+
+    .brand-subtitle {
+        font-size: 0.9rem;
+    }
+
+    .quote-text {
+        font-size: 1rem;
+    }
+
+    .video-content {
+        padding: 20px;
+    }
+
+    .form-floating .form-control {
+        height: 50px;
+        font-size: 0.9rem;
+        padding: 18px 14px 6px 14px;
+    }
+
+    .form-floating label {
+        padding: 18px 14px 6px 14px;
+        font-size: 0.9rem;
+    }
+
+    .btn-auth {
+        height: 50px;
+        font-size: 0.95rem;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .form-section {
+        background: linear-gradient(
+            135deg,
+            rgba(17, 24, 39, 1) 0%,
+            rgba(31, 41, 55, 1) 100%
+        );
+    }
+
+    .form-wrapper {
+        background: rgba(31, 41, 55, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .brand-title {
+        color: #e5e7eb;
+    }
+
+    .brand-subtitle {
+        color: #9ca3af;
+    }
+
+    .form-floating .form-control {
+        background-color: rgba(17, 24, 39, 0.8);
+        border-color: rgba(75, 85, 99, 0.8);
+        color: #e5e7eb;
+    }
+
+    .form-floating label {
+        color: #9ca3af;
+    }
+}

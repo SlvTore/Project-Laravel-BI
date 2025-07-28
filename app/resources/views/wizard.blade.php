@@ -27,7 +27,7 @@
     </div>
 
     <!-- Step Content -->
-    <div class="bg-white rounded-4 shadow-sm p-5">
+    <div class="wizard-card">
         <!-- Step 1: Role Selection -->
         <div class="step-content" id="step-1">
             <div class="text-center mb-5">
@@ -204,104 +204,465 @@
 
 @push('styles')
 <style>
+/* Wizard Card with Transparent Blur Effect */
+.wizard-card {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 24px;
+    padding: 3rem;
+    box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.1),
+        0 8px 16px rgba(0, 0, 0, 0.05);
+    animation: fadeInUp 0.8s ease-out;
+    position: relative;
+    overflow: hidden;
+}
+
+.wizard-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+}
+
 /* Progress Wizard Styles */
+.progress-wizard {
+    padding: 2rem 0;
+    animation: slideInLeft 0.8s ease-out;
+}
+
 .progress-wizard .step-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     position: relative;
+    transition: all 0.4s ease;
 }
 
 .progress-wizard .step-circle {
-    width: 40px;
-    height: 40px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
-    background: #e9ecef;
-    color: #6c757d;
+    background: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.7);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
-    margin-bottom: 8px;
-    transition: all 0.3s ease;
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
 }
 
 .progress-wizard .step-label {
-    font-size: 0.875rem;
-    color: #6c757d;
-    font-weight: 500;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 600;
+    transition: all 0.3s ease;
 }
 
 .progress-wizard .step-item.active .step-circle {
-    background: #0d6efd;
-    color: white;
+    background: rgba(255, 255, 255, 0.95);
+    color: #1e3c80;
+    transform: scale(1.1);
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.8);
 }
 
 .progress-wizard .step-item.active .step-label {
-    color: #0d6efd;
+    color: #ffffff;
+    font-weight: 700;
 }
 
 .progress-wizard .step-item.completed .step-circle {
-    background: #198754;
+    background: rgba(124, 185, 71, 0.9);
     color: white;
+    border-color: rgba(124, 185, 71, 0.5);
 }
 
 .progress-wizard .step-item.completed .step-label {
-    color: #198754;
+    color: rgba(124, 185, 71, 0.9);
+    font-weight: 600;
 }
 
 .progress-wizard .step-connector {
-    width: 60px;
-    height: 2px;
-    background: #e9ecef;
-    margin: 0 20px 24px 20px;
+    width: 80px;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.2);
+    margin: 0 25px 32px 25px;
+    border-radius: 2px;
+    transition: all 0.4s ease;
 }
 
 .progress-wizard .step-connector.active {
-    background: #0d6efd;
+    background: rgba(124, 185, 71, 0.7);
+    box-shadow: 0 0 10px rgba(124, 185, 71, 0.4);
 }
 
-/* Role Card Styles */
+/* Step Content Styles */
+.step-content {
+    animation: scaleIn 0.6s ease-out;
+}
+
+.step-content .text-center {
+    animation: fadeInDown 0.8s ease-out 0.2s both;
+}
+
+/* Role Card Styles with Transparent Design */
 .role-card {
     cursor: pointer !important;
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
     user-select: none;
+    background: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-radius: 16px !important;
+    animation: slideInRight 0.6s ease-out;
+    position: relative;
+    overflow: hidden;
+}
+
+.role-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transition: left 0.6s ease;
+}
+
+.role-card:hover::before {
+    left: 100%;
 }
 
 .role-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.15) !important;
 }
 
 .role-card.selected {
-    border-color: #0d6efd !important;
-    background: #f8f9ff !important;
+    border-color: rgba(124, 185, 71, 0.8) !important;
+    background: rgba(124, 185, 71, 0.1) !important;
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(124, 185, 71, 0.2);
+}
+
+.role-card .card-title {
+    color: white !important;
+    font-weight: 700;
+    margin-bottom: 0.8rem;
+}
+
+.role-card .card-text {
+    color: rgba(255, 255, 255, 0.8) !important;
+    font-size: 0.9rem;
+    line-height: 1.5;
 }
 
 .role-icon {
-    width: 60px;
-    height: 60px;
+    width: 70px;
+    height: 70px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    margin: 0 auto 1.5rem;
+    transition: all 0.3s ease;
 }
 
-.cursor-pointer {
-    cursor: pointer !important;
+/* Form Styles with Transparent Design */
+.form-label {
+    color: white !important;
+    font-weight: 600;
+    margin-bottom: 0.8rem;
+    font-size: 0.95rem;
 }
 
-/* Form Styles */
-.form-control:focus {
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+.form-control, .form-select {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 2px solid rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    border-radius: 12px !important;
+    padding: 0.8rem 1rem;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
 }
 
-/* Button disabled state */
-button:disabled {
-    opacity: 0.6;
+.form-control::placeholder, .form-select option {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.form-control:focus, .form-select:focus {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(124, 185, 71, 0.8) !important;
+    box-shadow: 0 0 0 0.2rem rgba(124, 185, 71, 0.25) !important;
+    color: white !important;
+}
+
+.form-control option {
+    background: #1e3c80 !important;
+    color: white !important;
+}
+
+/* Button Styles */
+.btn {
+    border-radius: 12px !important;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #7cb947 0%, #1e3c80 100%) !important;
+    border: none !important;
+    box-shadow: 0 8px 20px rgba(124, 185, 71, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px rgba(124, 185, 71, 0.4);
+    background: linear-gradient(135deg, #6da53c 0%, #1a3470 100%) !important;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #7cb947 0%, #5a9a3a 100%) !important;
+    border: none !important;
+    box-shadow: 0 8px 20px rgba(124, 185, 71, 0.4);
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px rgba(124, 185, 71, 0.5);
+}
+
+.btn-outline-secondary {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    color: white !important;
+    backdrop-filter: blur(10px);
+}
+
+.btn-outline-secondary:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    color: white !important;
+    transform: translateY(-1px);
+}
+
+.btn:disabled {
+    opacity: 0.5;
     cursor: not-allowed !important;
+    transform: none !important;
+}
+
+/* Text Colors */
+.text-dark {
+    color: white !important;
+}
+
+.text-muted {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.lead {
+    font-size: 1.1rem;
+    font-weight: 400;
+    line-height: 1.6;
+}
+
+/* Icon Styles */
+.bg-primary {
+    background: rgba(124, 185, 71, 0.2) !important;
+    border: 2px solid rgba(124, 185, 71, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.text-primary {
+    color: #7cb947 !important;
+}
+
+/* Small Text */
+.form-text {
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    font-weight: 400;
+}
+
+/* Row Animation */
+.row.g-4 .col-md-6 {
+    animation: slideInUp 0.6s ease-out;
+}
+
+.row.g-4 .col-md-6:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.row.g-4 .col-md-6:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.row.g-4 .col-md-6:nth-child(4) {
+    animation-delay: 0.3s;
+}
+
+/* Required Asterisk */
+.text-danger {
+    color: #ff6b6b !important;
+    font-weight: bold;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(124, 185, 71, 0.6);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(124, 185, 71, 0.8);
+}
+
+/* Animation Classes */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .wizard-card {
+        padding: 2rem 1.5rem;
+        margin: 1rem;
+        border-radius: 20px;
+    }
+
+    .progress-wizard .step-connector {
+        width: 60px;
+        margin: 0 15px 25px 15px;
+    }
+
+    .progress-wizard .step-circle {
+        width: 45px;
+        height: 45px;
+        font-size: 1rem;
+    }
+
+    .role-card {
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .wizard-card {
+        padding: 1.5rem 1rem;
+        border-radius: 16px;
+    }
+
+    .progress-wizard {
+        padding: 1.5rem 0;
+    }
+
+    .progress-wizard .step-connector {
+        width: 40px;
+        margin: 0 10px 20px 10px;
+    }
+
+    .progress-wizard .step-circle {
+        width: 40px;
+        height: 40px;
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+    .progress-wizard .step-label {
+        font-size: 0.8rem;
+    }
 }
 </style>
 @endpush
