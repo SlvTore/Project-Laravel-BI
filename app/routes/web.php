@@ -50,6 +50,12 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
     Route::put('/dashboard/metrics/{id}', [App\Http\Controllers\MetricsController::class, 'update'])->name('dashboard.metrics.update');
     Route::delete('/dashboard/metrics/{id}', [App\Http\Controllers\MetricsController::class, 'destroy'])->name('dashboard.metrics.destroy');
 
+    // Dashboard - Metric Records
+    Route::get('/dashboard/metrics/{businessMetric}/records', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'show'])->name('dashboard.metrics.records.show');
+    Route::post('/dashboard/metrics/{businessMetric}/records', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'store'])->name('dashboard.metrics.records.store');
+    Route::put('/dashboard/metrics/{businessMetric}/records/{record}', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'update'])->name('dashboard.metrics.records.update');
+    Route::delete('/dashboard/metrics/{businessMetric}/records/{record}', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'destroy'])->name('dashboard.metrics.records.destroy');
+
     // Dashboard - Users
     Route::get('/dashboard/users', function () {
         return view('dashboard-users.index');

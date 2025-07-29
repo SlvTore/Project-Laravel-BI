@@ -3,11 +3,11 @@
 @section('title', 'Edit Metric')
 
 @section('content')
-    <div class="content-header">
+    <div class="content-header ms-5">
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <h1 class="content-title">Edit Metric</h1>
-                <p class="content-subtitle">Update the values and settings for "{{ $businessMetric->metric->name }}"</p>
+                <p class="content-subtitle">Update the values and settings for "{{ $businessMetric->metric_name }}"</p>
             </div>
             <a href="{{ route('dashboard.metrics') }}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left me-2"></i>
@@ -16,14 +16,14 @@
         </div>
     </div>
 
-    <div class="content-body">
+    <div class="content-body ms-5">
         <div class="row">
             <div class="col-md-8">
                 <div class="content-card">
-                    <div class="card-body">
+                    <div class="card-body p-4">
                         <h5 class="card-title fw-bold mb-4">
-                            <i class="bi {{ $businessMetric->metric->icon ?? 'bi-graph-up' }} me-2"></i>
-                            {{ $businessMetric->metric->name }}
+                            <i class="bi {{ $businessMetric->icon ?? 'bi-graph-up' }} me-2"></i>
+                            {{ $businessMetric->metric_name }}
                         </h5>
 
                         <form action="{{ route('dashboard.metrics.update', $businessMetric->id) }}" method="POST">
@@ -100,17 +100,17 @@
 
             <div class="col-md-4">
                 <!-- Metric Info Card -->
-                <div class="content-card mb-4">
+                <div class="content-card mb-4 p-3">
                     <div class="card-body">
                         <h6 class="card-title fw-bold mb-3">Metric Information</h6>
 
                         <div class="d-flex align-items-center mb-3">
                             <div class="metric-icon me-3">
-                                <i class="bi {{ $businessMetric->metric->icon ?? 'bi-graph-up' }}"></i>
+                                <i class="bi {{ $businessMetric->icon ?? 'bi-graph-up' }}"></i>
                             </div>
                             <div>
-                                <h6 class="mb-0">{{ $businessMetric->metric->name }}</h6>
-                                <small class="text-muted">{{ $businessMetric->metric->category ?? 'General' }} Metric</small>
+                                <h6 class="mb-0">{{ $businessMetric->metric_name }}</h6>
+                                <small class="text-muted">{{ $businessMetric->category ?? 'General' }} Metric</small>
                             </div>
                         </div>
 
@@ -136,7 +136,7 @@
 
                 <!-- Activity Timeline -->
                 <div class="content-card">
-                    <div class="card-body">
+                    <div class="card-body p-3">
                         <h6 class="card-title fw-bold mb-3">Recent Activity</h6>
 
                         <div class="timeline">

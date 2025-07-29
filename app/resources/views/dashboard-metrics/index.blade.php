@@ -170,6 +170,9 @@
                                             <td>{{ $businessMetric->updated_at->diffForHumans() }}</td>
                                             <td>
                                                 <div class="btn-group btn-group-sm">
+                                                    <a href="{{ route('dashboard.metrics.records.show', $businessMetric) }}" class="btn btn-outline-success" title="View Records">
+                                                        <i class="bi bi-graph-up"></i>
+                                                    </a>
                                                     <a href="{{ route('dashboard.metrics.edit', $businessMetric->id) }}" class="btn btn-outline-primary" title="Edit">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
