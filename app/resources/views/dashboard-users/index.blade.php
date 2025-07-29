@@ -418,7 +418,6 @@
             </div>
         </div>
     </div>
-@endsection
 
 @push('styles')
 <style>
@@ -568,6 +567,3 @@
     });
 </script>
 @endpush
-
-    </div>
-@endsection

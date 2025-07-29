@@ -12,19 +12,20 @@ class BusinessMetric extends Model
     protected $fillable = [
         'business_id',
         'metric_name',
-        'value',
+        'category',
+        'icon',
+        'description',
+        'current_value',
+        'previous_value',
         'unit',
-        'period_date',
-        'notes',
+        'is_active',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'value' => 'decimal:2',
-            'period_date' => 'date',
-        ];
-    }
+    protected $casts = [
+        'current_value' => 'decimal:2',
+        'previous_value' => 'decimal:2',
+        'is_active' => 'boolean',
+    ];
 
     // Relationships
     public function business()
@@ -33,19 +34,54 @@ class BusinessMetric extends Model
     }
 
     // Scopes
-    public function scopeByMetric($query, $metricName)
+    public function scopeActive($query)
     {
-        return $query->where('metric_name', $metricName);
+        return $query->where('is_active', true);
     }
 
-    public function scopeByPeriod($query, $startDate, $endDate = null)
+    public function scopeByBusiness($query, $businessId)
     {
-        $query->where('period_date', '>=', $startDate);
+        return $query->where('business_id', $businessId);
+    }
 
-        if ($endDate) {
-            $query->where('period_date', '<=', $endDate);
+    public function scopeByCategory($query, $category)
+    {
+        return $query->where('category', $category);
+    }
+
+    // Accessors & Calculated attributes
+    public function getChangePercentageAttribute()
+    {
+        if ($this->previous_value == 0) {
+            return $this->current_value > 0 ? 100 : 0;
         }
+        return (($this->current_value - $this->previous_value) / $this->previous_value) * 100;
+    }
 
-        return $query;
+    public function getFormattedValueAttribute()
+    {
+        switch ($this->unit) {
+            case 'Rp':
+                return 'Rp ' . number_format($this->current_value, 0, ',', '.');
+            case '%':
+                return number_format($this->current_value, 1) . '%';
+            default:
+                return number_format($this->current_value, 0, ',', '.');
+        }
+    }
+
+    public function getFormattedChangeAttribute()
+    {
+        $change = $this->change_percentage;
+        $sign = $change >= 0 ? '+' : '';
+        return $sign . number_format($change, 1) . '%';
+    }
+
+    public function getChangeStatusAttribute()
+    {
+        $change = $this->change_percentage;
+        if ($change > 0) return 'increase';
+        if ($change < 0) return 'decrease';
+        return 'stable';
     }
 }

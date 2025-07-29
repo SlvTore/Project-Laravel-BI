@@ -43,9 +43,12 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
     })->name('dashboard.main');
 
     // Dashboard - Metrics
-    Route::get('/dashboard/metrics', function () {
-        return view('dashboard-metrics.index');
-    })->name('dashboard.metrics');
+    Route::get('/dashboard/metrics', [App\Http\Controllers\MetricsController::class, 'index'])->name('dashboard.metrics');
+    Route::get('/dashboard/metrics/create', [App\Http\Controllers\MetricsController::class, 'create'])->name('dashboard.metrics.create');
+    Route::post('/dashboard/metrics', [App\Http\Controllers\MetricsController::class, 'store'])->name('dashboard.metrics.store');
+    Route::get('/dashboard/metrics/{id}/edit', [App\Http\Controllers\MetricsController::class, 'edit'])->name('dashboard.metrics.edit');
+    Route::put('/dashboard/metrics/{id}', [App\Http\Controllers\MetricsController::class, 'update'])->name('dashboard.metrics.update');
+    Route::delete('/dashboard/metrics/{id}', [App\Http\Controllers\MetricsController::class, 'destroy'])->name('dashboard.metrics.destroy');
 
     // Dashboard - Users
     Route::get('/dashboard/users', function () {
