@@ -3,7 +3,7 @@
 @section('title', 'Create Metrics')
 
 @section('content')
-    <div class="content-header">
+    <div class="content-header ms-5">
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <h1 class="content-title">Create Metrics</h1>
@@ -16,7 +16,7 @@
         </div>
     </div>
 
-    <div class="content-body">
+    <div class="content-body ms-5">
         <div class="dashboard-card">
             <div class="card-body">
                 <div class="row mb-4">
@@ -54,7 +54,7 @@
                         @foreach($availableMetrics as $metricName => $metricData)
                             @if(!in_array($metricName, $importedMetrics))
                                 <div class="col metric-item" data-category="{{ $metricData['category'] }}">
-                                    <div class="metric-card h-100" onclick="toggleMetric('metric_{{ $loop->index }}')">
+                                    <div class="metric-card h-100" data-metric-name="{{ $metricName }}" data-category="{{ $metricData['category'] }}">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-start mb-3">
                                                 <div class="metric-icon">
@@ -67,16 +67,23 @@
                                             <p class="card-text">{{ $metricData['description'] }}</p>
                                             <small class="text-muted">Unit: {{ $metricData['unit'] }}</small>
 
-                                            <div class="form-check mt-auto">
-                                                <input type="checkbox"
-                                                       class="form-check-input"
-                                                       id="metric_{{ $loop->index }}"
-                                                       name="selected_metrics[]"
-                                                       value="{{ $metricName }}"
-                                                       data-category="{{ $metricData['category'] }}">
-                                                <label class="form-check-label" for="metric_{{ $loop->index }}">
-                                                    Pilih metric ini
-                                                </label>
+                                            <!-- Hidden input for selected metrics -->
+                                            <input type="checkbox"
+                                                   class="d-none"
+                                                   id="metric_{{ $loop->index }}"
+                                                   name="selected_metrics[]"
+                                                   value="{{ $metricName }}"
+                                                   data-category="{{ $metricData['category'] }}">
+
+                                            <div class="selection-indicator mt-auto">
+                                                <div class="selected-badge d-none">
+                                                    <i class="bi bi-check-circle-fill me-2"></i>
+                                                    Terpilih
+                                                </div>
+                                                <div class="select-prompt">
+                                                    <i class="bi bi-plus-circle me-2"></i>
+                                                    Klik untuk memilih
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -96,11 +103,11 @@
                                             <p class="card-text text-muted">{{ $metricData['description'] }}</p>
                                             <small class="text-muted">Unit: {{ $metricData['unit'] }}</small>
 
-                                            <div class="form-check mt-auto">
-                                                <input type="checkbox" class="form-check-input" disabled checked>
-                                                <label class="form-check-label text-muted">
+                                            <div class="selection-indicator mt-auto">
+                                                <div class="selected-badge d-none text-success">
+                                                    <i class="bi bi-check-circle-fill me-2"></i>
                                                     Sudah diimport
-                                                </label>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -110,13 +117,13 @@
 
                         @if(count($availableMetrics) == count($importedMetrics))
                             <div class="col-12">
-                                <div class="alert alert-info text-center">
+                                <div class="alert alert-info text-center persistent-card">
                                     <i class="bi bi-check-circle me-2"></i>
-                                    Semua metrics yang tersedia sudah diimport ke dashboard Anda!
+                                    All metrics available have been imported to your dashboard!
                                     <br>
                                     <a href="{{ route('dashboard.metrics') }}" class="btn btn-primary mt-3">
                                         <i class="bi bi-arrow-left me-2"></i>
-                                        Kembali ke Dashboard Metrics
+                                        Back to Dashboard Metrics
                                     </a>
                                 </div>
                             </div>
@@ -158,5 +165,5 @@
 @endpush
 
 @push('scripts')
-<script src="{{ asset('js/dashboard/dashboard-metrics/create.js') }}"></script>
+<script src="{{ asset('js/dashboard/dashboard-metrics/create-new.js') }}"></script>
 @endpush

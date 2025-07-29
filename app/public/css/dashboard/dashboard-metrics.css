@@ -100,18 +100,32 @@
     flex-grow: 1;
 }
 
-.metric-card .form-check {
+.metric-card .selection-indicator {
     margin-top: auto;
 }
 
-.metric-card .form-check-input {
-    background-color: transparent;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+.metric-card .selected-badge {
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: 0.9rem;
 }
 
-.metric-card .form-check-input:checked {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
+.metric-card .select-prompt {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.metric-card:hover .select-prompt {
+    color: var(--primary-color);
+}
+
+.metric-card.selected .select-prompt {
+    display: none;
+}
+
+.metric-card.selected .selected-badge {
+    display: block !important;
 }
 
 /* Import Button */
@@ -286,6 +300,19 @@
     animation: fadeInUp 0.6s ease forwards;
     opacity: 0;
     transform: translateY(30px);
+}
+
+/* Persistent card styling - prevents disappearing */
+.persistent-card {
+    position: relative !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: none !important;
+    z-index: 10;
+}
+
+.persistent-card:hover {
+    transform: none !important;
 }
 
 .metric-card:nth-child(1) { animation-delay: 0.1s; }

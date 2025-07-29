@@ -190,9 +190,15 @@ class MetricsController extends Controller
 
         $businessMetric->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Metric berhasil dihapus!'
-        ]);
+        // Check if request expects JSON (AJAX) or regular redirect
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Metric berhasil dihapus!',
+                'redirect' => route('dashboard.metrics')
+            ]);
+        }
+
+        return redirect()->route('dashboard.metrics')->with('success', 'Metric berhasil dihapus!');
     }
 }

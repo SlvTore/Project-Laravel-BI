@@ -88,140 +88,63 @@ document.addEventListener('DOMContentLoaded', function() {
             selectedSummary.style.display = 'none';
         }
     }
-    function updateCardStyle(checkbox) {
-        const card = checkbox.closest('.metric-card');
-        if (card) {
-            if (checkbox.checked) {
-                card.classList.add('selected');
-            } else {
-                card.classList.remove('selected');
-            }
-        }
-    }
 
-    function updateSelectedMetrics() {
-        selectedMetrics = [];
-        checkboxes.forEach(checkbox => {
-            if (checkbox.checked && !checkbox.disabled) {
-                selectedMetrics.push({
-                    name: checkbox.value,
-                    category: checkbox.dataset.category
-                });
-            }
-        });
-    }
-
-    function updateSelectedSummary() {
-        if (selectedMetrics.length > 0) {
-            selectedSummary.style.display = 'block';
-
-            // Group metrics by category
-            const groupedMetrics = selectedMetrics.reduce((acc, metric) => {
-                if (!acc[metric.category]) {
-                    acc[metric.category] = [];
-                }
-                acc[metric.category].push(metric.name);
-                return acc;
-            }, {});
-
-            // Create summary HTML
-            let summaryHTML = '';
-            Object.keys(groupedMetrics).forEach(category => {
-                summaryHTML += `<div class="mb-2">
-                    <strong class="text-primary">${category}:</strong>
-                    <span class="ms-2">${groupedMetrics[category].join(', ')}</span>
-                </div>`;
-            });
-
-            selectedMetricsList.innerHTML = summaryHTML;
-            selectedCount.textContent = selectedMetrics.length;
-        } else {
-            selectedSummary.style.display = 'none';
-        }
-    }
-
+    // Update import button state
     function updateImportButton() {
-        if (importBtn) {
-            if (selectedMetrics.length > 0) {
-                importBtn.disabled = false;
-                importBtn.innerHTML = `
-                    <i class="bi bi-plus-circle me-2"></i>
-                    Import ${selectedMetrics.length} Metric${selectedMetrics.length > 1 ? 's' : ''}
-                `;
-            } else {
-                importBtn.disabled = true;
-                importBtn.innerHTML = `
-                    <i class="bi bi-plus-circle me-2"></i>
-                    Pilih Metrics untuk Import
-                `;
-            }
+        if (!importBtn) return;
+
+        if (selectedMetrics.length > 0) {
+            importBtn.disabled = false;
+            importBtn.classList.add('animate-bounce');
+        } else {
+            importBtn.disabled = true;
+            importBtn.classList.remove('animate-bounce');
         }
     }
 
     // Search functionality
     if (metricsSearch) {
         metricsSearch.addEventListener('input', function() {
-            filterMetrics();
+            const searchTerm = this.value.toLowerCase();
+            filterMetrics(searchTerm, categoryFilter ? categoryFilter.value : '');
         });
     }
 
     // Category filter functionality
     if (categoryFilter) {
         categoryFilter.addEventListener('change', function() {
-            filterMetrics();
+            const searchTerm = metricsSearch ? metricsSearch.value.toLowerCase() : '';
+            filterMetrics(searchTerm, this.value);
         });
     }
 
-    function filterMetrics() {
-        const searchTerm = metricsSearch ? metricsSearch.value.toLowerCase() : '';
-        const selectedCategory = categoryFilter ? categoryFilter.value : '';
+    // Filter metrics based on search and category
+    function filterMetrics(searchTerm, selectedCategory) {
         const metricItems = document.querySelectorAll('.metric-item');
 
         metricItems.forEach(item => {
-            const metricCard = item.querySelector('.metric-card');
-            const metricTitle = metricCard.querySelector('.card-title').textContent.toLowerCase();
-            const metricCategory = item.dataset.category;
-            const metricDescription = metricCard.querySelector('.card-text').textContent.toLowerCase();
+            const card = item.querySelector('.metric-card');
+            const metricName = card.getAttribute('data-metric-name');
+            const category = card.getAttribute('data-category');
 
-            const matchesSearch = metricTitle.includes(searchTerm) || metricDescription.includes(searchTerm);
-            const matchesCategory = !selectedCategory || metricCategory === selectedCategory;
+            // Check if item matches search term
+            const matchesSearch = !searchTerm ||
+                metricName.toLowerCase().includes(searchTerm) ||
+                category.toLowerCase().includes(searchTerm);
 
+            // Check if item matches category filter
+            const matchesCategory = !selectedCategory || category === selectedCategory;
+
+            // Show/hide item based on filters
             if (matchesSearch && matchesCategory) {
                 item.style.display = 'block';
+                item.style.opacity = '1';
             } else {
                 item.style.display = 'none';
+                item.style.opacity = '0';
             }
         });
     }
-
-    // Add visual feedback for card selection
-    document.querySelectorAll('.metric-card').forEach(card => {
-        card.addEventListener('click', function(e) {
-            // Don't trigger if clicking on checkbox or label
-            if (e.target.type === 'checkbox' || e.target.tagName === 'LABEL') {
-                return;
-            }
-
-            const checkbox = this.querySelector('input[type="checkbox"]');
-            if (checkbox && !checkbox.disabled) {
-                checkbox.checked = !checkbox.checked;
-                checkbox.dispatchEvent(new Event('change'));
-
-                // Update card visual state
-                if (checkbox.checked) {
-                    this.classList.add('selected');
-                } else {
-                    this.classList.remove('selected');
-                }
-            }
-        });
-
-        // Initial state check
-        const checkbox = card.querySelector('input[type="checkbox"]');
-        if (checkbox && checkbox.checked) {
-            card.classList.add('selected');
-        }
-    });
 
     // Form submission with loading state
     if (metricsForm) {
@@ -234,14 +157,43 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Show loading state
             if (importBtn) {
-                importBtn.disabled = true;
                 importBtn.innerHTML = `
                     <div class="spinner-border spinner-border-sm me-2" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
                     Mengimport Metrics...
                 `;
+                importBtn.disabled = true;
             }
         });
     }
+
+    // Add animation class
+    const style = document.createElement('style');
+    style.textContent = `
+        .animate-bounce {
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+});
+
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
 });

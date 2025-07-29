@@ -1,32 +1,39 @@
 // Dashboard Metrics Index JavaScript
 
 $(document).ready(function() {
-    // Initialize DataTables
+    // Initialize DataTables with full functionality
     const metricsTable = $('#metricsTable').DataTable({
         responsive: true,
         pageLength: 10,
-        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Semua"]],
+        order: [[4, 'desc']], // Order by Last Updated column
+        columnDefs: [
+            { orderable: false, targets: -1 }, // Disable ordering on Actions column
+            { responsivePriority: 1, targets: 0 }, // Metric name always visible
+            { responsivePriority: 2, targets: -1 } // Actions always visible
+        ],
         language: {
-            search: "",
-            searchPlaceholder: "Search metrics...",
-            lengthMenu: "Show _MENU_ metrics",
-            info: "Showing _START_ to _END_ of _TOTAL_ metrics",
-            infoEmpty: "No metrics found",
-            infoFiltered: "(filtered from _MAX_ total metrics)",
+            search: "Cari:",
+            lengthMenu: "Tampilkan _MENU_ metrics per halaman",
+            info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ metrics",
+            infoEmpty: "Tidak ada metrics ditemukan",
+            infoFiltered: "(difilter dari _MAX_ total metrics)",
             paginate: {
-                first: "First",
-                last: "Last",
-                next: "Next",
-                previous: "Previous"
-            }
+                first: "Pertama",
+                last: "Terakhir",
+                next: "Selanjutnya",
+                previous: "Sebelumnya"
+            },
+            emptyTable: "Tidak ada data metrics tersedia",
+            zeroRecords: "Tidak ada metrics yang cocok ditemukan"
         },
         dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
              '<"row"<"col-sm-12"tr>>' +
              '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
-        order: [[4, 'desc']], // Order by Last Updated column
-        columnDefs: [
-            { orderable: false, targets: -1 } // Disable ordering on Actions column
-        ]
+        drawCallback: function() {
+            // Initialize tooltips after table redraw
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        }
     });
 
     // Custom search functionality
@@ -240,7 +247,7 @@ function viewMetric(id) {
 
 function deleteMetric(id) {
     // Show confirmation dialog
-    if (!confirm('Are you sure you want to delete this metric? This action cannot be undone.')) {
+    if (!confirm('Apakah Anda yakin ingin menghapus metric ini? Tindakan ini tidak dapat dibatalkan.')) {
         return;
     }
 
@@ -259,32 +266,28 @@ function deleteMetric(id) {
         },
         success: function(response) {
             if (response.success) {
-                // Remove row from table
-                const table = $('#metricsTable').DataTable();
-                button.closest('tr').fadeOut(400, function() {
-                    table.row($(this)).remove().draw();
-                });
-
                 // Show success notification
-                showNotification(response.message || 'Metric deleted successfully!', 'success');
+                showNotification(response.message || 'Metric berhasil dihapus!', 'success');
 
-                // Check if no metrics left and redirect to empty state
+                // Redirect to metrics index page
                 setTimeout(() => {
-                    if (table.rows().count() === 0) {
+                    if (response.redirect) {
+                        window.location.href = response.redirect;
+                    } else {
                         window.location.reload();
                     }
-                }, 500);
+                }, 1000);
             } else {
                 // Restore button state
                 button.html(originalHtml).prop('disabled', false);
-                showNotification('Failed to delete metric. Please try again.', 'error');
+                showNotification('Gagal menghapus metric. Silakan coba lagi.', 'error');
             }
         },
         error: function(xhr, status, error) {
             // Restore button state
             button.html(originalHtml).prop('disabled', false);
 
-            let errorMessage = 'Failed to delete metric. Please try again.';
+            let errorMessage = 'Gagal menghapus metric. Silakan coba lagi.';
             if (xhr.responseJSON && xhr.responseJSON.message) {
                 errorMessage = xhr.responseJSON.message;
             }

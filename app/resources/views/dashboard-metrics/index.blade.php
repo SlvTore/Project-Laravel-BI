@@ -11,12 +11,6 @@
             </div>
             @if($businessMetrics->count() > 0)
             <div class="d-flex gap-2">
-                <div class="input-group" style="width: 250px;">
-                    <span class="input-group-text bg-white border-end-0">
-                        <i class="bi bi-calendar-range"></i>
-                    </span>
-                    <input type="text" class="form-control border-start-0" id="daterangepicker" placeholder="Select date range">
-                </div>
                 <a href="{{ route('dashboard.metrics.create') }}" class="btn btn-primary">
                     <i class="bi bi-plus-circle me-2"></i>
                     Add Metrics
@@ -49,8 +43,8 @@
             <!-- Metrics Overview Cards -->
             <div class="row g-4 mb-4">
                 <div class="col-md-3">
-                    <div class="content-card border-start border-primary border-4">
-                        <div class="card-body">
+                    <div class="content-card border-start border-primary border-4 ">
+                        <div class="card-body p-3">
                             <h6 class="text-muted text-uppercase fw-bold mb-2" style="font-size: 0.75rem;">Total Metrics</h6>
                             <h3 class="fw-bold text-primary mb-0">{{ $businessMetrics->count() }}</h3>
                             <small class="text-muted">
@@ -62,7 +56,7 @@
                 </div>
                 <div class="col-md-3">
                     <div class="content-card border-start border-success border-4">
-                        <div class="card-body">
+                        <div class="card-body p-3">
                             <h6 class="text-muted text-uppercase fw-bold mb-2" style="font-size: 0.75rem;">Positive Trends</h6>
                             <h3 class="fw-bold text-success mb-0">{{ $businessMetrics->where('change_percentage', '>', 0)->count() }}</h3>
                             <small class="text-success">
@@ -74,7 +68,7 @@
                 </div>
                 <div class="col-md-3">
                     <div class="content-card border-start border-warning border-4">
-                        <div class="card-body">
+                        <div class="card-body p-3">
                             <h6 class="text-muted text-uppercase fw-bold mb-2" style="font-size: 0.75rem;">Stable</h6>
                             <h3 class="fw-bold text-warning mb-0">{{ $businessMetrics->where('change_percentage', '=', 0)->count() }}</h3>
                             <small class="text-warning">
@@ -86,7 +80,7 @@
                 </div>
                 <div class="col-md-3">
                     <div class="content-card border-start border-danger border-4">
-                        <div class="card-body">
+                        <div class="card-body p-3 ">
                             <h6 class="text-muted text-uppercase fw-bold mb-2" style="font-size: 0.75rem;">Needs Attention</h6>
                             <h3 class="fw-bold text-danger mb-0">{{ $businessMetrics->where('change_percentage', '<', 0)->count() }}</h3>
                             <small class="text-danger">
@@ -104,8 +98,8 @@
                     <div class="content-card">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="card-title fw-bold mb-0">All Metrics</h5>
-                                <div class="d-flex gap-2">
+                                <h5 class="card-title fw-bold mb-0 ms-3">All Metrics</h5>
+                                <div class="d-flex gap-2 me-2 mt-2">
                                     <div class="input-group" style="width: 200px;">
                                         <span class="input-group-text bg-white border-end-0">
                                             <i class="bi bi-funnel"></i>
@@ -117,6 +111,12 @@
                                             <option value="customer">Customer</option>
                                             <option value="product">Product</option>
                                         </select>
+                                    </div>
+                                     <div class="input-group" style="width: 250px;">
+                                        <span class="input-group-text bg-white border-end-0">
+                                            <i class="bi bi-calendar-range"></i>
+                                        </span>
+                                        <input type="text" class="form-control border-start-0" id="daterangepicker" placeholder="Select date range">
                                     </div>
                                     <div class="input-group" style="width: 250px;">
                                         <span class="input-group-text bg-white border-end-0">
