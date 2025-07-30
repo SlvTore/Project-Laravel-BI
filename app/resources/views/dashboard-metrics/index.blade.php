@@ -9,14 +9,6 @@
                 <h1 class="content-title">Metrics</h1>
                 <p class="content-subtitle">Track and analyze your business performance metrics</p>
             </div>
-            @if($businessMetrics->count() > 0)
-            <div class="d-flex gap-2">
-                <a href="{{ route('dashboard.metrics.create') }}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle me-2"></i>
-                    Add Metrics
-                </a>
-            </div>
-            @endif
         </div>
     </div>
 
@@ -43,11 +35,11 @@
             <!-- Metrics Overview Cards -->
             <div class="row g-4 mb-4">
                 <div class="col-md-3">
-                    <div class="content-card border-start border-primary border-4 ">
+                    <div class="content-card border-start border-primary border-4">
                         <div class="card-body p-3">
-                            <h6 class="text-muted text-uppercase fw-bold mb-2" style="font-size: 0.75rem;">Total Metrics</h6>
-                            <h3 class="fw-bold text-primary mb-0">{{ $businessMetrics->count() }}</h3>
-                            <small class="text-muted">
+                            <h6 class="text-white text-uppercase fw-bold mb-2" style="font-size: 0.75rem;">Total Metrics</h6>
+                            <h3 class="fw-bold text-white mb-0">{{ $businessMetrics->count() }}</h3>
+                            <small class="text-white">
                                 <i class="bi bi-graph-up me-1"></i>
                                 Active metrics tracking
                             </small>
@@ -57,9 +49,9 @@
                 <div class="col-md-3">
                     <div class="content-card border-start border-success border-4">
                         <div class="card-body p-3">
-                            <h6 class="text-muted text-uppercase fw-bold mb-2" style="font-size: 0.75rem;">Positive Trends</h6>
-                            <h3 class="fw-bold text-success mb-0">{{ $businessMetrics->where('change_percentage', '>', 0)->count() }}</h3>
-                            <small class="text-success">
+                            <h6 class="text-white text-uppercase fw-bold mb-2" style="font-size: 0.75rem;">Positive Trends</h6>
+                            <h3 class="fw-bold text-white mb-0">{{ $businessMetrics->where('change_percentage', '>', 0)->count() }}</h3>
+                            <small class="text-white">
                                 <i class="bi bi-arrow-up me-1"></i>
                                 Improving metrics
                             </small>
@@ -69,9 +61,9 @@
                 <div class="col-md-3">
                     <div class="content-card border-start border-warning border-4">
                         <div class="card-body p-3">
-                            <h6 class="text-muted text-uppercase fw-bold mb-2" style="font-size: 0.75rem;">Stable</h6>
-                            <h3 class="fw-bold text-warning mb-0">{{ $businessMetrics->where('change_percentage', '=', 0)->count() }}</h3>
-                            <small class="text-warning">
+                            <h6 class=" text-white text-uppercase fw-bold mb-2" style="font-size: 0.75rem;">Stable</h6>
+                            <h3 class="fw-bold text-white text-warning mb-0">{{ $businessMetrics->where('change_percentage', '=', 0)->count() }}</h3>
+                            <small class="text-white">
                                 <i class="bi bi-dash me-1"></i>
                                 No change
                             </small>
@@ -81,9 +73,9 @@
                 <div class="col-md-3">
                     <div class="content-card border-start border-danger border-4">
                         <div class="card-body p-3 ">
-                            <h6 class="text-muted text-uppercase fw-bold mb-2" style="font-size: 0.75rem;">Needs Attention</h6>
-                            <h3 class="fw-bold text-danger mb-0">{{ $businessMetrics->where('change_percentage', '<', 0)->count() }}</h3>
-                            <small class="text-danger">
+                            <h6 class="text-white text-uppercase fw-bold mb-2" style="font-size: 0.75rem;">Needs Attention</h6>
+                            <h3 class="fw-bold text-white mb-0">{{ $businessMetrics->where('change_percentage', '<', 0)->count() }}</h3>
+                            <small class="text-white">
                                 <i class="bi bi-arrow-down me-1"></i>
                                 Declining metrics
                             </small>

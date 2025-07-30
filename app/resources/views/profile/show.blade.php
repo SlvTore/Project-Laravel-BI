@@ -3,7 +3,7 @@
 @section('title', 'Profile - Traction Tracker')
 
 @section('content')
-<div class="dashboard-content">
+<div class="dashboard-content ms-4">
     <div class="content-header">
         <div class="d-flex justify-content-between align-items-center">
             <div>

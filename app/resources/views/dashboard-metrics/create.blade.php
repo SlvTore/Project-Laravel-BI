@@ -7,7 +7,7 @@
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <h1 class="content-title">Create Metrics</h1>
-                <p class="content-subtitle">Pilih metrics yang ingin Anda track untuk bisnis Anda</p>
+                <p class="content-subtitle ">Pilih metrics yang ingin Anda track untuk bisnis Anda</p>
             </div>
             <a href="{{ route('dashboard.metrics') }}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left me-2"></i>
@@ -21,11 +21,11 @@
             <div class="card-body">
                 <div class="row mb-4">
                     <div class="col-md-8">
-                        <h5 class="card-title fw-bold text-primary mb-3">
+                        <h5 class="card-title fw-bold text-white mb-3">
                             <i class="bi bi-check-square me-2"></i>
                             Metrics Mana Yang Ingin Anda Pilih?
                         </h5>
-                        <p class="text-muted">
+                        <p class="text-white">
                             Pilih metrics yang paling relevan dengan tujuan bisnis Anda. Anda selalu bisa menambah metrics lainnya nanti.
                         </p>
                     </div>
