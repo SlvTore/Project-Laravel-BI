@@ -81,6 +81,44 @@ class MetricRecordsController extends Controller
         ));
     }
 
+    public function overview(BusinessMetric $businessMetric)
+    {
+        $this->authorizeMetricAccess($businessMetric);
+
+        // Get statistics
+        $statistics = $this->getStatistics($businessMetric);
+
+        // Get chart data (30 days)
+        $chartData = $this->getChartData($businessMetric, 30);
+
+        // Get recent records (last 10)
+        $recentRecords = MetricRecord::where('business_metric_id', $businessMetric->id)
+            ->orderBy('record_date', 'desc')
+            ->limit(10)
+            ->get()
+            ->map(function($record) {
+                return [
+                    'id' => $record->id,
+                    'record_date' => $record->record_date->format('Y-m-d'),
+                    'value' => (float) $record->value,
+                    'formatted_value' => $record->formatted_value,
+                    'notes' => $record->notes ?? ''
+                ];
+            });
+
+        return response()->json([
+            'metric' => [
+                'id' => $businessMetric->id,
+                'metric_name' => $businessMetric->metric_name,
+                'unit' => $businessMetric->unit ?? 'number',
+                'description' => $businessMetric->description
+            ],
+            'statistics' => $statistics,
+            'chartData' => $chartData,
+            'recentRecords' => $recentRecords
+        ]);
+    }
+
     public function getDataTablesData(BusinessMetric $businessMetric, Request $request)
     {
         $query = MetricRecord::where('business_metric_id', $businessMetric->id);

@@ -323,6 +323,13 @@
         font-size: 2rem;
         font-weight: bold;
         margin-bottom: 5px;
+        transition: all 0.3s ease;
+    }
+
+    .stats-card .stats-value.updated {
+        transform: scale(1.1);
+        color: #28a745;
+        text-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
     }
 
     .stats-card .stats-change {
@@ -1249,9 +1256,46 @@ function addInlineRecord() {
 }
 
 function updateStatistics() {
-    // Update the total records count in the statistics card
+    // Update the total records count from table info
     const info = recordsTable.page.info();
     $('#totalRecords').text(info.recordsTotal);
+    
+    // Fetch updated statistics from server
+    $.ajax({
+        url: `{{ route('dashboard.metrics.overview', $businessMetric->id) }}`,
+        method: 'GET',
+        success: function(response) {
+            const stats = response.statistics;
+            
+            // Update all statistics cards
+            $('#totalRecords').text(stats.total_records || 0);
+            $('#avgValue').text(formatNumber(stats.avg_value || 0));
+            
+            const growthRate = stats.growth_rate || 0;
+            $('#growthRate').text(growthRate.toFixed(1) + '%')
+                .removeClass('growth-positive growth-negative')
+                .addClass(growthRate >= 0 ? 'growth-positive' : 'growth-negative');
+            
+            $('#lastUpdate').text(stats.last_update ? 
+                moment(stats.last_update).format('DD MMM YYYY') : 'N/A');
+                
+            // Animate the updated values
+            $('.stats-value').each(function() {
+                $(this).addClass('updated');
+                setTimeout(() => {
+                    $(this).removeClass('updated');
+                }, 1000);
+            });
+        },
+        error: function(xhr) {
+            console.error('Failed to update statistics:', xhr.responseText);
+        }
+    });
+}
+
+function formatNumber(value) {
+    if (!value) return '0';
+    return new Intl.NumberFormat('id-ID').format(value);
 }
 
 function saveInlineEdit(id, callback) {
