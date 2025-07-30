@@ -1259,26 +1259,26 @@ function updateStatistics() {
     // Update the total records count from table info
     const info = recordsTable.page.info();
     $('#totalRecords').text(info.recordsTotal);
-    
+
     // Fetch updated statistics from server
     $.ajax({
         url: `{{ route('dashboard.metrics.overview', $businessMetric->id) }}`,
         method: 'GET',
         success: function(response) {
             const stats = response.statistics;
-            
+
             // Update all statistics cards
             $('#totalRecords').text(stats.total_records || 0);
             $('#avgValue').text(formatNumber(stats.avg_value || 0));
-            
+
             const growthRate = stats.growth_rate || 0;
             $('#growthRate').text(growthRate.toFixed(1) + '%')
                 .removeClass('growth-positive growth-negative')
                 .addClass(growthRate >= 0 ? 'growth-positive' : 'growth-negative');
-            
-            $('#lastUpdate').text(stats.last_update ? 
+
+            $('#lastUpdate').text(stats.last_update ?
                 moment(stats.last_update).format('DD MMM YYYY') : 'N/A');
-                
+
             // Animate the updated values
             $('.stats-value').each(function() {
                 $(this).addClass('updated');

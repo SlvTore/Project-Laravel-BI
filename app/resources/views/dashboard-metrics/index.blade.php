@@ -420,11 +420,11 @@ let modalTrendChart, modalSummaryChart;
 function showMetricOverview(metricId) {
     // Show modal
     $('#metricOverviewModal').modal('show');
-    
+
     // Show loading state
     $('#modalLoading').show();
     $('#modalContent').hide();
-    
+
     // Fetch metric data
     $.ajax({
         url: `/dashboard/metrics/${metricId}/overview`,
@@ -432,28 +432,28 @@ function showMetricOverview(metricId) {
         success: function(response) {
             // Update modal title
             $('#modalMetricName').text(response.metric.metric_name + ' Overview');
-            
+
             // Update statistics
             $('#modalTotalRecords').text(response.statistics.total_records || 0);
             $('#modalAvgValue').text(formatNumber(response.statistics.avg_value || 0));
-            
+
             const growthRate = response.statistics.growth_rate || 0;
             $('#modalGrowthRate').text(growthRate.toFixed(1) + '%')
                 .removeClass('text-success text-danger')
                 .addClass(growthRate >= 0 ? 'text-success' : 'text-danger');
-                
-            $('#modalLastUpdate').text(response.statistics.last_update ? 
+
+            $('#modalLastUpdate').text(response.statistics.last_update ?
                 moment(response.statistics.last_update).format('DD MMM YYYY') : 'N/A');
-            
+
             // Update manage records button
             $('#manageRecordsBtn').attr('href', `/dashboard/metrics/records/${metricId}/edit`);
-            
+
             // Load charts
             loadModalCharts(response.chartData, response.metric);
-            
+
             // Load recent records
             loadRecentRecords(response.recentRecords, response.metric);
-            
+
             // Hide loading and show content
             $('#modalLoading').hide();
             $('#modalContent').show();
@@ -478,7 +478,7 @@ function loadModalCharts(chartData, metric) {
     if (modalSummaryChart) {
         modalSummaryChart.destroy();
     }
-    
+
     // Trend Chart
     const trendOptions = {
         series: [{
@@ -500,7 +500,7 @@ function loadModalCharts(chartData, metric) {
             labels: { style: { colors: '#fff' } }
         },
         yaxis: {
-            labels: { 
+            labels: {
                 style: { colors: '#fff' },
                 formatter: function(value) {
                     return formatValue(value, metric.unit);
@@ -519,10 +519,10 @@ function loadModalCharts(chartData, metric) {
             }
         }
     };
-    
+
     modalTrendChart = new ApexCharts(document.querySelector("#modalTrendChart"), trendOptions);
     modalTrendChart.render();
-    
+
     // Summary Chart (Donut)
     const summaryOptions = {
         series: [
@@ -554,7 +554,7 @@ function loadModalCharts(chartData, metric) {
             }
         }
     };
-    
+
     modalSummaryChart = new ApexCharts(document.querySelector("#modalSummaryChart"), summaryOptions);
     modalSummaryChart.render();
 }
@@ -562,7 +562,7 @@ function loadModalCharts(chartData, metric) {
 function loadRecentRecords(records, metric) {
     const tbody = $('#modalRecentRecords');
     tbody.empty();
-    
+
     if (!records || records.length === 0) {
         tbody.append(`
             <tr>
@@ -571,7 +571,7 @@ function loadRecentRecords(records, metric) {
         `);
         return;
     }
-    
+
     records.forEach(record => {
         tbody.append(`
             <tr>
@@ -586,7 +586,7 @@ function loadRecentRecords(records, metric) {
 
 function formatValue(value, unit) {
     if (!value) return '0';
-    
+
     try {
         if (unit === 'currency') {
             return new Intl.NumberFormat('id-ID', {
