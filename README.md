@@ -309,9 +309,7 @@ Project ini dilisensikan di bawah [MIT License](https://opensource.org/licenses/
 ## 📞 Support
 
 Untuk bantuan dan pertanyaan:
-- 📧 Email: support@tractiontracker.com
-- 💬 Discord: [Join our community](https://discord.gg/tractiontracker)
-- 📚 Documentation: [docs.tractiontracker.com](https://docs.tractiontracker.com)
+- 📧 Email: mfadil25@outlook.com
 
 ---
 
