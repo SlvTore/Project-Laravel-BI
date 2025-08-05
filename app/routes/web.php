@@ -66,6 +66,9 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
     Route::get('/dashboard/metrics/{businessMetric}/calculation-data', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'getCalculationData'])->name('dashboard.metrics.calculation.data');
     Route::get('/dashboard/business/{business}/daily-data', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'getDailyData'])->name('dashboard.metrics.daily.data');
 
+    // AI Chat routes
+    Route::post('/dashboard/metrics/{businessMetric}/ai-chat', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'askAI'])->name('dashboard.metrics.ai-chat');
+
     // Dashboard - Users
     Route::get('/dashboard/users', function () {
         return view('dashboard-users.index');

@@ -320,6 +320,96 @@
     </div>
 </div>
 
+    <!-- AI Business Assistant Card -->
+    <div class="datatable-container mt-2 ms-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0 text-white">
+                <i class="fas fa-robot me-2"></i>AI Business Assistant
+            </h5>
+            <div class="ai-status">
+                <span class="badge bg-success" id="aiStatus">
+                    <i class="fas fa-circle me-1"></i>Online
+                </span>
+            </div>
+        </div>
+
+        <!-- Chat Interface -->
+        <div class="ai-chat-container">
+            <!-- Chat Messages -->
+            <div class="chat-messages" id="chatMessages">
+                <div class="message ai-message">
+                    <div class="message-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <strong>AI Assistant</strong>
+                            <small class="text-muted">{{ now()->format('H:i') }}</small>
+                        </div>
+                        <div class="message-text">
+                            Halo! Saya adalah asisten AI untuk analisis bisnis Anda. Saya dapat membantu menganalisis data {{ $businessMetric->metric_name }} dan memberikan insights untuk pengambilan keputusan.
+                            <br><br>
+                            Beberapa contoh pertanyaan yang bisa Anda ajukan:
+                            <ul class="mt-2 mb-0">
+                                <li>Bagaimana tren performa metric ini dalam 30 hari terakhir?</li>
+                                <li>Apa rekomendasi untuk meningkatkan {{ strtolower($businessMetric->metric_name) }}?</li>
+                                <li>Analisis pola data dan berikan strategi bisnis</li>
+                                <li>Identifikasi potensi risiko dari data saat ini</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="quick-actions mb-3">
+                <button class="btn btn-outline-primary btn-sm quick-question"
+                        data-question="Analisis tren performa dalam 30 hari terakhir dan berikan rekomendasi">
+                    <i class="fas fa-chart-line me-1"></i>Analisis Tren
+                </button>
+                <button class="btn btn-outline-success btn-sm quick-question"
+                        data-question="Berikan 3 strategi untuk meningkatkan metrik ini berdasarkan data yang ada">
+                    <i class="fas fa-lightbulb me-1"></i>Strategi Peningkatan
+                </button>
+                <button class="btn btn-outline-warning btn-sm quick-question"
+                        data-question="Identifikasi potensi risiko atau masalah dari pola data saat ini">
+                    <i class="fas fa-exclamation-triangle me-1"></i>Analisis Risiko
+                </button>
+                <button class="btn btn-outline-info btn-sm quick-question"
+                        data-question="Bandingkan performa saat ini dengan rata-rata industri dan berikan benchmark">
+                    <i class="fas fa-balance-scale me-1"></i>Benchmark Industri
+                </button>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="chat-input-container">
+                <form id="aiChatForm" class="d-flex gap-2">
+                    <div class="flex-grow-1">
+                        <textarea class="form-control chat-input" id="aiQuestion"
+                                  placeholder="Tanyakan tentang data metrics, tren, atau minta saran strategi bisnis..."
+                                  rows="2" maxlength="500"></textarea>
+                        <div class="chat-input-footer">
+                            <small class="text-muted">
+                                <span id="charCount">0</span>/500 karakter
+                            </small>
+                            <small class="text-muted">
+                                Press Ctrl+Enter to send
+                            </small>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-column gap-1">
+                        <button type="submit" class="btn btn-primary chat-send-btn" id="sendBtn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="clearChatBtn" title="Clear Chat">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @push('styles')
@@ -783,6 +873,235 @@
         background: rgba(40, 167, 69, 0.15) !important;
         border-color: rgba(40, 167, 69, 0.5) !important;
         box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25) !important;
+    }
+
+    /* AI Chat Styles */
+    .ai-chat-container {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        padding: 20px;
+        min-height: 400px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding-right: 10px;
+        margin-bottom: 20px;
+        max-height: 400px;
+    }
+
+    .message {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 20px;
+        animation: messageSlideIn 0.3s ease-out;
+    }
+
+    .message-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+
+    .ai-message .message-avatar {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .user-message {
+        flex-direction: row-reverse;
+    }
+
+    .user-message .message-avatar {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+    }
+
+    .message-content {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        padding: 15px;
+        max-width: 80%;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .user-message .message-content {
+        background: rgba(40, 167, 69, 0.2);
+        border-color: rgba(40, 167, 69, 0.3);
+    }
+
+    .message-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .message-header strong {
+        color: white;
+    }
+
+    .message-text {
+        color: #f8f9fa;
+        line-height: 1.5;
+        white-space: pre-wrap;
+    }
+
+    .message-text ul {
+        margin: 8px 0;
+        padding-left: 20px;
+    }
+
+    .message-text li {
+        margin-bottom: 4px;
+    }
+
+    .quick-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .quick-question {
+        border-radius: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .quick-question:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .chat-input-container {
+        margin-top: auto;
+    }
+
+    .chat-input {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border: 2px solid rgba(255, 255, 255, 0.2) !important;
+        border-radius: 12px !important;
+        color: white !important;
+        resize: none;
+        backdrop-filter: blur(10px);
+    }
+
+    .chat-input:focus {
+        background: rgba(255, 255, 255, 0.15) !important;
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
+        color: white !important;
+    }
+
+    .chat-input::placeholder {
+        color: rgba(255, 255, 255, 0.6) !important;
+    }
+
+    .chat-input-footer {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 4px;
+        padding: 0 4px;
+    }
+
+    .chat-send-btn {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .chat-send-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .chat-send-btn:disabled {
+        opacity: 0.6;
+        transform: none;
+    }
+
+    .ai-status .badge {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes messageSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+
+    .typing-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #6c757d;
+        font-style: italic;
+    }
+
+    .typing-dots {
+        display: flex;
+        gap: 3px;
+    }
+
+    .typing-dots span {
+        width: 6px;
+        height: 6px;
+        background: #6c757d;
+        border-radius: 50%;
+        animation: typingAnimation 1.4s infinite ease-in-out;
+    }
+
+    .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0s; }
+
+    @keyframes typingAnimation {
+        0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+        40% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Scrollbar Styling */
+    .chat-messages::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .chat-messages::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 3px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
     }
 </style>
 @endpush
@@ -2056,6 +2375,447 @@ function resetForm() {
 
     // Reset preview
     updatePreview();
+}
+
+// AI Chat functionality
+let chatMessages = [];
+
+$(document).ready(function() {
+    initializeAIChat();
+});
+
+function initializeAIChat() {
+    // Character counter
+    $('#aiQuestion').on('input', function() {
+        const length = $(this).val().length;
+        $('#charCount').text(length);
+
+        if (length > 450) {
+            $('#charCount').addClass('text-warning');
+        } else {
+            $('#charCount').removeClass('text-warning');
+        }
+    });
+
+    // Chat form submission
+    $('#aiChatForm').on('submit', function(e) {
+        e.preventDefault();
+        const question = $('#aiQuestion').val().trim();
+        if (question) {
+            sendAIMessage(question);
+        }
+    });
+
+    // Quick question buttons
+    $('.quick-question').on('click', function() {
+        const question = $(this).data('question');
+        sendAIMessage(question);
+    });
+
+    // Clear chat
+    $('#clearChatBtn').on('click', function() {
+        if (confirm('Hapus semua percakapan?')) {
+            clearChat();
+        }
+    });
+
+    // Keyboard shortcuts
+    $('#aiQuestion').on('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.which === 13) {
+            e.preventDefault();
+            $('#aiChatForm').submit();
+        }
+    });
+
+    // Auto-resize textarea
+    $('#aiQuestion').on('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+}
+
+function sendAIMessage(question) {
+    if (!question.trim()) return;
+
+    // Add user message to chat
+    addMessage('user', question);
+
+    // Clear input
+    $('#aiQuestion').val('').trigger('input');
+
+    // Show typing indicator
+    showTypingIndicator();
+
+    // Disable send button
+    $('#sendBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+    // Send request to AI
+    $.ajax({
+        url: '{{ route("dashboard.metrics.ai-chat", $businessMetric->id) }}',
+        method: 'POST',
+        data: {
+            question: question,
+            _token: '{{ csrf_token() }}'
+        },
+        success: function(response) {
+            hideTypingIndicator();
+
+            if (response.success) {
+                addMessage('ai', response.response);
+                updateAIStatus('online');
+            } else {
+                addMessage('ai', 'Maaf, terjadi kesalahan: ' + (response.error || 'Tidak dapat memproses pertanyaan Anda.'));
+                updateAIStatus('error');
+            }
+        },
+        error: function(xhr) {
+            hideTypingIndicator();
+            updateAIStatus('error');
+
+            let errorMessage = 'Maaf, terjadi kesalahan saat menghubungi AI assistant.';
+
+            if (xhr.status === 429) {
+                errorMessage = 'Terlalu banyak permintaan. Silakan coba lagi dalam beberapa saat.';
+            } else if (xhr.status === 500) {
+                errorMessage = 'Terjadi kesalahan server. Silakan coba lagi nanti.';
+            } else if (xhr.status === 403) {
+                errorMessage = 'API key tidak valid atau akses ditolak.';
+            }
+
+            addMessage('ai', errorMessage);
+        },
+        complete: function() {
+            // Re-enable send button
+            $('#sendBtn').prop('disabled', false).html('<i class="fas fa-paper-plane"></i>');
+        }
+    });
+}
+
+function addMessage(type, content) {
+    const timestamp = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    const avatar = type === 'ai' ? '<i class="fas fa-robot"></i>' : '<i class="fas fa-user"></i>';
+    const name = type === 'ai' ? 'AI Assistant' : 'Anda';
+
+    const messageHtml = `
+        <div class="message ${type}-message">
+            <div class="message-avatar">
+                ${avatar}
+            </div>
+            <div class="message-content">
+                <div class="message-header">
+                    <strong>${name}</strong>
+                    <small class="text-muted">${timestamp}</small>
+                </div>
+                <div class="message-text">${formatAIResponse(content)}</div>
+            </div>
+        </div>
+    `;
+
+    $('#chatMessages').append(messageHtml);
+    scrollToBottom();
+
+    // Store message
+    chatMessages.push({
+        type: type,
+        content: content,
+        timestamp: timestamp
+    });
+}
+
+function formatAIResponse(text) {
+    // Convert markdown-like formatting to HTML
+    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+    // Convert numbered lists
+    text = text.replace(/(\d+\.\s)/g, '<br>$1');
+
+    // Convert bullet points
+    text = text.replace(/(-\s)/g, '<br>• ');
+
+    // Convert line breaks
+    text = text.replace(/\n\n/g, '<br><br>');
+    text = text.replace(/\n/g, '<br>');
+
+    return text;
+}
+
+function showTypingIndicator() {
+    const typingHtml = `
+        <div class="message ai-message" id="typingIndicator">
+            <div class="message-avatar">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="message-content">
+                <div class="typing-indicator">
+                    <span>AI sedang mengetik</span>
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    $('#chatMessages').append(typingHtml);
+    scrollToBottom();
+}
+
+function hideTypingIndicator() {
+    $('#typingIndicator').remove();
+}
+
+function scrollToBottom() {
+    const chatContainer = $('#chatMessages');
+    chatContainer.scrollTop(chatContainer[0].scrollHeight);
+}
+
+function clearChat() {
+    // Keep only the initial AI message
+    $('#chatMessages').find('.message').not(':first').remove();
+    chatMessages = [];
+    toastr.success('Percakapan telah dihapus');
+}
+
+// Update AI status based on connection
+function updateAIStatus(status) {
+    const statusElement = $('#aiStatus');
+    if (status === 'online') {
+        statusElement.removeClass('bg-danger bg-warning').addClass('bg-success')
+                   .html('<i class="fas fa-circle me-1"></i>Online');
+    } else if (status === 'error') {
+        statusElement.removeClass('bg-success bg-warning').addClass('bg-danger')
+                   .html('<i class="fas fa-exclamation-circle me-1"></i>Error');
+    } else {
+        statusElement.removeClass('bg-success bg-danger').addClass('bg-warning')
+                   .html('<i class="fas fa-clock me-1"></i>Connecting');
+    }
+}
+
+function initializeAIChat() {
+    // Character counter
+    $('#aiQuestion').on('input', function() {
+        const length = $(this).val().length;
+        $('#charCount').text(length);
+
+        if (length > 450) {
+            $('#charCount').addClass('text-warning');
+        } else {
+            $('#charCount').removeClass('text-warning');
+        }
+    });
+
+    // Chat form submission
+    $('#aiChatForm').on('submit', function(e) {
+        e.preventDefault();
+        const question = $('#aiQuestion').val().trim();
+        if (question) {
+            sendAIMessage(question);
+        }
+    });
+
+    // Quick question buttons
+    $('.quick-question').on('click', function() {
+        const question = $(this).data('question');
+        sendAIMessage(question);
+    });
+
+    // Clear chat
+    $('#clearChatBtn').on('click', function() {
+        if (confirm('Hapus semua percakapan?')) {
+            clearChat();
+        }
+    });
+
+    // Keyboard shortcuts
+    $('#aiQuestion').on('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.which === 13) {
+            e.preventDefault();
+            $('#aiChatForm').submit();
+        }
+    });
+
+    // Auto-resize textarea
+    $('#aiQuestion').on('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+}
+
+function sendAIMessage(question) {
+    if (!question.trim()) return;
+
+    // Add user message to chat
+    addMessage('user', question);
+
+    // Clear input
+    $('#aiQuestion').val('').trigger('input');
+
+    // Show typing indicator
+    showTypingIndicator();
+
+    // Disable send button
+    $('#sendBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+    // Send request to AI
+    $.ajax({
+        url: '{{ route("dashboard.metrics.ai-chat", $businessMetric->id) }}',
+        method: 'POST',
+        data: {
+            question: question,
+            _token: '{{ csrf_token() }}'
+        },
+        success: function(response) {
+            hideTypingIndicator();
+
+            if (response.success) {
+                addMessage('ai', response.response);
+            } else {
+                addMessage('ai', 'Maaf, terjadi kesalahan: ' + (response.error || 'Tidak dapat memproses pertanyaan Anda.'));
+            }
+        },
+        error: function(xhr) {
+            hideTypingIndicator();
+            let errorMessage = 'Maaf, terjadi kesalahan saat menghubungi AI assistant.';
+
+            if (xhr.status === 429) {
+                errorMessage = 'Terlalu banyak permintaan. Silakan coba lagi dalam beberapa saat.';
+            } else if (xhr.status === 500) {
+                errorMessage = 'Terjadi kesalahan server. Silakan coba lagi nanti.';
+            }
+
+            addMessage('ai', errorMessage);
+        },
+        complete: function() {
+            // Re-enable send button
+            $('#sendBtn').prop('disabled', false).html('<i class="fas fa-paper-plane"></i>');
+        }
+    });
+}
+
+function addMessage(type, content) {
+    const timestamp = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    const avatar = type === 'ai' ? '<i class="fas fa-robot"></i>' : '<i class="fas fa-user"></i>';
+    const name = type === 'ai' ? 'AI Assistant' : 'Anda';
+
+    const messageHtml = `
+        <div class="message ${type}-message">
+            <div class="message-avatar">
+                ${avatar}
+            </div>
+            <div class="message-content">
+                <div class="message-header">
+                    <strong>${name}</strong>
+                    <small class="text-muted">${timestamp}</small>
+                </div>
+                <div class="message-text">${formatAIResponse(content)}</div>
+            </div>
+        </div>
+    `;
+
+    $('#chatMessages').append(messageHtml);
+    scrollToBottom();
+
+    // Store message
+    chatMessages.push({
+        type: type,
+        content: content,
+        timestamp: timestamp
+    });
+}
+
+function formatAIResponse(text) {
+    // Convert markdown-like formatting to HTML
+    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+    // Convert numbered lists
+    text = text.replace(/(\d+\.\s)/g, '<br>$1');
+
+    // Convert bullet points
+    text = text.replace(/(-\s)/g, '<br>• ');
+
+    // Convert line breaks
+    text = text.replace(/\n\n/g, '<br><br>');
+    text = text.replace(/\n/g, '<br>');
+
+    return text;
+}
+
+function showTypingIndicator() {
+    const typingHtml = `
+        <div class="message ai-message" id="typingIndicator">
+            <div class="message-avatar">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="message-content">
+                <div class="typing-indicator">
+                    <span>AI sedang mengetik</span>
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    $('#chatMessages').append(typingHtml);
+    scrollToBottom();
+}
+
+function hideTypingIndicator() {
+    $('#typingIndicator').remove();
+}
+
+function scrollToBottom() {
+    const chatContainer = $('#chatMessages');
+    chatContainer.scrollTop(chatContainer[0].scrollHeight);
+}
+
+function clearChat() {
+    // Keep only the initial AI message
+    $('#chatMessages').find('.message').not(':first').remove();
+    chatMessages = [];
+    toastr.success('Percakapan telah dihapus');
+}
+
+// Update AI status based on connection
+function updateAIStatus(status) {
+    const statusElement = $('#aiStatus');
+    if (status === 'online') {
+        statusElement.removeClass('bg-danger bg-warning').addClass('bg-success')
+                   .html('<i class="fas fa-circle me-1"></i>Online');
+    } else if (status === 'error') {
+        statusElement.removeClass('bg-success bg-warning').addClass('bg-danger')
+                   .html('<i class="fas fa-exclamation-circle me-1"></i>Error');
+    } else {
+        statusElement.removeClass('bg-success bg-danger').addClass('bg-warning')
+                   .html('<i class="fas fa-clock me-1"></i>Connecting');
+    }
+}
+
+// Export chat function (optional)
+function exportChat() {
+    const chatData = {
+        metric: '{{ $businessMetric->metric_name }}',
+        business: '{{ $businessMetric->business->business_name ?? "Business" }}',
+        timestamp: new Date().toISOString(),
+        messages: chatMessages
+    };
+
+    const dataStr = JSON.stringify(chatData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+
+    const exportFileDefaultName = `ai_chat_${Date.now()}.json`;
+
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
 }
 </script>
 @endpush

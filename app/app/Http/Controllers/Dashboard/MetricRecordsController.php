@@ -8,10 +8,12 @@ use App\Models\MetricRecord;
 use App\Models\SalesData;
 use App\Models\ProductSales;
 use App\Models\Customer;
+use App\Services\GeminiAIService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MetricRecordsController extends Controller
 {
@@ -995,5 +997,83 @@ class MetricRecordsController extends Controller
             'new_customer_count' => $salesData->new_customer_count,
             'total_customer_count' => $salesData->total_customer_count
         ]);
+    }
+
+    /**
+     * Handle AI chat requests for business insights
+     */
+    public function askAI(Request $request, $id)
+    {
+        try {
+            $businessMetric = BusinessMetric::with('business')->findOrFail($id);
+            $this->authorizeMetricAccess($businessMetric);
+
+            $question = $request->input('question');
+
+            if (empty($question)) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Question is required'
+                ], 400);
+            }
+
+            // Get recent data for context
+            $recentData = MetricRecord::where('business_metric_id', $id)
+                ->orderBy('record_date', 'desc')
+                ->limit(10)
+                ->get(['record_date', 'value', 'notes'])
+                ->toArray();
+
+            // Get statistics
+            $statistics = $this->getMetricStatistics($businessMetric);
+
+            // Prepare context for AI
+            $context = [
+                'metric_name' => $businessMetric->metric_name,
+                'business_name' => $businessMetric->business->business_name ?? 'Business',
+                'recent_data' => $recentData,
+                'statistics' => $statistics
+            ];
+
+            $aiService = new GeminiAIService();
+            $result = $aiService->generateBusinessInsight($question, $context);
+
+            return response()->json($result);
+
+        } catch (\Exception $e) {
+            Log::error('AI Chat Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get statistics for a metric to provide context to AI
+     */
+    private function getMetricStatistics($businessMetric)
+    {
+        $records = MetricRecord::where('business_metric_id', $businessMetric->id)
+            ->orderBy('record_date', 'desc')
+            ->get();
+
+        if ($records->isEmpty()) {
+            return [];
+        }
+
+        $values = $records->pluck('value')->filter()->toArray();
+
+        return [
+            'total_records' => $records->count(),
+            'latest_value' => $records->first()->value ?? 0,
+            'average_value' => count($values) > 0 ? array_sum($values) / count($values) : 0,
+            'max_value' => count($values) > 0 ? max($values) : 0,
+            'min_value' => count($values) > 0 ? min($values) : 0,
+            'date_range' => [
+                'start' => $records->last()->record_date ?? null,
+                'end' => $records->first()->record_date ?? null
+            ]
+        ];
     }
 }
