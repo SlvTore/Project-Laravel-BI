@@ -185,19 +185,30 @@ class MetricRecordsController extends Controller
     {
         $this->authorizeMetricAccess($businessMetric);
 
+        // Basic validation for common fields
         $validated = $request->validate([
             'record_date' => 'required|date|before_or_equal:today',
-            'value' => 'required|numeric|min:0',
+            'value' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:1000',
         ], [
             'record_date.before_or_equal' => 'Record date cannot be in the future.',
             'value.min' => 'Value must be positive.',
-            'value.required' => 'Value is required.',
             'record_date.required' => 'Date is required.'
         ]);
 
-        // Handle specific metric types
+        // Handle metric-specific data and validation
+        $metricSpecificData = $this->handleMetricSpecificValidation($request, $businessMetric);
+
+        // Merge specific data with validated data
+        $validated = array_merge($validated, $metricSpecificData);
+
+        // Handle specific metric types (store additional data)
         $this->handleSpecificMetricStore($request, $businessMetric);
+
+        // Calculate the value if not provided (for computed metrics)
+        if (!isset($validated['value']) || $validated['value'] === null) {
+            $validated['value'] = $this->calculateMetricValue($request, $businessMetric);
+        }
 
         // Store the metric record using updateOrCreate to prevent duplicates
         $record = MetricRecord::updateOrCreate(
@@ -232,6 +243,150 @@ class MetricRecordsController extends Controller
         }
 
         return redirect()->back()->with('success', 'Data berhasil disimpan!');
+    }
+
+    /**
+     * Handle metric-specific validation
+     */
+    private function handleMetricSpecificValidation(Request $request, BusinessMetric $businessMetric)
+    {
+        $metricName = $businessMetric->metric_name;
+        $rules = [];
+        $data = [];
+
+        switch ($metricName) {
+            case 'Total Penjualan':
+                $rules = [
+                    'total_revenue' => 'required|numeric|min:0',
+                    'transaction_count' => 'nullable|integer|min:0',
+                ];
+                break;
+
+            case 'Biaya Pokok Penjualan (COGS)':
+                $rules = [
+                    'total_cogs' => 'required|numeric|min:0',
+                    'cogs_notes' => 'nullable|string|max:500',
+                ];
+                break;
+
+            case 'Jumlah Pelanggan Baru':
+                $rules = [
+                    'new_customer_count' => 'required|integer|min:0',
+                    'customer_source' => 'nullable|string|max:100',
+                    'customer_acquisition_cost' => 'nullable|numeric|min:0',
+                ];
+                break;
+
+            case 'Jumlah Pelanggan Setia':
+                $rules = [
+                    'total_customer_count' => 'required|integer|min:0',
+                    'loyal_customer_definition' => 'nullable|string|max:100',
+                    'loyalty_program_members' => 'nullable|integer|min:0',
+                    'avg_purchase_frequency' => 'nullable|numeric|min:0',
+                ];
+                break;
+
+            case 'Penjualan Produk Terlaris':
+                $rules = [
+                    'product_name' => 'required|string|max:255',
+                    'product_sku' => 'nullable|string|max:100',
+                    'quantity_sold' => 'required|integer|min:0',
+                    'unit_price' => 'required|numeric|min:0',
+                    'cost_per_unit' => 'nullable|numeric|min:0',
+                    'product_category' => 'nullable|string|max:100',
+                ];
+                break;
+
+            case 'Margin Keuntungan (Profit Margin)':
+                $rules = [
+                    'margin_period' => 'required|string|in:daily,weekly,monthly,yearly',
+                    'margin_target' => 'nullable|numeric|min:0|max:100',
+                ];
+                break;
+        }
+
+        if (!empty($rules)) {
+            $data = $request->validate($rules);
+        }
+
+        return $data;
+    }
+
+    /**
+     * Calculate metric value for computed metrics
+     */
+    private function calculateMetricValue(Request $request, BusinessMetric $businessMetric)
+    {
+        $metricName = $businessMetric->metric_name;
+
+        switch ($metricName) {
+            case 'Total Penjualan':
+                return $request->input('total_revenue', 0);
+
+            case 'Biaya Pokok Penjualan (COGS)':
+                return $request->input('total_cogs', 0);
+
+            case 'Jumlah Pelanggan Baru':
+                return $request->input('new_customer_count', 0);
+
+            case 'Jumlah Pelanggan Setia':
+                $totalCustomers = $request->input('total_customer_count', 0);
+                $newCustomers = $request->input('new_customer_count', 0);
+                if ($totalCustomers > 0) {
+                    return (($totalCustomers - $newCustomers) / $totalCustomers) * 100;
+                }
+                return 0;
+
+            case 'Penjualan Produk Terlaris':
+                $quantity = $request->input('quantity_sold', 0);
+                $price = $request->input('unit_price', 0);
+                return $quantity * $price;
+
+            case 'Margin Keuntungan (Profit Margin)':
+                // This will be calculated from existing sales data
+                $period = $request->input('margin_period', 'monthly');
+                return $this->calculateMarginFromPeriod($businessMetric->business_id, $period);
+
+            default:
+                return $request->input('value', 0);
+        }
+    }
+
+    /**
+     * Calculate margin percentage from period data
+     */
+    private function calculateMarginFromPeriod($businessId, $period)
+    {
+        $endDate = Carbon::now();
+        switch ($period) {
+            case 'daily':
+                $startDate = $endDate->copy()->startOfDay();
+                break;
+            case 'weekly':
+                $startDate = $endDate->copy()->startOfWeek();
+                break;
+            case 'monthly':
+                $startDate = $endDate->copy()->startOfMonth();
+                break;
+            case 'yearly':
+                $startDate = $endDate->copy()->startOfYear();
+                break;
+            default:
+                $startDate = $endDate->copy()->startOfMonth();
+        }
+
+        $salesData = SalesData::forBusiness($businessId)
+            ->dateRange($startDate, $endDate)
+            ->get();
+
+        $totalRevenue = $salesData->sum('total_revenue');
+        $totalCogs = $salesData->sum('total_cogs');
+
+        if ($totalRevenue > 0) {
+            return (($totalRevenue - $totalCogs) / $totalRevenue) * 100;
+        }
+
+        return 0;
     }
 
     public function update(Request $request, MetricRecord $record)
@@ -624,21 +779,110 @@ class MetricRecordsController extends Controller
 
         switch ($metricName) {
             case 'Total Penjualan':
-            case 'Biaya Pokok Penjualan':
-                if ($request->has('total_revenue') || $request->has('total_cogs')) {
-                    SalesData::updateOrCreate(
-                        [
-                            'business_id' => $businessId,
-                            'sales_date' => $recordDate,
-                        ],
-                        [
-                            'total_revenue' => $request->input('total_revenue', 0),
-                            'total_cogs' => $request->input('total_cogs', 0),
-                            'transaction_count' => $request->input('transaction_count', 0),
-                            'notes' => $request->input('sales_notes'),
-                        ]
-                    );
-                }
+                SalesData::updateOrCreate(
+                    [
+                        'business_id' => $businessId,
+                        'sales_date' => $recordDate,
+                    ],
+                    [
+                        'total_revenue' => $request->input('total_revenue', 0),
+                        'transaction_count' => $request->input('transaction_count', 0),
+                        'notes' => $request->input('notes'),
+                    ]
+                );
+                break;
+
+            case 'Biaya Pokok Penjualan (COGS)':
+                SalesData::updateOrCreate(
+                    [
+                        'business_id' => $businessId,
+                        'sales_date' => $recordDate,
+                    ],
+                    [
+                        'total_cogs' => $request->input('total_cogs', 0),
+                        'notes' => $request->input('cogs_notes') ?? $request->input('notes'),
+                    ]
+                );
+                break;
+
+            case 'Jumlah Pelanggan Baru':
+                SalesData::updateOrCreate(
+                    [
+                        'business_id' => $businessId,
+                        'sales_date' => $recordDate,
+                    ],
+                    [
+                        'new_customer_count' => $request->input('new_customer_count', 0),
+                        'notes' => $request->input('notes'),
+                    ]
+                );
+
+                // Store customer acquisition data in metadata
+                $metadata = [
+                    'customer_source' => $request->input('customer_source'),
+                    'customer_acquisition_cost' => $request->input('customer_acquisition_cost'),
+                ];
+
+                // Update the metric record metadata
+                MetricRecord::where('business_metric_id', $businessMetric->id)
+                    ->where('record_date', $recordDate)
+                    ->update(['metadata' => $metadata]);
+                break;
+
+            case 'Jumlah Pelanggan Setia':
+                SalesData::updateOrCreate(
+                    [
+                        'business_id' => $businessId,
+                        'sales_date' => $recordDate,
+                    ],
+                    [
+                        'total_customer_count' => $request->input('total_customer_count', 0),
+                        'notes' => $request->input('notes'),
+                    ]
+                );
+
+                // Store loyalty data in metadata
+                $metadata = [
+                    'loyal_customer_definition' => $request->input('loyal_customer_definition'),
+                    'loyalty_program_members' => $request->input('loyalty_program_members'),
+                    'avg_purchase_frequency' => $request->input('avg_purchase_frequency'),
+                ];
+
+                // Update the metric record metadata
+                MetricRecord::where('business_metric_id', $businessMetric->id)
+                    ->where('record_date', $recordDate)
+                    ->update(['metadata' => $metadata]);
+                break;
+
+            case 'Penjualan Produk Terlaris':
+                $revenueGenerated = ($request->input('quantity_sold', 0) * $request->input('unit_price', 0));
+
+                ProductSales::create([
+                    'business_id' => $businessId,
+                    'product_name' => $request->input('product_name'),
+                    'product_sku' => $request->input('product_sku'),
+                    'sales_date' => $recordDate,
+                    'quantity_sold' => $request->input('quantity_sold', 0),
+                    'unit_price' => $request->input('unit_price', 0),
+                    'revenue_generated' => $revenueGenerated,
+                    'cost_per_unit' => $request->input('cost_per_unit', 0),
+                    'category' => $request->input('product_category'),
+                    'notes' => $request->input('notes'),
+                ]);
+                break;
+
+            case 'Margin Keuntungan (Profit Margin)':
+                // Store margin calculation metadata
+                $metadata = [
+                    'margin_period' => $request->input('margin_period'),
+                    'margin_target' => $request->input('margin_target'),
+                    'calculation_method' => 'automatic',
+                ];
+
+                // Update the metric record metadata
+                MetricRecord::where('business_metric_id', $businessMetric->id)
+                    ->where('record_date', $recordDate)
+                    ->update(['metadata' => $metadata]);
                 break;
         }
     }
@@ -660,5 +904,96 @@ class MetricRecordsController extends Controller
                 'previous_value' => $previousRecord ? $previousRecord->value : 0,
             ]);
         }
+    }
+
+    /**
+     * Get calculation data for margin and other computed metrics
+     */
+    public function getCalculationData(BusinessMetric $businessMetric, Request $request)
+    {
+        $this->authorizeMetricAccess($businessMetric);
+
+        $period = $request->get('period', 'monthly');
+        $businessId = $businessMetric->business_id;
+
+        // Calculate date range based on period
+        $endDate = Carbon::now();
+        switch ($period) {
+            case 'daily':
+                $startDate = $endDate->copy()->startOfDay();
+                break;
+            case 'weekly':
+                $startDate = $endDate->copy()->startOfWeek();
+                break;
+            case 'monthly':
+                $startDate = $endDate->copy()->startOfMonth();
+                break;
+            case 'yearly':
+                $startDate = $endDate->copy()->startOfYear();
+                break;
+            default:
+                $startDate = $endDate->copy()->startOfMonth();
+        }
+
+        // Get sales data for the period
+        $salesData = SalesData::forBusiness($businessId)
+            ->dateRange($startDate, $endDate)
+            ->get();
+
+        $totalRevenue = $salesData->sum('total_revenue');
+        $totalCogs = $salesData->sum('total_cogs');
+        $totalCustomers = $salesData->sum('total_customer_count');
+        $newCustomers = $salesData->sum('new_customer_count');
+
+        return response()->json([
+            'period' => $period,
+            'start_date' => $startDate->format('Y-m-d'),
+            'end_date' => $endDate->format('Y-m-d'),
+            'total_revenue' => $totalRevenue,
+            'total_cogs' => $totalCogs,
+            'total_customers' => $totalCustomers,
+            'new_customers' => $newCustomers,
+            'returning_customers' => max(0, $totalCustomers - $newCustomers),
+            'margin_percentage' => $totalRevenue > 0 ? (($totalRevenue - $totalCogs) / $totalRevenue) * 100 : 0
+        ]);
+    }
+
+    /**
+     * Get daily data for a specific business
+     */
+    public function getDailyData($businessId, Request $request)
+    {
+        // Check access to business
+        $userBusinessIds = auth()->user()->businesses()->pluck('id')->toArray();
+        if (!in_array($businessId, $userBusinessIds)) {
+            abort(403, 'Unauthorized access to business data.');
+        }
+
+        $date = $request->get('date', Carbon::now()->format('Y-m-d'));
+
+        // Get sales data for the specific date
+        $salesData = SalesData::forBusiness($businessId)
+            ->where('sales_date', $date)
+            ->first();
+
+        if (!$salesData) {
+            return response()->json([
+                'date' => $date,
+                'total_revenue' => 0,
+                'total_cogs' => 0,
+                'transaction_count' => 0,
+                'new_customer_count' => 0,
+                'total_customer_count' => 0
+            ]);
+        }
+
+        return response()->json([
+            'date' => $date,
+            'total_revenue' => $salesData->total_revenue,
+            'total_cogs' => $salesData->total_cogs,
+            'transaction_count' => $salesData->transaction_count,
+            'new_customer_count' => $salesData->new_customer_count,
+            'total_customer_count' => $salesData->total_customer_count
+        ]);
     }
 }

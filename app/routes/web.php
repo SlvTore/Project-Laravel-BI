@@ -62,6 +62,10 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
     Route::post('/dashboard/metrics/records/bulk-delete', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'bulkDelete'])->name('dashboard.metrics.records.bulk-delete');
     Route::get('/dashboard/metrics/{businessMetric}/records/export', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'export'])->name('dashboard.metrics.records.export');
 
+    // New routes for metric calculations
+    Route::get('/dashboard/metrics/{businessMetric}/calculation-data', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'getCalculationData'])->name('dashboard.metrics.calculation.data');
+    Route::get('/dashboard/business/{business}/daily-data', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'getDailyData'])->name('dashboard.metrics.daily.data');
+
     // Dashboard - Users
     Route::get('/dashboard/users', function () {
         return view('dashboard-users.index');

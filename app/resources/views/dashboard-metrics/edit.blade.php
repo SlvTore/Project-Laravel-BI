@@ -215,6 +215,7 @@
             </div>
             <form id="addRecordForm">
                 <div class="modal-body p-4">
+                    <!-- Common Fields -->
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
@@ -226,7 +227,7 @@
                                 <div class="form-text text-light opacity-75">Select the date for this record</div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6" id="generic-value-field">
                             <div class="mb-3">
                                 <label for="record_value" class="form-label text-white">
                                     <i class="fas fa-calculator me-1"></i>Value <span class="text-danger">*</span>
@@ -246,6 +247,22 @@
                         </div>
                     </div>
 
+                    <!-- Metric-Specific Forms -->
+                    @if($businessMetric->metric_name === 'Total Penjualan')
+                        @include('dashboard-metrics.partials.total-penjualan-form')
+                    @elseif($businessMetric->metric_name === 'Biaya Pokok Penjualan (COGS)')
+                        @include('dashboard-metrics.partials.cogs-form')
+                    @elseif($businessMetric->metric_name === 'Margin Keuntungan (Profit Margin)')
+                        @include('dashboard-metrics.partials.margin-keuntungan-form')
+                    @elseif($businessMetric->metric_name === 'Jumlah Pelanggan Baru')
+                        @include('dashboard-metrics.partials.pelanggan-baru-form')
+                    @elseif($businessMetric->metric_name === 'Jumlah Pelanggan Setia')
+                        @include('dashboard-metrics.partials.pelanggan-setia-form')
+                    @elseif($businessMetric->metric_name === 'Penjualan Produk Terlaris')
+                        @include('dashboard-metrics.partials.produk-terlaris-form')
+                    @endif
+
+                    <!-- Generic Notes Field -->
                     <div class="mb-3">
                         <label for="record_notes" class="form-label text-white">
                             <i class="fas fa-sticky-note me-1"></i>Notes <span class="text-muted">(Optional)</span>
@@ -277,6 +294,14 @@
                                 <div class="preview-item">
                                     <small class="text-muted">Formatted</small>
                                     <div class="preview-value text-success" id="preview_formatted">-</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-12">
+                                <div class="preview-item">
+                                    <small class="text-muted">Notes</small>
+                                    <div class="preview-value text-white" id="preview_notes">No notes</div>
                                 </div>
                             </div>
                         </div>
@@ -702,6 +727,62 @@
         to {
             transform: rotate(1turn);
         }
+    }
+
+    /* Metric-specific form styling */
+    .metric-specific-form {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .formula-display {
+        background: rgba(102, 126, 234, 0.1);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        backdrop-filter: blur(5px);
+    }
+
+    .calculation-preview {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        padding: 15px;
+    }
+
+    .calculation-preview .bg-dark {
+        background: rgba(0, 0, 0, 0.3) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Dynamic form visibility */
+    .metric-specific-form.active {
+        display: block !important;
+        animation: fadeInUp 0.3s ease-out;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Auto-calculation fields */
+    .auto-calculate {
+        background: rgba(40, 167, 69, 0.1) !important;
+        border-color: rgba(40, 167, 69, 0.3) !important;
+    }
+
+    .auto-calculate:focus {
+        background: rgba(40, 167, 69, 0.15) !important;
+        border-color: rgba(40, 167, 69, 0.5) !important;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25) !important;
     }
 </style>
 @endpush
@@ -1498,6 +1579,9 @@ function initializeModal() {
     // Set default date to today
     $('#record_date').val(moment().format('YYYY-MM-DD'));
 
+    // Initialize metric-specific form
+    initializeMetricSpecificForm();
+
     // Bind preview update events
     $('#record_date, #record_value, #record_notes').on('input change', updatePreview);
 
@@ -1539,10 +1623,245 @@ function initializeModal() {
     updatePreview();
 }
 
+function initializeMetricSpecificForm() {
+    const metricName = '{{ $businessMetric->metric_name }}';
+
+    // Hide generic value field for specific metrics that have their own input fields
+    const metricsWithSpecificForms = [
+        'Total Penjualan',
+        'Biaya Pokok Penjualan (COGS)',
+        'Margin Keuntungan (Profit Margin)',
+        'Jumlah Pelanggan Baru',
+        'Jumlah Pelanggan Setia',
+        'Penjualan Produk Terlaris'
+    ];
+
+    if (metricsWithSpecificForms.includes(metricName)) {
+        $('#generic-value-field').hide();
+
+        // Show specific form
+        $('.metric-specific-form').hide();
+        const formId = getFormIdByMetricName(metricName);
+        $(`#${formId}`).addClass('active').show();
+
+        // Initialize specific form handlers
+        initializeSpecificFormHandlers(metricName);
+    }
+}
+
+function getFormIdByMetricName(metricName) {
+    const formMap = {
+        'Total Penjualan': 'total-penjualan-form',
+        'Biaya Pokok Penjualan (COGS)': 'cogs-form',
+        'Margin Keuntungan (Profit Margin)': 'margin-keuntungan-form',
+        'Jumlah Pelanggan Baru': 'pelanggan-baru-form',
+        'Jumlah Pelanggan Setia': 'pelanggan-setia-form',
+        'Penjualan Produk Terlaris': 'produk-terlaris-form'
+    };
+    return formMap[metricName] || '';
+}
+
+function initializeSpecificFormHandlers(metricName) {
+    switch(metricName) {
+        case 'Total Penjualan':
+            initializeTotalPenjualanForm();
+            break;
+        case 'Biaya Pokok Penjualan (COGS)':
+            initializeCOGSForm();
+            break;
+        case 'Margin Keuntungan (Profit Margin)':
+            initializeMarginKeuntunganForm();
+            break;
+        case 'Jumlah Pelanggan Baru':
+            initializePelangganBaruForm();
+            break;
+        case 'Jumlah Pelanggan Setia':
+            initializePelangganSetiaForm();
+            break;
+        case 'Penjualan Produk Terlaris':
+            initializeProdukTerlarisForm();
+            break;
+    }
+}
+
+function initializeTotalPenjualanForm() {
+    // Update record_value when total_revenue changes
+    $('#total_revenue').on('input', function() {
+        const value = parseFloat($(this).val()) || 0;
+        $('#record_value').val(value);
+        updatePreview();
+    });
+
+    // Validation
+    $('#total_revenue').on('blur', function() {
+        const value = parseFloat($(this).val());
+        if (!isNaN(value) && value > 0) {
+            $(this).removeClass('is-invalid').addClass('is-valid');
+        }
+    });
+}
+
+function initializeCOGSForm() {
+    // Update record_value when total_cogs changes
+    $('#total_cogs').on('input', function() {
+        const value = parseFloat($(this).val()) || 0;
+        $('#record_value').val(value);
+        updatePreview();
+    });
+}
+
+function initializeMarginKeuntunganForm() {
+    // Load existing data and calculate margin
+    loadMarginCalculationData();
+
+    // Recalculate when period changes
+    $('#margin_period').on('change', loadMarginCalculationData);
+}
+
+function initializePelangganBaruForm() {
+    // Update record_value when new_customer_count changes
+    $('#new_customer_count').on('input', function() {
+        const value = parseInt($(this).val()) || 0;
+        $('#record_value').val(value);
+        updatePreview();
+    });
+
+    // Calculate acquisition cost per customer
+    $('#customer_acquisition_cost, #new_customer_count').on('input', function() {
+        calculateAcquisitionMetrics();
+    });
+}
+
+function initializePelangganSetiaForm() {
+    // Real-time calculation
+    $('#total_customer_count, #new_customer_count').on('input', function() {
+        calculateLoyaltyMetrics();
+    });
+
+    // Load new customer count from previous input if available
+    loadNewCustomerCount();
+}
+
+function initializeProdukTerlarisForm() {
+    // Calculate revenue generated
+    $('#quantity_sold, #unit_price, #cost_per_unit').on('input', function() {
+        calculateProductMetrics();
+    });
+
+    // Auto-uppercase SKU
+    $('#product_sku').on('input', function() {
+        $(this).val($(this).val().toUpperCase());
+    });
+}
+
+function loadMarginCalculationData() {
+    const period = $('#margin_period').val();
+
+    // Fetch data via AJAX
+    $.ajax({
+        url: '{{ route("dashboard.metrics.calculation.data", $businessMetric->id) }}',
+        method: 'GET',
+        data: { period: period },
+        success: function(response) {
+            $('#ref_total_revenue').text(formatCurrency(response.total_revenue || 0));
+            $('#ref_total_cogs').text(formatCurrency(response.total_cogs || 0));
+
+            const margin = calculateMarginPercentage(response.total_revenue || 0, response.total_cogs || 0);
+            $('#calculated_margin').text(margin + '%');
+            $('#record_value').val(margin);
+            updatePreview();
+        },
+        error: function() {
+            console.error('Failed to load calculation data');
+        }
+    });
+}
+
+function calculateLoyaltyMetrics() {
+    const totalCustomers = parseInt($('#total_customer_count').val()) || 0;
+    const newCustomers = parseInt($('#new_customer_count').val()) || 0;
+    const returningCustomers = Math.max(0, totalCustomers - newCustomers);
+    const loyaltyPercentage = totalCustomers > 0 ? ((returningCustomers / totalCustomers) * 100).toFixed(1) : 0;
+
+    $('#display_total_customers').text(totalCustomers);
+    $('#display_new_customers').text(newCustomers);
+    $('#display_returning_customers').text(returningCustomers);
+    $('#display_loyalty_percentage').text(loyaltyPercentage + '%');
+
+    // Update main record value
+    $('#record_value').val(loyaltyPercentage);
+    updatePreview();
+}
+
+function calculateProductMetrics() {
+    const quantity = parseInt($('#quantity_sold').val()) || 0;
+    const price = parseFloat($('#unit_price').val()) || 0;
+    const cost = parseFloat($('#cost_per_unit').val()) || 0;
+
+    const revenue = quantity * price;
+    const profitPerUnit = price - cost;
+
+    $('#calculated_revenue').text(formatCurrency(revenue));
+    $('#calculated_profit_per_unit').text(formatCurrency(profitPerUnit));
+
+    // Update main record value with revenue
+    $('#record_value').val(revenue);
+    updatePreview();
+}
+
+function calculateAcquisitionMetrics() {
+    const newCustomers = parseInt($('#new_customer_count').val()) || 0;
+    const acquisitionCost = parseFloat($('#customer_acquisition_cost').val()) || 0;
+
+    if (newCustomers > 0 && acquisitionCost > 0) {
+        const costPerCustomer = acquisitionCost / newCustomers;
+        // You can display this somewhere if needed
+        console.log('Cost per customer acquisition:', formatCurrency(costPerCustomer));
+    }
+}
+
+function loadNewCustomerCount() {
+    // Try to get new customer count from today's data
+    const today = moment().format('YYYY-MM-DD');
+    $.ajax({
+        url: '{{ route("dashboard.metrics.daily.data", $businessMetric->business_id) }}',
+        method: 'GET',
+        data: { date: today },
+        success: function(response) {
+            if (response.new_customer_count) {
+                $('#new_customer_count').val(response.new_customer_count);
+                calculateLoyaltyMetrics();
+            }
+        },
+        error: function() {
+            // Ignore error, it's optional data
+        }
+    });
+}
+
+function calculateMarginPercentage(revenue, cogs) {
+    if (revenue <= 0) return 0;
+    return (((revenue - cogs) / revenue) * 100).toFixed(1);
+}
+
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0
+    }).format(amount);
+}
+
 function updatePreview() {
     const date = $('#record_date').val();
-    const value = parseFloat($('#record_value').val()) || 0;
+    let value = parseFloat($('#record_value').val()) || 0;
     const notes = $('#record_notes').val();
+    const metricName = '{{ $businessMetric->metric_name }}';
+
+    // Get value from metric-specific forms if available
+    if (!value || value === 0) {
+        value = getValueFromSpecificForm(metricName);
+    }
 
     // Update date preview with animation
     if (date) {
@@ -1570,10 +1889,8 @@ function updatePreview() {
 
         // Validate value (reasonable range)
         if (value > 999999999999) { // 1 trillion
-            $('#record_value').addClass('is-invalid');
             showFieldError('#record_value', 'Value seems too large. Please verify.');
         } else {
-            $('#record_value').removeClass('is-invalid');
             clearFieldError('#record_value');
         }
     } else {
@@ -1582,12 +1899,47 @@ function updatePreview() {
     }
 
     // Update notes preview
-    if (notes && notes.length > 100) {
-        $('#record_notes').addClass('is-invalid');
-        showFieldError('#record_notes', `Notes are quite long (${notes.length} characters). Consider shortening.`);
+    if (notes) {
+        const truncatedNotes = notes.length > 50 ? notes.substring(0, 50) + '...' : notes;
+        animateTextChange('#preview_notes', truncatedNotes);
+
+        if (notes.length > 100) {
+            $('#record_notes').addClass('is-invalid');
+            showFieldError('#record_notes', `Notes are quite long (${notes.length} characters). Consider shortening.`);
+        } else {
+            $('#record_notes').removeClass('is-invalid');
+            clearFieldError('#record_notes');
+        }
     } else {
+        animateTextChange('#preview_notes', 'No notes');
         $('#record_notes').removeClass('is-invalid');
         clearFieldError('#record_notes');
+    }
+}
+
+function getValueFromSpecificForm(metricName) {
+    switch(metricName) {
+        case 'Total Penjualan':
+            return parseFloat($('#total_revenue').val()) || 0;
+        case 'Biaya Pokok Penjualan (COGS)':
+            return parseFloat($('#total_cogs').val()) || 0;
+        case 'Jumlah Pelanggan Baru':
+            return parseInt($('#new_customer_count').val()) || 0;
+        case 'Jumlah Pelanggan Setia':
+            const totalCustomers = parseInt($('#total_customer_count').val()) || 0;
+            const newCustomers = parseInt($('#new_customer_count').val()) || 0;
+            if (totalCustomers > 0) {
+                return parseFloat((((totalCustomers - newCustomers) / totalCustomers) * 100).toFixed(1));
+            }
+            return 0;
+        case 'Penjualan Produk Terlaris':
+            const quantity = parseInt($('#quantity_sold').val()) || 0;
+            const price = parseFloat($('#unit_price').val()) || 0;
+            return quantity * price;
+        case 'Margin Keuntungan (Profit Margin)':
+            return parseFloat($('#calculated_margin').text().replace('%', '')) || 0;
+        default:
+            return parseFloat($('#record_value').val()) || 0;
     }
 }
 

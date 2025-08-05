@@ -16,6 +16,8 @@ class SalesData extends Model
         'total_revenue',
         'total_cogs',
         'transaction_count',
+        'new_customer_count',
+        'total_customer_count',
         'notes',
     ];
 
