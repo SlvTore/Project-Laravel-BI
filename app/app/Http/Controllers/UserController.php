@@ -7,7 +7,6 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Yajra\DataTables\Facades\DataTables;
 
 class UserController extends Controller
 {
@@ -22,7 +21,12 @@ class UserController extends Controller
         $business = $user->primaryBusiness();
 
         if (!$business) {
-            return response()->json(['error' => 'No business found'], 404);
+            return response()->json([
+                'draw' => $request->input('draw'),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => []
+            ]);
         }
 
         // Get all users associated with this business
@@ -30,43 +34,91 @@ class UserController extends Controller
                          ->with(['userRole'])
                          ->select('users.*', 'business_user.joined_at', 'business_user.role_id');
 
-        return DataTables::of($users)
-            ->addColumn('role_display', function ($user) {
-                return $user->userRole ? $user->userRole->display_name : 'No Role';
-            })
-            ->addColumn('joined_date', function ($user) {
-                return $user->joined_at ? $user->joined_at->format('d M Y') : 'N/A';
-            })
-            ->addColumn('status', function ($user) {
-                $statusClass = $user->is_active ? 'success' : 'danger';
-                $statusText = $user->is_active ? 'Active' : 'Inactive';
-                return "<span class='badge bg-{$statusClass}'>{$statusText}</span>";
-            })
-            ->addColumn('actions', function ($user) {
-                $currentUser = Auth::user();
-                $actions = '';
+        // Apply search if provided
+        if ($request->has('search') && !empty($request->input('search.value'))) {
+            $searchValue = $request->input('search.value');
+            $users->where(function ($query) use ($searchValue) {
+                $query->where('users.name', 'like', "%{$searchValue}%")
+                      ->orWhere('users.email', 'like', "%{$searchValue}%");
+            });
+        }
 
-                // Only Business Owner and Administrator can manage users
-                if ($currentUser->canManageUsers()) {
-                    // Can promote staff to administrator
-                    if ($user->isStaff() && $currentUser->canPromoteUsers()) {
-                        $actions .= '<button class="btn btn-sm btn-outline-primary me-1" onclick="promoteUser(' . $user->id . ', \'administrator\')" title="Promote to Administrator">
-                                       <i class="bi bi-arrow-up-circle"></i>
-                                     </button>';
-                    }
+        $recordsTotal = $users->count();
+        $recordsFiltered = $recordsTotal;
 
-                    // Can delete users (except Business Owner)
-                    if (!$user->isBusinessOwner() && $currentUser->canDeleteUsers()) {
-                        $actions .= '<button class="btn btn-sm btn-outline-danger" onclick="deleteUser(' . $user->id . ')" title="Remove User">
-                                       <i class="bi bi-trash"></i>
-                                     </button>';
-                    }
+        // Apply ordering
+        if ($request->has('order')) {
+            $orderColumn = $request->input('order.0.column');
+            $orderDir = $request->input('order.0.dir');
+            
+            switch ($orderColumn) {
+                case 0: // name
+                    $users->orderBy('users.name', $orderDir);
+                    break;
+                case 1: // email
+                    $users->orderBy('users.email', $orderDir);
+                    break;
+                case 3: // joined_date
+                    $users->orderBy('business_user.joined_at', $orderDir);
+                    break;
+                default:
+                    $users->orderBy('business_user.joined_at', 'desc');
+            }
+        } else {
+            $users->orderBy('business_user.joined_at', 'desc');
+        }
+
+        // Apply pagination
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 25);
+        
+        $users = $users->skip($start)->take($length)->get();
+
+        $data = [];
+        foreach ($users as $userRecord) {
+            $currentUser = Auth::user();
+            $actions = '';
+
+            // Only Business Owner and Administrator can manage users
+            if ($currentUser->canManageUsers()) {
+                // Can promote staff to administrator
+                if ($userRecord->isStaff() && $currentUser->canPromoteUsers()) {
+                    $actions .= '<button class="btn btn-sm btn-outline-primary me-1" onclick="promoteUser(' . $userRecord->id . ', \'administrator\')" title="Promote to Administrator">
+                                   <i class="bi bi-arrow-up-circle"></i>
+                                 </button>';
                 }
 
-                return $actions ?: '<span class="text-muted">No actions</span>';
-            })
-            ->rawColumns(['status', 'actions'])
-            ->make(true);
+                // Can delete users (except Business Owner)
+                if (!$userRecord->isBusinessOwner() && $currentUser->canDeleteUsers()) {
+                    $actions .= '<button class="btn btn-sm btn-outline-danger" onclick="deleteUser(' . $userRecord->id . ')" title="Remove User">
+                                   <i class="bi bi-trash"></i>
+                                 </button>';
+                }
+            }
+
+            if (empty($actions)) {
+                $actions = '<span class="text-muted">No actions</span>';
+            }
+
+            $statusClass = $userRecord->is_active ? 'success' : 'danger';
+            $statusText = $userRecord->is_active ? 'Active' : 'Inactive';
+
+            $data[] = [
+                'name' => $userRecord->name,
+                'email' => $userRecord->email,
+                'role_display' => $userRecord->userRole ? $userRecord->userRole->display_name : 'No Role',
+                'joined_date' => $userRecord->joined_at ? $userRecord->joined_at->format('d M Y') : 'N/A',
+                'status' => "<span class='badge bg-{$statusClass}'>{$statusText}</span>",
+                'actions' => $actions
+            ];
+        }
+
+        return response()->json([
+            'draw' => $request->input('draw'),
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $data
+        ]);
     }
 
     public function promote(Request $request, User $user)
