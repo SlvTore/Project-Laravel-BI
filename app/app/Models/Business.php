@@ -19,6 +19,8 @@ class Business extends Model
         'initial_revenue',
         'initial_customers',
         'goals',
+        'public_id',
+        'invitation_code',
     ];
 
     protected function casts(): array
@@ -31,9 +33,16 @@ class Business extends Model
     }
 
     // Relationships
-    public function user()
+    public function owner()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'business_user')
+                    ->withPivot('joined_at')
+                    ->withTimestamps();
     }
 
     public function metrics()
@@ -42,6 +51,42 @@ class Business extends Model
     }
 
     // Helper methods
+    public function generatePublicId()
+    {
+        do {
+            $publicId = 'BIZ-' . strtoupper(uniqid());
+        } while (self::where('public_id', $publicId)->exists());
+        
+        $this->update(['public_id' => $publicId]);
+        return $publicId;
+    }
+
+    public function generateInvitationCode()
+    {
+        $invitationCode = strtoupper(substr(md5(uniqid() . $this->id), 0, 8));
+        $this->update(['invitation_code' => $invitationCode]);
+        return $invitationCode;
+    }
+
+    public function refreshInvitationCode()
+    {
+        return $this->generateInvitationCode();
+    }
+
+    public function addUser(User $user)
+    {
+        if (!$this->users()->where('user_id', $user->id)->exists()) {
+            $this->users()->attach($user->id, ['joined_at' => now()]);
+            return true;
+        }
+        return false;
+    }
+
+    public function removeUser(User $user)
+    {
+        return $this->users()->detach($user->id);
+    }
+
     public function getLatestMetrics()
     {
         return $this->metrics()

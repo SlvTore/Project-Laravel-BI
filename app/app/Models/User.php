@@ -45,12 +45,19 @@ class User extends Authenticatable
     // Relationships
     public function businesses()
     {
+        return $this->belongsToMany(Business::class, 'business_user')
+                    ->withPivot('joined_at')
+                    ->withTimestamps();
+    }
+
+    public function ownedBusinesses()
+    {
         return $this->hasMany(Business::class);
     }
 
     public function primaryBusiness()
     {
-        return $this->hasOne(Business::class)->oldest();
+        return $this->ownedBusinesses()->oldest();
     }
 
     public function userRole()
@@ -72,9 +79,69 @@ class User extends Authenticatable
         ]);
     }
 
+    public function hasRole(string $roleName)
+    {
+        return $this->userRole && $this->userRole->name === $roleName;
+    }
+
+    public function promoteTo(string $roleName)
+    {
+        $role = Role::where('name', $roleName)->first();
+        if ($role) {
+            $this->update(['role_id' => $role->id]);
+            return true;
+        }
+        return false;
+    }
+
+    public function isBusinessOwner()
+    {
+        return $this->hasRole('business-owner');
+    }
+
+    public function isAdministrator()
+    {
+        return $this->hasRole('administrator');
+    }
+
+    public function isStaff()
+    {
+        return $this->hasRole('staff');
+    }
+
+    public function isBusinessInvestigator()
+    {
+        return $this->hasRole('business-investigator');
+    }
+
+    public function canManageUsers()
+    {
+        return $this->isBusinessOwner() || $this->isAdministrator();
+    }
+
+    public function canPromoteUsers()
+    {
+        return $this->isBusinessOwner() || $this->isAdministrator();
+    }
+
+    public function canDeleteUsers()
+    {
+        return $this->isBusinessOwner() || $this->isAdministrator();
+    }
+
+    public function canImportMetrics()
+    {
+        return $this->isBusinessOwner() || $this->isAdministrator();
+    }
+
+    public function canDeleteMetrics()
+    {
+        return $this->isBusinessOwner() || $this->isAdministrator();
+    }
+
     public function isAdmin()
     {
-        return $this->role === 'admin' || ($this->userRole && $this->userRole->name === 'admin');
+        return $this->role === 'admin' || ($this->userRole && $this->userRole->name === 'admin') || $this->isBusinessOwner() || $this->isAdministrator();
     }
 
     public function isMentor()
