@@ -44,13 +44,12 @@
                 @foreach($roles as $role)
                     @php
                         $roleConfig = [
-                            'owner' => ['icon' => 'bi-crown', 'color' => 'warning', 'bg' => 'warning'],
-                            'admin' => ['icon' => 'bi-gear', 'color' => 'primary', 'bg' => 'primary'],
-                            'mentor' => ['icon' => 'bi-lightbulb', 'color' => 'success', 'bg' => 'success'],
-                            'investigator' => ['icon' => 'bi-search', 'color' => 'info', 'bg' => 'info'],
+                            'business-owner' => ['icon' => 'bi-crown', 'color' => 'warning', 'bg' => 'warning'],
+                            'staff' => ['icon' => 'bi-people', 'color' => 'primary', 'bg' => 'primary'],
+                            'business-investigator' => ['icon' => 'bi-search', 'color' => 'info', 'bg' => 'info'],
                         ][$role->name] ?? ['icon' => 'bi-person', 'color' => 'secondary', 'bg' => 'secondary'];
                     @endphp
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="role-card-container">
                             <input
                                 type="radio"
@@ -58,6 +57,7 @@
                                 id="role_{{ $role->id }}"
                                 value="{{ $role->id }}"
                                 class="d-none role-input"
+                                data-role-name="{{ $role->name }}"
                             >
                             <label class="card role-card h-100 w-100 cursor-pointer" for="role_{{ $role->id }}">
                                 <div class="card-body text-center p-4">
@@ -81,7 +81,58 @@
             </div>
         </div>
 
-        <!-- Step 2: Business Information -->
+        <!-- Step 2: Access Validation (for Staff and Business Investigator) -->
+        <div class="step-content d-none" id="step-access-validation">
+            <div class="text-center mb-5">
+                <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                    <i class="bi bi-key text-primary fs-1"></i>
+                </div>
+                <h2 class="fw-bold text-dark mb-3">Validasi Akses</h2>
+                <p class="text-muted lead" id="access-validation-description">
+                    Masukkan kode akses yang diberikan oleh Business Owner.
+                </p>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <!-- For Staff: Dashboard ID + Invitation Code -->
+                    <div id="staff-access-fields" class="d-none">
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">ID Dashboard Perusahaan <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="dashboard_id" placeholder="Masukkan ID Dashboard">
+                            <small class="form-text text-muted">ID Dashboard yang diberikan oleh Business Owner</small>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Kode Undangan Staff <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="invitation_code" placeholder="Masukkan Kode Undangan">
+                            <small class="form-text text-muted">Kode undangan rahasia untuk staff</small>
+                        </div>
+                    </div>
+
+                    <!-- For Business Investigator: Dashboard ID only -->
+                    <div id="investigator-access-fields" class="d-none">
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">ID Dashboard Perusahaan <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="dashboard_id_investigator" placeholder="Masukkan ID Dashboard">
+                            <small class="form-text text-muted">ID Dashboard publik perusahaan yang ingin Anda analisis</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-5">
+                <button type="button" class="btn btn-outline-secondary me-3" id="prevStepAccess">
+                    <i class="bi bi-arrow-left me-2"></i>
+                    Kembali
+                </button>
+                <button type="button" class="btn btn-primary btn-lg px-5" id="validateAccess">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Validasi Akses
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 3: Business Information -->
         <div class="step-content d-none" id="step-2">
             <div class="text-center mb-5">
                 <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
@@ -137,19 +188,19 @@
             </div>
 
             <div class="text-center mt-5">
-                <button type="button" class="btn btn-outline-secondary me-3" id="prevStep2">
+                <button type="button" class="btn btn-outline-secondary me-3" id="prevStep3">
                     <i class="bi bi-arrow-left me-2"></i>
                     Kembali
                 </button>
-                <button type="button" class="btn btn-primary btn-lg px-5" id="nextStep2">
+                <button type="button" class="btn btn-primary btn-lg px-5" id="nextStep3">
                     <i class="bi bi-arrow-right me-2"></i>
                     Lanjutkan
                 </button>
             </div>
         </div>
 
-        <!-- Step 3: Goals & Targets -->
-        <div class="step-content d-none" id="step-3">
+        <!-- Step 4: Goals & Targets -->
+        <div class="step-content d-none" id="step-4">
             <div class="text-center mb-5">
                 <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
                     <i class="bi bi-target text-primary fs-1"></i>
@@ -188,7 +239,7 @@
             </div>
 
             <div class="text-center mt-5">
-                <button type="button" class="btn btn-outline-secondary me-3" id="prevStep3">
+                <button type="button" class="btn btn-outline-secondary me-3" id="prevStep4">
                     <i class="bi bi-arrow-left me-2"></i>
                     Kembali
                 </button>
@@ -673,7 +724,8 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Wizard JavaScript loaded');
 
     let currentStep = 1;
-    const totalSteps = 3;
+    const totalSteps = 4; // Updated to 4 steps
+    let selectedRoleName = '';
 
     // Elements
     const stepItems = document.querySelectorAll('.step-item');
@@ -683,9 +735,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Navigation buttons
     const nextStep1 = document.getElementById('nextStep1');
-    const nextStep2 = document.getElementById('nextStep2');
-    const prevStep2 = document.getElementById('prevStep2');
+    const validateAccess = document.getElementById('validateAccess');
+    const prevStepAccess = document.getElementById('prevStepAccess');
+    const nextStep3 = document.getElementById('nextStep3');
     const prevStep3 = document.getElementById('prevStep3');
+    const prevStep4 = document.getElementById('prevStep4');
     const completeSetup = document.getElementById('completeSetup');
 
     // Debug log
@@ -715,7 +769,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (radio) {
                 radio.checked = true;
-                console.log('Radio checked:', radio.value);
+                selectedRoleName = radio.getAttribute('data-role-name');
+                console.log('Radio checked:', radio.value, 'Role name:', selectedRoleName);
 
                 // Enable next button
                 if (nextStep1) {
@@ -726,6 +781,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Fallback: try to find radio by index
                 if (roleInputs[index]) {
                     roleInputs[index].checked = true;
+                    selectedRoleName = roleInputs[index].getAttribute('data-role-name');
                     console.log('Fallback: Radio checked by index:', roleInputs[index].value);
 
                     if (nextStep1) {
@@ -743,12 +799,34 @@ document.addEventListener('DOMContentLoaded', function() {
         // Hide all steps
         stepContents.forEach(content => content.classList.add('d-none'));
 
-        // Show current step
-        document.getElementById(`step-${step}`).classList.remove('d-none');
+        // Show current step based on role and step number
+        let stepId = `step-${step}`;
+        
+        // Special handling for access validation step
+        if (step === 'access-validation') {
+            stepId = 'step-access-validation';
+            
+            // Show appropriate fields based on role
+            if (selectedRoleName === 'staff') {
+                document.getElementById('staff-access-fields').classList.remove('d-none');
+                document.getElementById('investigator-access-fields').classList.add('d-none');
+                document.getElementById('access-validation-description').textContent = 
+                    'Masukkan ID Dashboard dan Kode Undangan yang diberikan oleh Business Owner.';
+            } else if (selectedRoleName === 'business-investigator') {
+                document.getElementById('staff-access-fields').classList.add('d-none');
+                document.getElementById('investigator-access-fields').classList.remove('d-none');
+                document.getElementById('access-validation-description').textContent = 
+                    'Masukkan ID Dashboard Perusahaan yang ingin Anda analisis.';
+            }
+        }
 
-        // Update progress
-        updateProgress(step);
-        currentStep = step;
+        document.getElementById(stepId).classList.remove('d-none');
+
+        // Update progress only for numbered steps
+        if (typeof step === 'number') {
+            updateProgress(step);
+            currentStep = step;
+        }
     }
 
     function updateProgress(step) {
@@ -772,9 +850,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (selectedRole && selectedRole.value) {
                 console.log('Saving role data...');
-                saveStepData('role', { role_id: selectedRole.value }, () => {
-                    console.log('Role saved, showing step 2');
-                    showStep(2);
+                saveStepData('role', { role_id: selectedRole.value }, (response) => {
+                    console.log('Role saved, next step:', response.next_step);
+                    
+                    if (response.next_step === 'access_validation') {
+                        showStep('access-validation');
+                    } else {
+                        showStep(2);
+                    }
                 });
             } else {
                 alert('Silakan pilih role terlebih dahulu!');
@@ -782,9 +865,49 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    if (nextStep2) {
-        nextStep2.addEventListener('click', function() {
-            console.log('Next step 2 clicked');
+    // Access validation
+    if (validateAccess) {
+        validateAccess.addEventListener('click', function() {
+            console.log('Validate access clicked');
+
+            let validationData = {};
+
+            if (selectedRoleName === 'staff') {
+                validationData = {
+                    dashboard_id: document.querySelector('[name="dashboard_id"]').value,
+                    invitation_code: document.querySelector('[name="invitation_code"]').value,
+                };
+
+                if (!validationData.dashboard_id || !validationData.invitation_code) {
+                    alert('ID Dashboard dan Kode Undangan wajib diisi!');
+                    return;
+                }
+            } else if (selectedRoleName === 'business-investigator') {
+                validationData = {
+                    dashboard_id: document.querySelector('[name="dashboard_id_investigator"]').value,
+                };
+
+                if (!validationData.dashboard_id) {
+                    alert('ID Dashboard wajib diisi!');
+                    return;
+                }
+            }
+
+            saveStepData('access_validation', validationData, (response) => {
+                if (response.redirect) {
+                    window.location.href = response.redirect;
+                }
+            });
+        });
+    }
+
+    if (prevStepAccess) {
+        prevStepAccess.addEventListener('click', () => showStep(1));
+    }
+
+    if (nextStep3) {
+        nextStep3.addEventListener('click', function() {
+            console.log('Next step 3 clicked');
 
             const businessData = {
                 business_name: document.querySelector('[name="business_name"]').value,
@@ -805,17 +928,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             saveStepData('business', businessData, () => {
-                showStep(3);
+                showStep(4);
             });
         });
     }
 
-    if (prevStep2) {
-        prevStep2.addEventListener('click', () => showStep(1));
+    if (prevStep3) {
+        prevStep3.addEventListener('click', () => showStep(1));
     }
 
-    if (prevStep3) {
-        prevStep3.addEventListener('click', () => showStep(2));
+    if (prevStep4) {
+        prevStep4.addEventListener('click', () => showStep(2));
     }
 
     if (completeSetup) {

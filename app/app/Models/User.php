@@ -58,6 +58,23 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class, 'role_id');
     }
 
+    // Many-to-many relationship for business access
+    public function businessAccess()
+    {
+        return $this->belongsToMany(Business::class, 'business_user')
+                    ->withPivot('role_id', 'joined_at')
+                    ->withTimestamps();
+    }
+
+    // Get user's roles in specific business
+    public function rolesInBusiness(Business $business)
+    {
+        return $this->businessAccess()
+                    ->where('business_id', $business->id)
+                    ->with('roles')
+                    ->get();
+    }
+
     // Helper methods
     public function isSetupCompleted()
     {
@@ -72,14 +89,89 @@ class User extends Authenticatable
         ]);
     }
 
+    // RBAC Helper Methods
+    public function hasRole(string $roleName): bool
+    {
+        return $this->userRole && $this->userRole->name === $roleName;
+    }
+
+    public function hasAnyRole(array $roleNames): bool
+    {
+        return $this->userRole && in_array($this->userRole->name, $roleNames);
+    }
+
+    public function hasPermission(string $permission): bool
+    {
+        return $this->userRole && $this->userRole->hasPermission($permission);
+    }
+
+    public function promoteTo(string $roleName): bool
+    {
+        $role = \App\Models\Role::where('name', $roleName)->where('is_active', true)->first();
+        
+        if (!$role) {
+            return false;
+        }
+
+        $this->update(['role_id' => $role->id]);
+        return true;
+    }
+
+    // Specific role checks
+    public function isBusinessOwner(): bool
+    {
+        return $this->hasRole('business-owner');
+    }
+
+    public function isAdministrator(): bool
+    {
+        return $this->hasRole('administrator');
+    }
+
+    public function isStaff(): bool
+    {
+        return $this->hasRole('staff');
+    }
+
+    public function isBusinessInvestigator(): bool
+    {
+        return $this->hasRole('business-investigator');
+    }
+
+    public function canManageUsers(): bool
+    {
+        return $this->hasAnyRole(['business-owner', 'administrator']);
+    }
+
+    public function canPromoteUsers(): bool
+    {
+        return $this->hasAnyRole(['business-owner', 'administrator']);
+    }
+
+    public function canDeleteUsers(): bool
+    {
+        return $this->hasAnyRole(['business-owner', 'administrator']);
+    }
+
+    public function canManageMetrics(): bool
+    {
+        return $this->hasAnyRole(['business-owner', 'administrator', 'staff']);
+    }
+
+    public function canViewOnlyData(): bool
+    {
+        return $this->hasRole('business-investigator');
+    }
+
+    // Legacy methods for backward compatibility
     public function isAdmin()
     {
-        return $this->role === 'admin' || ($this->userRole && $this->userRole->name === 'admin');
+        return $this->hasAnyRole(['business-owner', 'administrator']);
     }
 
     public function isMentor()
     {
-        return $this->role === 'mentor' || ($this->userRole && $this->userRole->name === 'mentor');
+        return $this->hasRole('business-investigator');
     }
 
     public function isActive()

@@ -32,23 +32,42 @@ Route::middleware(['auth'])->group(function () {
 
 // Dashboard routes - require authentication and setup completion
 Route::middleware(['auth', 'setup.completed'])->group(function () {
-    // Main Dashboard
+    // Main Dashboard - role-based access
     Route::get('/dashboard', function () {
+        $user = auth()->user();
+        
+        if ($user->isBusinessInvestigator()) {
+            // Business Investigator sees limited view
+            return view('dashboard-main.investigator');
+        }
+        
         return view('dashboard-main.index');
     })->name('dashboard');
 
-    // Dashboard - Main/Overview
+    // Dashboard - Main/Overview  
     Route::get('/dashboard/main', function () {
+        $user = auth()->user();
+        
+        if ($user->isBusinessInvestigator()) {
+            return view('dashboard-main.investigator');
+        }
+        
         return view('dashboard-main.index');
     })->name('dashboard.main');
 
-    // Dashboard - Metrics
-    Route::get('/dashboard/metrics', [App\Http\Controllers\MetricsController::class, 'index'])->name('dashboard.metrics');
-    Route::get('/dashboard/metrics/create', [App\Http\Controllers\MetricsController::class, 'create'])->name('dashboard.metrics.create');
-    Route::post('/dashboard/metrics', [App\Http\Controllers\MetricsController::class, 'store'])->name('dashboard.metrics.store');
-    Route::get('/dashboard/metrics/{id}/edit', [App\Http\Controllers\MetricsController::class, 'edit'])->name('dashboard.metrics.edit');
-    Route::put('/dashboard/metrics/{id}', [App\Http\Controllers\MetricsController::class, 'update'])->name('dashboard.metrics.update');
-    Route::delete('/dashboard/metrics/{id}', [App\Http\Controllers\MetricsController::class, 'destroy'])->name('dashboard.metrics.destroy');
+    // Dashboard - Metrics (with role-based access)
+    Route::middleware(['check.role:business-owner,administrator,staff'])->group(function () {
+        Route::get('/dashboard/metrics', [App\Http\Controllers\MetricsController::class, 'index'])->name('dashboard.metrics');
+        Route::get('/dashboard/metrics/create', [App\Http\Controllers\MetricsController::class, 'create'])->name('dashboard.metrics.create');
+        Route::post('/dashboard/metrics', [App\Http\Controllers\MetricsController::class, 'store'])->name('dashboard.metrics.store');
+    });
+
+    // Administrator and Business Owner only for import/delete metrics
+    Route::middleware(['check.role:business-owner,administrator'])->group(function () {
+        Route::get('/dashboard/metrics/{id}/edit', [App\Http\Controllers\MetricsController::class, 'edit'])->name('dashboard.metrics.edit');
+        Route::put('/dashboard/metrics/{id}', [App\Http\Controllers\MetricsController::class, 'update'])->name('dashboard.metrics.update');
+        Route::delete('/dashboard/metrics/{id}', [App\Http\Controllers\MetricsController::class, 'destroy'])->name('dashboard.metrics.destroy');
+    });
 
     // Dashboard - Metric Records
     Route::get('/dashboard/metrics/{businessMetric}/overview', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'overview'])->name('dashboard.metrics.overview');
@@ -69,20 +88,31 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
     // AI Chat routes
     Route::post('/dashboard/metrics/{businessMetric}/ai-chat', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'askAI'])->name('dashboard.metrics.ai-chat');
 
-    // Dashboard - Users
-    Route::get('/dashboard/users', function () {
-        return view('dashboard-users.index');
-    })->name('dashboard.users');
+    // Dashboard - Users (with RBAC)
+    Route::middleware(['check.role:business-owner,administrator'])->group(function () {
+        Route::get('/dashboard/users', [App\Http\Controllers\UserController::class, 'index'])->name('dashboard.users');
+        Route::get('/dashboard/users/datatable', [App\Http\Controllers\UserController::class, 'datatable'])->name('users.datatable');
+        Route::post('/dashboard/users/{user}/promote', [App\Http\Controllers\UserController::class, 'promote'])->name('users.promote');
+        Route::delete('/dashboard/users/{user}', [App\Http\Controllers\UserController::class, 'destroy'])->name('users.destroy');
+    });
+
+    // Business Owner only routes
+    Route::middleware(['check.role:business-owner'])->group(function () {
+        Route::get('/dashboard/users/business-codes', [App\Http\Controllers\UserController::class, 'getBusinessCodes'])->name('users.business-codes');
+        Route::post('/dashboard/users/refresh-invitation-code', [App\Http\Controllers\UserController::class, 'refreshInvitationCode'])->name('users.refresh-invitation-code');
+    });
 
     // Dashboard - Settings
     Route::get('/dashboard/settings', function () {
         return view('dashboard-settings.index');
     })->name('dashboard.settings');
 
-    // Dashboard - Feeds (placeholder)
-    Route::get('/dashboard/feeds', function () {
-        return view('dashboard-main.index')->with('page_title', 'Data Feeds');
-    })->name('dashboard.feeds');
+    // Dashboard - Feeds (for all roles except Business Investigator)
+    Route::middleware(['check.role:business-owner,administrator,staff'])->group(function () {
+        Route::get('/dashboard/feeds', function () {
+            return view('dashboard-main.index')->with('page_title', 'Data Feeds');
+        })->name('dashboard.feeds');
+    });
 
     // Dashboard - Notifications (placeholder)
     Route::get('/dashboard/notifications', function () {

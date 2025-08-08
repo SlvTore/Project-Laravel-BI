@@ -17,7 +17,11 @@ class SetupWizardController extends Controller
             return redirect()->route('dashboard');
         }
 
-        $roles = Role::where('is_active', true)->get();
+        // Only get the 3 initial roles as per requirements
+        $roles = Role::whereIn('name', ['business-owner', 'staff', 'business-investigator'])
+                    ->where('is_active', true)
+                    ->get();
+        
         return view('wizard', compact('roles'));
     }
 
@@ -36,6 +40,8 @@ class SetupWizardController extends Controller
             switch ($step) {
                 case 'role':
                     return $this->handleRoleStep($request);
+                case 'access_validation':
+                    return $this->handleAccessValidationStep($request);
                 case 'business':
                     return $this->handleBusinessStep($request);
                 case 'goals':
@@ -75,17 +81,127 @@ class SetupWizardController extends Controller
         }
 
         $user = Auth::user();
+        $role = Role::find($request->role_id);
         $user->update(['role_id' => $request->role_id]);
+
+        // Determine next step based on role
+        $nextStep = 'business';
+        
+        if (in_array($role->name, ['staff', 'business-investigator'])) {
+            $nextStep = 'access_validation';
+        }
 
         return response()->json([
             'success' => true,
-            'next_step' => 'business',
+            'next_step' => $nextStep,
+            'role_name' => $role->name,
             'message' => 'Role saved successfully'
+        ]);
+    }
+
+    private function handleAccessValidationStep(Request $request)
+    {
+        $user = Auth::user();
+        $role = $user->userRole;
+
+        if (!$role) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User role not found'
+            ], 400);
+        }
+
+        if ($role->name === 'staff') {
+            // Staff requires both dashboard ID and invitation code
+            $validator = validator($request->all(), [
+                'dashboard_id' => 'required|string',
+                'invitation_code' => 'required|string',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Validate dashboard ID and invitation code
+            $business = Business::where('public_id', $request->dashboard_id)
+                               ->where('invitation_code', $request->invitation_code)
+                               ->first();
+
+            if (!$business) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid dashboard ID or invitation code'
+                ], 422);
+            }
+
+            // Add user to business as staff
+            if (!$business->addUserWithRole($user, 'staff')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to join business'
+                ], 500);
+            }
+
+        } elseif ($role->name === 'business-investigator') {
+            // Business Investigator requires only dashboard ID
+            $validator = validator($request->all(), [
+                'dashboard_id' => 'required|string',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Validate dashboard ID
+            $business = Business::where('public_id', $request->dashboard_id)->first();
+
+            if (!$business) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid dashboard ID'
+                ], 422);
+            }
+
+            // Add user to business as investigator
+            if (!$business->addUserWithRole($user, 'business-investigator')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to join business'
+                ], 500);
+            }
+        }
+
+        // Mark setup as completed for staff and investigators
+        $user->markSetupCompleted();
+
+        return response()->json([
+            'success' => true,
+            'next_step' => 'complete',
+            'redirect' => route('dashboard'),
+            'message' => 'Access validation successful'
         ]);
     }
 
     private function handleBusinessStep(Request $request)
     {
+        $user = Auth::user();
+        
+        // Only Business Owner should reach this step
+        if (!$user->hasRole('business-owner')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to business step'
+            ], 403);
+        }
+
         $validator = validator($request->all(), [
             'business_name' => 'required|string|max:255',
             'industry' => 'required|string|max:255',
@@ -104,8 +220,6 @@ class SetupWizardController extends Controller
             ], 422);
         }
 
-        $user = Auth::user();
-
         // Create or update business
         $business = $user->businesses()->updateOrCreate(
             ['user_id' => $user->id],
@@ -120,6 +234,18 @@ class SetupWizardController extends Controller
             ]
         );
 
+        // Generate public ID and invitation code for Business Owner
+        if (!$business->public_id) {
+            $business->generatePublicId();
+        }
+        
+        if (!$business->hasValidInvitationCode()) {
+            $business->generateInvitationCode();
+        }
+
+        // Add business owner to the business_user pivot table
+        $business->addUserWithRole($user, 'business-owner');
+
         return response()->json([
             'success' => true,
             'next_step' => 'goals',
@@ -129,6 +255,16 @@ class SetupWizardController extends Controller
 
     private function handleGoalsStep(Request $request)
     {
+        $user = Auth::user();
+        
+        // Only Business Owner should reach this step
+        if (!$user->hasRole('business-owner')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to goals step'
+            ], 403);
+        }
+
         $validator = validator($request->all(), [
             'revenue_target' => 'required|numeric|min:0',
             'customer_target' => 'required|integer|min:0',
@@ -145,7 +281,6 @@ class SetupWizardController extends Controller
             ], 422);
         }
 
-        $user = Auth::user();
         $business = $user->businesses()->first();
 
         if ($business) {
@@ -167,6 +302,10 @@ class SetupWizardController extends Controller
             'success' => true,
             'next_step' => 'complete',
             'redirect' => route('dashboard'),
+            'business_codes' => [
+                'public_id' => $business->public_id,
+                'invitation_code' => $business->invitation_code,
+            ],
             'message' => 'Setup completed successfully'
         ]);
     }
