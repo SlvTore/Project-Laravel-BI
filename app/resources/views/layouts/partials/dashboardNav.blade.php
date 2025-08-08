@@ -19,29 +19,35 @@
                 </a>
             </li>
 
-            <!-- Metrics -->
+            <!-- Metrics (accessible to Business Owner, Administrator, Staff) -->
+            @if(auth()->user()->isBusinessOwner() || auth()->user()->isAdministrator() || auth()->user()->isStaff())
             <li class="nav-item">
                 <a href="{{ route('dashboard.metrics') }}" class="nav-link {{ request()->routeIs('dashboard.metrics*') ? 'active' : '' }}">
                     <i class="bi bi-graph-up-arrow nav-icon"></i>
                     <span class="nav-text">Metrics</span>
                 </a>
             </li>
+            @endif
 
-            <!-- Data Feeds -->
+            <!-- Data Feeds (accessible to Business Owner, Administrator, Staff) -->
+            @if(auth()->user()->isBusinessOwner() || auth()->user()->isAdministrator() || auth()->user()->isStaff())
             <li class="nav-item">
                 <a href="{{ route('dashboard.feeds') }}" class="nav-link {{ request()->routeIs('dashboard.feeds*') ? 'active' : '' }}">
                     <i class="bi bi-rss nav-icon"></i>
                     <span class="nav-text">Data Feeds</span>
                 </a>
             </li>
+            @endif
 
-            <!-- Users -->
+            <!-- Users (only accessible to Business Owner and Administrator) -->
+            @if(auth()->user()->canManageUsers())
             <li class="nav-item">
                 <a href="{{ route('dashboard.users') }}" class="nav-link {{ request()->routeIs('dashboard.users*') ? 'active' : '' }}">
                     <i class="bi bi-people nav-icon"></i>
                     <span class="nav-text">Users</span>
                 </a>
             </li>
+            @endif
 
             <!-- Notifications -->
             <li class="nav-item">
