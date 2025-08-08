@@ -42,59 +42,82 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
         return view('dashboard-main.index');
     })->name('dashboard.main');
 
-    // Dashboard - Metrics
-    Route::get('/dashboard/metrics', [App\Http\Controllers\MetricsController::class, 'index'])->name('dashboard.metrics');
-    Route::get('/dashboard/metrics/create', [App\Http\Controllers\MetricsController::class, 'create'])->name('dashboard.metrics.create');
-    Route::post('/dashboard/metrics', [App\Http\Controllers\MetricsController::class, 'store'])->name('dashboard.metrics.store');
-    Route::get('/dashboard/metrics/{id}/edit', [App\Http\Controllers\MetricsController::class, 'edit'])->name('dashboard.metrics.edit');
-    Route::put('/dashboard/metrics/{id}', [App\Http\Controllers\MetricsController::class, 'update'])->name('dashboard.metrics.update');
-    Route::delete('/dashboard/metrics/{id}', [App\Http\Controllers\MetricsController::class, 'destroy'])->name('dashboard.metrics.destroy');
+    // Dashboard - Metrics (accessible to Business Owner, Administrator, Staff)
+    Route::middleware(['role:business-owner,administrator,staff'])->group(function () {
+        Route::get('/dashboard/metrics', [App\Http\Controllers\MetricsController::class, 'index'])->name('dashboard.metrics');
+        Route::get('/dashboard/metrics/create', [App\Http\Controllers\MetricsController::class, 'create'])->name('dashboard.metrics.create');
+        Route::post('/dashboard/metrics', [App\Http\Controllers\MetricsController::class, 'store'])->name('dashboard.metrics.store');
+        Route::get('/dashboard/metrics/{id}/edit', [App\Http\Controllers\MetricsController::class, 'edit'])->name('dashboard.metrics.edit');
+        Route::put('/dashboard/metrics/{id}', [App\Http\Controllers\MetricsController::class, 'update'])->name('dashboard.metrics.update');
+        
+        // Only Business Owner and Administrator can delete metrics
+        Route::middleware(['role:business-owner,administrator'])->group(function () {
+            Route::delete('/dashboard/metrics/{id}', [App\Http\Controllers\MetricsController::class, 'destroy'])->name('dashboard.metrics.destroy');
+        });
+    });
 
     // Dashboard - Metric Records
-    Route::get('/dashboard/metrics/{businessMetric}/overview', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'overview'])->name('dashboard.metrics.overview');
-    Route::get('/dashboard/metrics/{businessMetric}/records', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'show'])->name('dashboard.metrics.records.show');
-    Route::get('/dashboard/metrics/{businessMetric}/records/edit', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'editPage'])->name('dashboard.metrics.records.edit');
-    Route::get('/dashboard/metrics/{businessMetric}/records/stats', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'getTableStats'])->name('dashboard.metrics.records.stats');
-    Route::post('/dashboard/metrics/{businessMetric}/records', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'store'])->name('dashboard.metrics.records.store');
-    Route::get('/dashboard/metrics/records/{record}', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'getRecord'])->name('dashboard.metrics.records.get');
-    Route::put('/dashboard/metrics/records/{record}', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'update'])->name('dashboard.metrics.records.update');
-    Route::delete('/dashboard/metrics/records/{record}', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'destroy'])->name('dashboard.metrics.records.destroy');
-    Route::post('/dashboard/metrics/records/bulk-delete', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'bulkDelete'])->name('dashboard.metrics.records.bulk-delete');
-    Route::get('/dashboard/metrics/{businessMetric}/records/export', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'export'])->name('dashboard.metrics.records.export');
+    Route::middleware(['role:business-owner,administrator,staff'])->group(function () {
+        Route::get('/dashboard/metrics/{businessMetric}/overview', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'overview'])->name('dashboard.metrics.overview');
+        Route::get('/dashboard/metrics/{businessMetric}/records', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'show'])->name('dashboard.metrics.records.show');
+        Route::get('/dashboard/metrics/{businessMetric}/records/edit', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'editPage'])->name('dashboard.metrics.records.edit');
+        Route::get('/dashboard/metrics/{businessMetric}/records/stats', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'getTableStats'])->name('dashboard.metrics.records.stats');
+        Route::post('/dashboard/metrics/{businessMetric}/records', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'store'])->name('dashboard.metrics.records.store');
+        Route::get('/dashboard/metrics/records/{record}', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'getRecord'])->name('dashboard.metrics.records.get');
+        Route::put('/dashboard/metrics/records/{record}', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'update'])->name('dashboard.metrics.records.update');
+        Route::delete('/dashboard/metrics/records/{record}', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'destroy'])->name('dashboard.metrics.records.destroy');
+        Route::post('/dashboard/metrics/records/bulk-delete', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'bulkDelete'])->name('dashboard.metrics.records.bulk-delete');
+        Route::get('/dashboard/metrics/{businessMetric}/records/export', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'export'])->name('dashboard.metrics.records.export');
+    });
 
     // New routes for metric calculations
-    Route::get('/dashboard/metrics/{businessMetric}/calculation-data', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'getCalculationData'])->name('dashboard.metrics.calculation.data');
-    Route::get('/dashboard/business/{business}/daily-data', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'getDailyData'])->name('dashboard.metrics.daily.data');
+    Route::middleware(['role:business-owner,administrator,staff'])->group(function () {
+        Route::get('/dashboard/metrics/{businessMetric}/calculation-data', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'getCalculationData'])->name('dashboard.metrics.calculation.data');
+        Route::get('/dashboard/business/{business}/daily-data', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'getDailyData'])->name('dashboard.metrics.daily.data');
+    });
 
     // AI Chat routes
-    Route::post('/dashboard/metrics/{businessMetric}/ai-chat', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'askAI'])->name('dashboard.metrics.ai-chat');
+    Route::middleware(['role:business-owner,administrator,staff'])->group(function () {
+        Route::post('/dashboard/metrics/{businessMetric}/ai-chat', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'askAI'])->name('dashboard.metrics.ai-chat');
+    });
 
-    // Dashboard - Users
-    Route::get('/dashboard/users', function () {
-        return view('dashboard-users.index');
-    })->name('dashboard.users');
+    // Dashboard - Users (only accessible to Business Owner and Administrator)
+    Route::middleware(['role:business-owner,administrator'])->group(function () {
+        Route::get('/dashboard/users', [App\Http\Controllers\UserManagementController::class, 'index'])->name('dashboard.users');
+        Route::get('/users/data', [App\Http\Controllers\UserManagementController::class, 'getUsersData'])->name('users.data');
+        Route::post('/users/{user}/promote', [App\Http\Controllers\UserManagementController::class, 'promote'])->name('users.promote');
+        Route::delete('/users/{user}/remove', [App\Http\Controllers\UserManagementController::class, 'remove'])->name('users.remove');
+        
+        // Business Owner only routes
+        Route::middleware(['role:business-owner'])->group(function () {
+            Route::get('/users/business-codes', [App\Http\Controllers\UserManagementController::class, 'getBusinessCodes'])->name('users.business-codes');
+            Route::post('/users/regenerate-invite-code', [App\Http\Controllers\UserManagementController::class, 'regenerateInvitationCode'])->name('users.regenerate-invite-code');
+        });
+    });
 
     // Dashboard - Settings
     Route::get('/dashboard/settings', function () {
         return view('dashboard-settings.index');
     })->name('dashboard.settings');
 
-    // Dashboard - Feeds (placeholder)
-    Route::get('/dashboard/feeds', function () {
-        return view('dashboard-main.index')->with('page_title', 'Data Feeds');
-    })->name('dashboard.feeds');
+    // Dashboard - Feeds (accessible to Business Owner, Administrator, Staff)
+    Route::middleware(['role:business-owner,administrator,staff'])->group(function () {
+        Route::get('/dashboard/feeds', function () {
+            return view('dashboard-main.index')->with('page_title', 'Data Feeds');
+        })->name('dashboard.feeds');
+    });
 
-    // Dashboard - Notifications (placeholder)
+    // Dashboard - Notifications (accessible to all authenticated users)
     Route::get('/dashboard/notifications', function () {
         return view('dashboard-main.index')->with('page_title', 'Notifications');
     })->name('dashboard.notifications');
 
-    // Dashboard - Help (placeholder)
+    // Dashboard - Help (accessible to all authenticated users)
     Route::get('/dashboard/help', function () {
         return view('dashboard-main.index')->with('page_title', 'Help & Support');
     })->name('dashboard.help');
 
-    // Profile routes
+    // Profile routes (accessible to all authenticated users)
     Route::get('/profile', function () {
         return view('profile.show');
     })->name('profile.show');
