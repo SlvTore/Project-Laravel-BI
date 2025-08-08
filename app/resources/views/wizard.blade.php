@@ -44,10 +44,10 @@
                 @foreach($roles as $role)
                     @php
                         $roleConfig = [
-                            'owner' => ['icon' => 'bi-crown', 'color' => 'warning', 'bg' => 'warning'],
-                            'admin' => ['icon' => 'bi-gear', 'color' => 'primary', 'bg' => 'primary'],
-                            'mentor' => ['icon' => 'bi-lightbulb', 'color' => 'success', 'bg' => 'success'],
-                            'investigator' => ['icon' => 'bi-search', 'color' => 'info', 'bg' => 'info'],
+                            'business-owner' => ['icon' => 'bi-crown', 'color' => 'warning', 'bg' => 'warning'],
+                            'administrator' => ['icon' => 'bi-gear', 'color' => 'primary', 'bg' => 'primary'],
+                            'staff' => ['icon' => 'bi-person-check', 'color' => 'success', 'bg' => 'success'],
+                            'business-investigator' => ['icon' => 'bi-search', 'color' => 'info', 'bg' => 'info'],
                         ][$role->name] ?? ['icon' => 'bi-person', 'color' => 'secondary', 'bg' => 'secondary'];
                     @endphp
                     <div class="col-md-6">
@@ -58,6 +58,7 @@
                                 id="role_{{ $role->id }}"
                                 value="{{ $role->id }}"
                                 class="d-none role-input"
+                                data-role-name="{{ $role->name }}"
                             >
                             <label class="card role-card h-100 w-100 cursor-pointer" for="role_{{ $role->id }}">
                                 <div class="card-body text-center p-4">
@@ -195,6 +196,38 @@
                 <button type="button" class="btn btn-success btn-lg px-5" id="completeSetup">
                     <i class="bi bi-check-circle me-2"></i>
                     Selesaikan Setup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Invitation Modal -->
+<div class="modal fade" id="invitationModal" tabindex="-1" aria-labelledby="invitationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white" id="invitationModalLabel">
+                    <i class="bi bi-key me-2"></i>Masukkan Kode Akses
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <label class="form-label fw-semibold text-white">ID Dashboard Perusahaan <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="publicId" placeholder="Contoh: BIZ-ABC123DEF">
+                    <small class="form-text text-muted">ID ini diberikan oleh Business Owner</small>
+                </div>
+                <div class="mb-4" id="invitationCodeField" style="display: none;">
+                    <label class="form-label fw-semibold text-white">Kode Undangan Staff <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="invitationCode" placeholder="Contoh: ABC12345">
+                    <small class="form-text text-muted">Kode rahasia yang diberikan oleh Business Owner</small>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="submitInvitation">
+                    <i class="bi bi-check-circle me-2"></i>Bergabung
                 </button>
             </div>
         </div>
@@ -772,9 +805,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (selectedRole && selectedRole.value) {
                 console.log('Saving role data...');
-                saveStepData('role', { role_id: selectedRole.value }, () => {
-                    console.log('Role saved, showing step 2');
-                    showStep(2);
+                const roleName = selectedRole.getAttribute('data-role-name');
+                
+                saveStepData('role', { role_id: selectedRole.value }, (response) => {
+                    console.log('Role saved, response:', response);
+                    
+                    if (response.next_step === 'invitation') {
+                        // Show invitation modal for staff and business-investigator
+                        showInvitationModal(roleName);
+                    } else {
+                        // Continue to business step for business-owner
+                        showStep(2);
+                    }
                 });
             } else {
                 alert('Silakan pilih role terlebih dahulu!');
@@ -899,6 +941,65 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             console.error('Error:', error);
             alert('Terjadi kesalahan: ' + error.message);
+        });
+    }
+
+    // Invitation modal functions
+    function showInvitationModal(roleName) {
+        const modal = document.getElementById('invitationModal');
+        const invitationCodeField = document.getElementById('invitationCodeField');
+        const submitButton = document.getElementById('submitInvitation');
+        
+        // Show invitation code field only for staff
+        if (roleName === 'staff') {
+            invitationCodeField.style.display = 'block';
+        } else {
+            invitationCodeField.style.display = 'none';
+        }
+        
+        // Use Bootstrap modal if available, fallback to simple display
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            const bootstrapModal = new bootstrap.Modal(modal);
+            bootstrapModal.show();
+        } else {
+            modal.style.display = 'block';
+            modal.classList.add('show');
+        }
+    }
+
+    // Handle invitation form submission
+    const submitInvitationBtn = document.getElementById('submitInvitation');
+    if (submitInvitationBtn) {
+        submitInvitationBtn.addEventListener('click', function() {
+            const publicId = document.getElementById('publicId').value;
+            const invitationCode = document.getElementById('invitationCode').value;
+            const selectedRole = document.querySelector('input[name="role_id"]:checked');
+            
+            if (!publicId) {
+                alert('ID Dashboard Perusahaan wajib diisi!');
+                return;
+            }
+            
+            const roleName = selectedRole ? selectedRole.getAttribute('data-role-name') : '';
+            
+            if (roleName === 'staff' && !invitationCode) {
+                alert('Kode Undangan Staff wajib diisi!');
+                return;
+            }
+            
+            const invitationData = {
+                public_id: publicId,
+            };
+            
+            if (roleName === 'staff') {
+                invitationData.invitation_code = invitationCode;
+            }
+            
+            saveStepData('invitation', invitationData, (response) => {
+                if (response.redirect) {
+                    window.location.href = response.redirect;
+                }
+            });
         });
     }
 });
