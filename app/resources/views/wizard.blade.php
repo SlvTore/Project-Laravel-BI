@@ -711,7 +711,7 @@
     position: relative !important;
 }
 
-/* Modal input specific styles */
+/* Modal input specific styles - simplified and working */
 .modal .form-control {
     background: rgba(255, 255, 255, 0.2) !important;
     border: 2px solid rgba(255, 255, 255, 0.3) !important;
@@ -721,6 +721,7 @@
     -webkit-user-select: text !important;
     -moz-user-select: text !important;
     -ms-user-select: text !important;
+    cursor: text !important;
 }
 
 .modal .form-control:focus {
@@ -734,13 +735,20 @@
     color: rgba(255, 255, 255, 0.6) !important;
 }
 
-/* Ensure modal dialog is clickable */
+/* Ensure modal dialog is properly interactive */
 .modal-dialog {
     pointer-events: none !important;
 }
 
 .modal-dialog .modal-content {
     pointer-events: auto !important;
+}
+
+/* Ensure inputs inside modal are always interactive */
+.modal input[type="text"] {
+    pointer-events: auto !important;
+    user-select: text !important;
+    cursor: text !important;
 }
 </style>
 @endpush
@@ -1002,97 +1010,47 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Clear previous values and reset state
+        // Clear previous values and ensure inputs are fully enabled
         publicIdInput.value = '';
-        publicIdInput.disabled = false;
-        publicIdInput.readOnly = false;
-        publicIdInput.style.pointerEvents = 'auto';
-        publicIdInput.removeAttribute('disabled');
-        publicIdInput.removeAttribute('readonly');
-
         if (invitationCodeInput) {
             invitationCodeInput.value = '';
-            invitationCodeInput.disabled = false;
-            invitationCodeInput.readOnly = false;
-            invitationCodeInput.style.pointerEvents = 'auto';
-            invitationCodeInput.removeAttribute('disabled');
-            invitationCodeInput.removeAttribute('readonly');
         }
 
-        // Show invitation code for staff and business-investigator
-        if (roleName === 'staff' || roleName === 'business-investigator') {
+        // Show invitation code field for staff only
+        if (roleName === 'staff') {
             invitationCodeField.style.display = 'block';
         } else {
             invitationCodeField.style.display = 'none';
         }
 
-        // Simple modal show without complex focus management
+        // Show modal using Bootstrap if available
         if (typeof window.bootstrap !== 'undefined' && window.bootstrap.Modal) {
             console.log('Using Bootstrap modal');
             const instance = window.bootstrap.Modal.getOrCreateInstance(modal, {
                 backdrop: 'static',
                 keyboard: false
             });
-
-            // Simple focus after modal is fully shown
-            modal.addEventListener('shown.bs.modal', () => {
-                console.log('Modal shown, simple focus');
-                setTimeout(() => {
-                    const targetInput = publicIdInput; // Always focus publicId first
-                    targetInput.focus();
-                    console.log('Simple focus applied to publicId');
-                }, 300);
-            }, { once: true });
-
             instance.show();
         } else {
             console.log('Using fallback modal');
-            // Simplified fallback
-            let backdrop = document.querySelector('.modal-backdrop');
-            if (!backdrop) {
-                backdrop = document.createElement('div');
-                backdrop.className = 'modal-backdrop fade show';
-                backdrop.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1990;';
-                document.body.appendChild(backdrop);
-            }
-
-            document.body.style.overflow = 'hidden';
-            modal.style.cssText = 'display:block;position:fixed;z-index:2000;';
+            // Simplified fallback without complex focus management
+            modal.style.display = 'block';
             modal.classList.add('show');
-            modal.removeAttribute('tabindex');
-
-            setTimeout(() => {
-                publicIdInput.focus();
-                console.log('Fallback focus applied to publicId');
-            }, 300);
-
-            // Simple hide function
-            const hideModal = () => {
-                modal.classList.remove('show');
-                modal.style.display = 'none';
-                document.body.style.overflow = '';
-                if (backdrop?.parentNode) backdrop.parentNode.removeChild(backdrop);
-            };
-
-            modal.querySelectorAll('[data-bs-dismiss="modal"]').forEach(btn => {
-                btn.addEventListener('click', hideModal, { once: true });
-            });
+            document.body.classList.add('modal-open');
         }
     }
 
-    // Setup input event listeners with simplified approach
+    // Setup input event listeners - simplified approach
     ['publicId', 'invitationCode'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
-            console.log('Setting up simplified event listeners for:', id);
+            console.log('Setting up event listeners for:', id);
 
-            // Remove any existing attributes that might block input
-            el.removeAttribute('disabled');
-            el.removeAttribute('readonly');
+            // Ensure input is enabled
             el.disabled = false;
             el.readOnly = false;
-
-            // Basic event listeners
+            
+            // Basic event listeners without interference
             el.addEventListener('keydown', (e) => {
                 console.log('Keydown on', id, ':', e.key);
                 if (e.key === 'Enter') {
@@ -1105,18 +1063,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Input event on', id, ':', e.target.value);
             });
 
-            // Simple focus/blur without interference
-            el.addEventListener('focus', (e) => {
-                console.log('Focus event on', id);
-            });
-
-            el.addEventListener('blur', (e) => {
-                console.log('Blur event on', id);
-            });
-
-            // Test if input is actually working by trying to set value
             el.addEventListener('click', (e) => {
-                console.log('Click event on', id, 'current value:', e.target.value);
+                console.log('Click event on', id);
                 e.target.focus();
             });
         }
@@ -1137,6 +1085,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const roleName = selectedRole ? selectedRole.getAttribute('data-role-name') : '';
 
+            // Only staff needs invitation code, business-investigator just needs public_id
             if (roleName === 'staff' && !invitationCode) {
                 alert('Kode Undangan Staff wajib diisi!');
                 return;
@@ -1146,9 +1095,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 public_id: publicId,
             };
 
+            // Only add invitation code for staff
             if (roleName === 'staff') {
                 invitationData.invitation_code = invitationCode;
             }
+
+            console.log('Submitting invitation data:', invitationData);
 
             saveStepData('invitation', invitationData, (response) => {
                 if (response.redirect) {
