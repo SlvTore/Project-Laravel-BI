@@ -20,8 +20,8 @@
                     <div class="empty-state-icon mb-4">
                         <i class="bi bi-graph-up" style="font-size: 5rem; color: var(--primary-color); opacity: 0.6;"></i>
                     </div>
-                    <h3 class="text-white mb-3">Belum Ada Metrics</h3>
-                    <p class="text-muted mb-4 fs-5">
+                    <h3 class="text-white fw-bold mb-3">Belum Ada Metrics</h3>
+                    <p class="text-white mb-4 fs-5">
                         Mulai tracking performa bisnis Anda dengan menambahkan metrics pertama.<br>
                         Pilih dari metrics yang telah disediakan atau buat custom metrics.
                     </p>

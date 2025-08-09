@@ -5,7 +5,7 @@
 @section('content')
 <div class="wizard-container">
     <!-- Progress Bar -->
-    <div class="mb-5">
+    <div class="mb-2">
         <div class="d-flex justify-content-center">
             <div class="progress-wizard d-flex align-items-center">
                 <div class="step-item active" data-step="1">
@@ -101,7 +101,7 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label fw-semibold">Industri <span class="text-danger">*</span></label>
-                    <select class="form-select" name="industry">
+                    <select class="form-select text-dark" name="industry">
                         <option value="">Pilih industri</option>
                         <option value="Technology">Teknologi</option>
                         <option value="E-commerce">E-commerce</option>
@@ -203,7 +203,7 @@
 </div>
 
 <!-- Invitation Modal -->
-<div class="modal fade" id="invitationModal" tabindex="-1" aria-labelledby="invitationModalLabel" aria-hidden="true">
+<div class="modal fade" id="invitationModal" tabindex="-1" aria-labelledby="invitationModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px;">
             <div class="modal-header border-0">
@@ -215,12 +215,12 @@
             <div class="modal-body">
                 <div class="mb-4">
                     <label class="form-label fw-semibold text-white">ID Dashboard Perusahaan <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="publicId" placeholder="Contoh: BIZ-ABC123DEF">
+                    <input type="text" class="form-control" id="publicId" placeholder="Contoh: BIZ-ABC123DEF" autocomplete="off">
                     <small class="form-text text-muted">ID ini diberikan oleh Business Owner</small>
                 </div>
                 <div class="mb-4" id="invitationCodeField" style="display: none;">
                     <label class="form-label fw-semibold text-white">Kode Undangan Staff <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="invitationCode" placeholder="Contoh: ABC12345">
+                    <input type="text" class="form-control" id="invitationCode" placeholder="Contoh: ABC12345" autocomplete="off">
                     <small class="form-text text-muted">Kode rahasia yang diberikan oleh Business Owner</small>
                 </div>
             </div>
@@ -697,6 +697,51 @@
         font-size: 0.8rem;
     }
 }
+
+/* Ensure modal overlays everything and inputs are clickable */
+.modal {
+    z-index: 2000 !important;
+    position: fixed !important;
+}
+.modal-backdrop {
+    z-index: 1990 !important;
+}
+.modal-content {
+    pointer-events: auto !important;
+    position: relative !important;
+}
+
+/* Modal input specific styles */
+.modal .form-control {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    color: white !important;
+    pointer-events: auto !important;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+}
+
+.modal .form-control:focus {
+    background: rgba(255, 255, 255, 0.25) !important;
+    border-color: rgba(124, 185, 71, 0.8) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 0.2rem rgba(124, 185, 71, 0.25) !important;
+}
+
+.modal .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Ensure modal dialog is clickable */
+.modal-dialog {
+    pointer-events: none !important;
+}
+
+.modal-dialog .modal-content {
+    pointer-events: auto !important;
+}
 </style>
 @endpush
 
@@ -806,10 +851,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (selectedRole && selectedRole.value) {
                 console.log('Saving role data...');
                 const roleName = selectedRole.getAttribute('data-role-name');
-                
+
                 saveStepData('role', { role_id: selectedRole.value }, (response) => {
                     console.log('Role saved, response:', response);
-                    
+
                     if (response.next_step === 'invitation') {
                         // Show invitation modal for staff and business-investigator
                         showInvitationModal(roleName);
@@ -946,26 +991,136 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Invitation modal functions
     function showInvitationModal(roleName) {
+        console.log('showInvitationModal called with role:', roleName);
         const modal = document.getElementById('invitationModal');
         const invitationCodeField = document.getElementById('invitationCodeField');
-        const submitButton = document.getElementById('submitInvitation');
-        
-        // Show invitation code field only for staff
-        if (roleName === 'staff') {
+        const publicIdInput = document.getElementById('publicId');
+        const invitationCodeInput = document.getElementById('invitationCode');
+
+        if (!modal || !publicIdInput) {
+            console.error('Modal elements not found');
+            return;
+        }
+
+        // Clear previous values and reset state
+        publicIdInput.value = '';
+        publicIdInput.disabled = false;
+        publicIdInput.readOnly = false;
+        publicIdInput.style.pointerEvents = 'auto';
+        publicIdInput.removeAttribute('disabled');
+        publicIdInput.removeAttribute('readonly');
+
+        if (invitationCodeInput) {
+            invitationCodeInput.value = '';
+            invitationCodeInput.disabled = false;
+            invitationCodeInput.readOnly = false;
+            invitationCodeInput.style.pointerEvents = 'auto';
+            invitationCodeInput.removeAttribute('disabled');
+            invitationCodeInput.removeAttribute('readonly');
+        }
+
+        // Show invitation code for staff and business-investigator
+        if (roleName === 'staff' || roleName === 'business-investigator') {
             invitationCodeField.style.display = 'block';
         } else {
             invitationCodeField.style.display = 'none';
         }
-        
-        // Use Bootstrap modal if available, fallback to simple display
-        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-            const bootstrapModal = new bootstrap.Modal(modal);
-            bootstrapModal.show();
+
+        // Simple modal show without complex focus management
+        if (typeof window.bootstrap !== 'undefined' && window.bootstrap.Modal) {
+            console.log('Using Bootstrap modal');
+            const instance = window.bootstrap.Modal.getOrCreateInstance(modal, {
+                backdrop: 'static',
+                keyboard: false
+            });
+
+            // Simple focus after modal is fully shown
+            modal.addEventListener('shown.bs.modal', () => {
+                console.log('Modal shown, simple focus');
+                setTimeout(() => {
+                    const targetInput = publicIdInput; // Always focus publicId first
+                    targetInput.focus();
+                    console.log('Simple focus applied to publicId');
+                }, 300);
+            }, { once: true });
+
+            instance.show();
         } else {
-            modal.style.display = 'block';
+            console.log('Using fallback modal');
+            // Simplified fallback
+            let backdrop = document.querySelector('.modal-backdrop');
+            if (!backdrop) {
+                backdrop = document.createElement('div');
+                backdrop.className = 'modal-backdrop fade show';
+                backdrop.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1990;';
+                document.body.appendChild(backdrop);
+            }
+
+            document.body.style.overflow = 'hidden';
+            modal.style.cssText = 'display:block;position:fixed;z-index:2000;';
             modal.classList.add('show');
+            modal.removeAttribute('tabindex');
+
+            setTimeout(() => {
+                publicIdInput.focus();
+                console.log('Fallback focus applied to publicId');
+            }, 300);
+
+            // Simple hide function
+            const hideModal = () => {
+                modal.classList.remove('show');
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+                if (backdrop?.parentNode) backdrop.parentNode.removeChild(backdrop);
+            };
+
+            modal.querySelectorAll('[data-bs-dismiss="modal"]').forEach(btn => {
+                btn.addEventListener('click', hideModal, { once: true });
+            });
         }
     }
+
+    // Setup input event listeners with simplified approach
+    ['publicId', 'invitationCode'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            console.log('Setting up simplified event listeners for:', id);
+
+            // Remove any existing attributes that might block input
+            el.removeAttribute('disabled');
+            el.removeAttribute('readonly');
+            el.disabled = false;
+            el.readOnly = false;
+
+            // Basic event listeners
+            el.addEventListener('keydown', (e) => {
+                console.log('Keydown on', id, ':', e.key);
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('submitInvitation')?.click();
+                }
+            });
+
+            el.addEventListener('input', (e) => {
+                console.log('Input event on', id, ':', e.target.value);
+            });
+
+            // Simple focus/blur without interference
+            el.addEventListener('focus', (e) => {
+                console.log('Focus event on', id);
+            });
+
+            el.addEventListener('blur', (e) => {
+                console.log('Blur event on', id);
+            });
+
+            // Test if input is actually working by trying to set value
+            el.addEventListener('click', (e) => {
+                console.log('Click event on', id, 'current value:', e.target.value);
+                e.target.focus();
+            });
+        }
+    });
 
     // Handle invitation form submission
     const submitInvitationBtn = document.getElementById('submitInvitation');
@@ -974,27 +1129,27 @@ document.addEventListener('DOMContentLoaded', function() {
             const publicId = document.getElementById('publicId').value;
             const invitationCode = document.getElementById('invitationCode').value;
             const selectedRole = document.querySelector('input[name="role_id"]:checked');
-            
+
             if (!publicId) {
                 alert('ID Dashboard Perusahaan wajib diisi!');
                 return;
             }
-            
+
             const roleName = selectedRole ? selectedRole.getAttribute('data-role-name') : '';
-            
+
             if (roleName === 'staff' && !invitationCode) {
                 alert('Kode Undangan Staff wajib diisi!');
                 return;
             }
-            
+
             const invitationData = {
                 public_id: publicId,
             };
-            
+
             if (roleName === 'staff') {
                 invitationData.invitation_code = invitationCode;
             }
-            
+
             saveStepData('invitation', invitationData, (response) => {
                 if (response.redirect) {
                     window.location.href = response.redirect;
