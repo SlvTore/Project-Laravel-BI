@@ -25,10 +25,10 @@
                             <span class="input-group-text bg-transparent border-white text-white">
                                 <i class="bi bi-calendar3"></i>
                             </span>
-                            <input type="text" id="daterangepicker" class="form-control bg-transparent border-white text-white" 
+                            <input type="text" id="daterangepicker" class="form-control bg-transparent border-white text-white"
                                    style="min-width: 280px; cursor: pointer;"
                                    placeholder="Select date range"
-                                   data-bs-toggle="tooltip" 
+                                   data-bs-toggle="tooltip"
                                    data-bs-placement="bottom"
                                    title="Click to select date range for filtering activities"
                                    readonly>

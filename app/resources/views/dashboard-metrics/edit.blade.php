@@ -10,14 +10,11 @@
             <h2 class="mb-1 text-white">{{ $businessMetric->metric_name }} - Complete Records Management</h2>
             <p class="text-white mb-0">{{ $businessMetric->business->business_name ?? 'Business' }} - {{ $businessMetric->description }}</p>
         </div>
-        <div>
+        <div >
             <a href="{{ route('dashboard.metrics') }}"
-               class="btn btn-outline-secondary me-2">
+               class="btn btn-outline-secondary me-3">
                 <i class="fas fa-arrow-left"></i> Kembali
             </a>
-            <button class="btn btn-excel" data-bs-toggle="modal" data-bs-target="#addRecordModal">
-                <i class="fas fa-plus"></i> Add New Row
-            </button>
         </div>
     </div>
 
@@ -348,9 +345,9 @@
                         </div>
                         <div class="message-text">
                             Halo! Saya adalah asisten AI untuk analisis bisnis Anda. Saya dapat membantu menganalisis data {{ $businessMetric->metric_name }} dan memberikan insights untuk pengambilan keputusan.
-                            <br><br>
+                            <br>
                             Beberapa contoh pertanyaan yang bisa Anda ajukan:
-                            <ul class="mt-2 mb-0">
+                            <ul class="mt-1 mb-0">
                                 <li>Bagaimana tren performa metric ini dalam 30 hari terakhir?</li>
                                 <li>Apa rekomendasi untuk meningkatkan {{ strtolower($businessMetric->metric_name) }}?</li>
                                 <li>Analisis pola data dan berikan strategi bisnis</li>
@@ -363,19 +360,19 @@
 
             <!-- Quick Action Buttons -->
             <div class="quick-actions mb-3">
-                <button class="btn btn-outline-primary btn-sm quick-question"
+                <button class="btn btn-outline-light btn-sm quick-question"
                         data-question="Analisis tren performa dalam 30 hari terakhir dan berikan rekomendasi">
                     <i class="fas fa-chart-line me-1"></i>Analisis Tren
                 </button>
-                <button class="btn btn-outline-success btn-sm quick-question"
+                <button class="btn btn-outline-light btn-sm quick-question"
                         data-question="Berikan 3 strategi untuk meningkatkan metrik ini berdasarkan data yang ada">
                     <i class="fas fa-lightbulb me-1"></i>Strategi Peningkatan
                 </button>
-                <button class="btn btn-outline-warning btn-sm quick-question"
+                <button class="btn btn-outline-light btn-sm quick-question"
                         data-question="Identifikasi potensi risiko atau masalah dari pola data saat ini">
                     <i class="fas fa-exclamation-triangle me-1"></i>Analisis Risiko
                 </button>
-                <button class="btn btn-outline-info btn-sm quick-question"
+                <button class="btn btn-outline-light btn-sm quick-question"
                         data-question="Bandingkan performa saat ini dengan rata-rata industri dan berikan benchmark">
                     <i class="fas fa-balance-scale me-1"></i>Benchmark Industri
                 </button>
@@ -389,10 +386,10 @@
                                   placeholder="Tanyakan tentang data metrics, tren, atau minta saran strategi bisnis..."
                                   rows="2" maxlength="500"></textarea>
                         <div class="chat-input-footer">
-                            <small class="text-muted">
+                            <small class="text-white">
                                 <span id="charCount">0</span>/500 karakter
                             </small>
-                            <small class="text-muted">
+                            <small class="text-white">
                                 Press Ctrl+Enter to send
                             </small>
                         </div>
@@ -679,7 +676,7 @@
     }
 
     .modal-glass .modal-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #7cb947 0%, #1e3c80 100%);
         border-radius: 15px 15px 0 0 !important;
         padding: 20px 25px;
     }
@@ -706,8 +703,8 @@
 
     .modal-input:focus {
         background: rgba(255, 255, 255, 0.15) !important;
-        border-color: #667eea !important;
-        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
+        border-color: #7cb947 !important;
+        box-shadow: 0 0 0 0.2rem rgba(124, 185, 103, 0.25) !important;
         color: white !important;
     }
 
@@ -912,7 +909,7 @@
     }
 
     .ai-message .message-avatar {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #7cb947 0%, #1e3c80 100%);
         color: white;
     }
 
@@ -996,7 +993,7 @@
 
     .chat-input:focus {
         background: rgba(255, 255, 255, 0.15) !important;
-        border-color: #667eea !important;
+        border-color: #7cb947 !important;
         box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
         color: white !important;
     }
@@ -1019,7 +1016,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #7cb947 0%, #1e3c80 100%);
         border: none;
         transition: all 0.3s ease;
     }

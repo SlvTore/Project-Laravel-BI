@@ -100,7 +100,7 @@
                 <div class="col-12">
                     <div class="content-card">
                         <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="table-header d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="card-title fw-bold mb-0 ms-3">All Metrics</h5>
                                 <div class="d-flex gap-2 me-2 mt-2">
                                     <div class="input-group" style="width: 200px;">
@@ -129,6 +129,8 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <hr class="border-white opacity-10 my-3">
 
                             <div class="table-responsive">
                                 <table class="table table-hover" id="metricsTable">
@@ -341,7 +343,7 @@
     }
 
     .modal-glass .modal-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #7cb947 0%, #1e3c80 100%);
         border-radius: 15px 15px 0 0 !important;
         padding: 20px 25px;
     }

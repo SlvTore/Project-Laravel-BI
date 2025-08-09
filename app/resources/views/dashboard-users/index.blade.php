@@ -3,7 +3,7 @@
 @section('title', 'User Management')
 
 @section('content')
-<div class="container-fluid ms-4 p-5">
+<div class="container mx-auto p-5">
     <!-- Header Card -->
     <div class="row mb-4">
         <div class="col-12">
