@@ -22,13 +22,24 @@
                     </div>
                     <h3 class="text-white fw-bold mb-3">Belum Ada Metrics</h3>
                     <p class="text-white mb-4 fs-5">
-                        Mulai tracking performa bisnis Anda dengan menambahkan metrics pertama.<br>
-                        Pilih dari metrics yang telah disediakan atau buat custom metrics.
+                        @if(Auth::user()->canImportMetrics())
+                            Mulai tracking performa bisnis Anda dengan menambahkan metrics pertama.<br>
+                            Pilih dari metrics yang telah disediakan atau buat custom metrics.
+                        @else
+                            Belum ada metrics yang tersedia untuk Anda. Silakan hubungi Administrator atau Business Owner untuk menambahkan metrics.
+                        @endif
                     </p>
+                    @if(Auth::user()->canImportMetrics())
                     <a href="{{ route('dashboard.metrics.create') }}" class="btn btn-primary btn-lg">
                         <i class="bi bi-plus-circle me-2"></i>
                         Tambah Metrics Pertama
                     </a>
+                    @else
+                    <div class="text-center">
+                        <i class="bi bi-person-check text-white opacity-50" style="font-size: 2rem;"></i>
+                        <p class="text-white mt-2 mb-0 small">Waiting for metrics to be created</p>
+                    </div>
+                    @endif
                 </div>
             </div>
         @else
@@ -171,6 +182,7 @@
                                                     <button class="btn btn-outline-info" title="View Details" onclick="viewMetricDetails({{ $businessMetric->id }})">
                                                         <i class="bi bi-eye"></i>
                                                     </button>
+                                                    @if(Auth::user()->canDeleteMetrics())
                                                     <form action="{{ route('dashboard.metrics.destroy', $businessMetric->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this metric?')">
                                                         @csrf
                                                         @method('DELETE')
@@ -178,6 +190,7 @@
                                                             <i class="bi bi-trash"></i>
                                                         </button>
                                                     </form>
+                                                    @endif
                                                 </div>
                                             </td>
                                         </tr>
@@ -192,7 +205,7 @@
         @endif
 
         <!-- Floating Add Button -->
-        @if($businessMetrics->count() > 0)
+        @if($businessMetrics->count() > 0 && Auth::user()->canImportMetrics())
         <div class="floating-add-btn">
             <a href="{{ route('dashboard.metrics.create') }}" class="btn btn-primary btn-lg rounded-circle shadow-lg">
                 <i class="bi bi-plus-lg fs-4"></i>

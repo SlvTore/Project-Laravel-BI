@@ -8,6 +8,7 @@ use App\Models\MetricRecord;
 use App\Models\SalesData;
 use App\Models\ProductSales;
 use App\Models\Customer;
+use App\Models\ActivityLog;
 use App\Services\GeminiAIService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -22,13 +23,13 @@ class MetricRecordsController extends Controller
      */
     private function authorizeMetricAccess(BusinessMetric $businessMetric)
     {
-        $user = auth()->user();
-        $userBusinessIds = $user->businesses()->pluck('id')->toArray();
+        $user = Auth::user();
+        $userBusinessIds = $user->businesses()->pluck('businesses.id')->toArray();
 
         // Debug: Show what's happening
         if (empty($userBusinessIds)) {
             // User has no businesses, let's see what we can do
-            \Log::warning('User has no businesses', ['user_id' => $user->id]);
+            Log::warning('User has no businesses', ['user_id' => $user->id]);
 
             // For now, let's allow access if user has no businesses (development mode)
             // In production, you should ensure users always have businesses
@@ -36,7 +37,7 @@ class MetricRecordsController extends Controller
         }
 
         // Debug: Log the authorization check
-        \Log::info('Authorization check:', [
+        Log::info('Authorization check:', [
             'user_id' => $user->id,
             'user_business_ids' => $userBusinessIds,
             'metric_business_id' => $businessMetric->business_id,
@@ -219,6 +220,7 @@ class MetricRecordsController extends Controller
                 'record_date' => $validated['record_date'],
             ],
             [
+                'user_id' => Auth::id(),
                 'value' => $validated['value'],
                 'notes' => $validated['notes'],
             ]
@@ -226,6 +228,15 @@ class MetricRecordsController extends Controller
 
         // Update the business metric current and previous values
         $this->updateBusinessMetricValues($businessMetric);
+
+        // Log activity
+        $user = Auth::user();
+        ActivityLog::logDataInput(
+            $businessMetric->business_id,
+            $user->id,
+            $businessMetric->id,
+            $validated['value']
+        );
 
         // Return JSON response for AJAX requests
         if ($request->ajax()) {
@@ -536,7 +547,7 @@ class MetricRecordsController extends Controller
 
         try {
             // Get user's business IDs
-            $userBusinessIds = auth()->user()->businesses()->pluck('id')->toArray();
+            $userBusinessIds = auth()->user()->businesses()->pluck('businesses.id')->toArray();
 
             // Get records with their business metrics
             $records = MetricRecord::with('businessMetric')
@@ -966,7 +977,7 @@ class MetricRecordsController extends Controller
     public function getDailyData($businessId, Request $request)
     {
         // Check access to business
-        $userBusinessIds = auth()->user()->businesses()->pluck('id')->toArray();
+        $userBusinessIds = auth()->user()->businesses()->pluck('businesses.id')->toArray();
         if (!in_array($businessId, $userBusinessIds)) {
             abort(403, 'Unauthorized access to business data.');
         }

@@ -15,6 +15,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Toastr CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <!-- Enhanced UI CSS -->
+    <link rel="stylesheet" href="{{ asset('css/enhanced-ui.css') }}">
     <!-- Custom Dashboard CSS -->
     <style>
         :root {
@@ -170,8 +172,11 @@
 
     @stack('styles')
 </head>
-<body>
-    <div class="dashboard-wrapper">
+<body class="@if(Auth::check() && Auth::user()->isStaff()) staff-mode @endif">
+    <div class="dashboard-wrapper
+        @if(Auth::check())
+            role-{{ strtolower(str_replace([' ', '-'], '', Auth::user()->userRole->name ?? 'user')) }}
+        @endif">
         <!-- Include Sidebar Navigation - Fixed Path -->
         @include('layouts.partials.dashboardNav')
 

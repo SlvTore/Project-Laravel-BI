@@ -71,6 +71,85 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Business Information Card -->
+                @if($business)
+                <div class="dashboard-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="bi bi-building me-2"></i>
+                            Business Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Business Name</label>
+                                <div class="form-control-plaintext">{{ $business->business_name }}</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Industry</label>
+                                <div class="form-control-plaintext">{{ $business->industry ?? 'Not specified' }}</div>
+                            </div>
+                            @if($business->description)
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Description</label>
+                                <div class="form-control-plaintext">{{ $business->description }}</div>
+                            </div>
+                            @endif
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Founded Date</label>
+                                <div class="form-control-plaintext">
+                                    {{ $business->founded_date ? $business->founded_date->format('F j, Y') : 'Not specified' }}
+                                </div>
+                            </div>
+                            @if($business->website)
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Website</label>
+                                <div class="form-control-plaintext">
+                                    <a href="{{ $business->website }}" target="_blank" class="text-decoration-none">
+                                        {{ $business->website }} <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            @endif
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Your Role</label>
+                                <div class="form-control-plaintext">
+                                    @if(Auth::user()->isBusinessOwner() && $business->user_id == Auth::user()->id)
+                                        <span class="badge bg-primary">Business Owner</span>
+                                    @else
+                                        <span class="badge bg-secondary">{{ Auth::user()->userRole->display_name ?? 'Member' }}</span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Active Metrics</label>
+                                <div class="form-control-plaintext">
+                                    {{ $business->metrics()->where('is_active', true)->count() }} metrics
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @else
+                <div class="dashboard-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="bi bi-building me-2"></i>
+                            Business Information
+                        </h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <i class="bi bi-building display-4 text-muted mb-3"></i>
+                        <h6 class="text-muted">No Business Associated</h6>
+                        <p class="text-muted small">
+                            You are not currently associated with any business.
+                            Contact your administrator to be added to a business.
+                        </p>
+                    </div>
+                </div>
+                @endif
             </div>
 
             <!-- Profile Statistics & Quick Actions -->

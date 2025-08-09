@@ -12,6 +12,7 @@ class MetricRecord extends Model
 
     protected $fillable = [
         'business_metric_id',
+        'user_id',
         'record_date',
         'value',
         'notes',
@@ -28,6 +29,11 @@ class MetricRecord extends Model
     public function businessMetric()
     {
         return $this->belongsTo(BusinessMetric::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
     // Scopes

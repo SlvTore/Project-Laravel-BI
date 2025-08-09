@@ -38,6 +38,12 @@ class BusinessMetric extends Model
         return $this->hasMany(MetricRecord::class);
     }
 
+    // Alias for records() method used in feeds
+    public function records()
+    {
+        return $this->metricRecords();
+    }
+
     // Scopes
     public function scopeActive($query)
     {

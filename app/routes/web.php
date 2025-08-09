@@ -49,7 +49,7 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
         Route::post('/dashboard/metrics', [App\Http\Controllers\MetricsController::class, 'store'])->name('dashboard.metrics.store');
         Route::get('/dashboard/metrics/{id}/edit', [App\Http\Controllers\MetricsController::class, 'edit'])->name('dashboard.metrics.edit');
         Route::put('/dashboard/metrics/{id}', [App\Http\Controllers\MetricsController::class, 'update'])->name('dashboard.metrics.update');
-        
+
         // Only Business Owner and Administrator can delete metrics
         Route::middleware(['role:business-owner,administrator'])->group(function () {
             Route::delete('/dashboard/metrics/{id}', [App\Http\Controllers\MetricsController::class, 'destroy'])->name('dashboard.metrics.destroy');
@@ -87,7 +87,7 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
         Route::get('/users/data', [App\Http\Controllers\UserManagementController::class, 'getUsersData'])->name('users.data');
         Route::post('/users/{user}/promote', [App\Http\Controllers\UserManagementController::class, 'promote'])->name('users.promote');
         Route::delete('/users/{user}/remove', [App\Http\Controllers\UserManagementController::class, 'remove'])->name('users.remove');
-        
+
         // Business Owner only routes
         Route::middleware(['role:business-owner'])->group(function () {
             Route::get('/users/business-codes', [App\Http\Controllers\UserManagementController::class, 'getBusinessCodes'])->name('users.business-codes');
@@ -102,15 +102,9 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
 
     // Dashboard - Feeds (accessible to Business Owner, Administrator, Staff)
     Route::middleware(['role:business-owner,administrator,staff'])->group(function () {
-        Route::get('/dashboard/feeds', function () {
-            return view('dashboard-main.index')->with('page_title', 'Data Feeds');
-        })->name('dashboard.feeds');
+        Route::get('/dashboard/feeds', [App\Http\Controllers\FeedsController::class, 'index'])->name('dashboard.feeds');
+        Route::get('/dashboard/feeds/activities', [App\Http\Controllers\FeedsController::class, 'getActivitiesData'])->name('dashboard.feeds.activities');
     });
-
-    // Dashboard - Notifications (accessible to all authenticated users)
-    Route::get('/dashboard/notifications', function () {
-        return view('dashboard-main.index')->with('page_title', 'Notifications');
-    })->name('dashboard.notifications');
 
     // Dashboard - Help (accessible to all authenticated users)
     Route::get('/dashboard/help', function () {

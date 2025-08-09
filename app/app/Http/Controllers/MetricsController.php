@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\BusinessMetric;
 use App\Models\Business;
+use App\Models\User;
+use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -55,30 +57,65 @@ class MetricsController extends Controller
         ];
     }
 
+    /**
+     * Display a listing of the metrics.
+     */
     public function index()
     {
+        /** @var User $user */
         $user = Auth::user();
-        $business = Business::where('user_id', $user->id)->first();
 
-        if (!$business) {
-            return redirect()->route('dashboard')->with('error', 'Silakan buat business terlebih dahulu.');
+        if (!$user) {
+            return redirect()->route('login');
         }
 
+        // Get user's primary business or business they're associated with
+        $business = $user->isBusinessOwner()
+            ? $user->primaryBusiness()->first()
+            : $user->businesses()->first();
+
+        if (!$business) {
+            return redirect()->route('dashboard')->with('error', 'No business found. Please complete setup first or ask your business owner for access.');
+        }
+
+        // Get metrics for this business
         $businessMetrics = BusinessMetric::where('business_id', $business->id)
-                                        ->active()
-                                        ->orderBy('created_at', 'desc')
-                                        ->get();
+                                      ->orderBy('created_at', 'desc')
+                                      ->get();
+
+        // Filter metrics based on user role for staff
+        if ($user->isStaff()) {
+            // Staff can only see metrics they can edit/input data
+            $businessMetrics = $businessMetrics->filter(function($metric) {
+                return in_array($metric->metric_type, [
+                    'Total Penjualan',
+                    'Biaya Pokok Penjualan (COGS)',
+                    'Penjualan Produk Terlaris',
+                    'Jumlah Pelanggan Baru',
+                    'Jumlah Pelanggan Setia'
+                ]);
+            });
+        }
 
         return view('dashboard-metrics.index', compact('businessMetrics', 'business'));
     }
 
     public function create()
     {
+        /** @var User $user */
         $user = Auth::user();
-        $business = Business::where('user_id', $user->id)->first();
+
+        // Only Business Owner and Administrator can create/import metrics
+        if (!$user->canImportMetrics()) {
+            abort(403, 'You do not have permission to create metrics. Only business owners and administrators can import new metrics.');
+        }
+
+        $business = $user->isBusinessOwner()
+            ? $user->primaryBusiness()->first()
+            : $user->businesses()->first();
 
         if (!$business) {
-            return redirect()->route('dashboard')->with('error', 'Silakan buat business terlebih dahulu.');
+            return redirect()->route('dashboard')->with('error', 'No business found. Please complete setup first or ask your business owner for access.');
         }
 
         $availableMetrics = $this->getAvailableMetrics();
@@ -94,16 +131,25 @@ class MetricsController extends Controller
 
     public function store(Request $request)
     {
+        /** @var User $user */
+        $user = Auth::user();
+
+        // Only Business Owner and Administrator can create/import metrics
+        if (!$user->canImportMetrics()) {
+            abort(403, 'You do not have permission to create metrics. Only business owners and administrators can import new metrics.');
+        }
+
         $request->validate([
             'selected_metrics' => 'required|array|min:1',
             'selected_metrics.*' => 'string'
         ]);
 
-        $user = Auth::user();
-        $business = Business::where('user_id', $user->id)->first();
+        $business = $user->isBusinessOwner()
+            ? $user->primaryBusiness()->first()
+            : $user->businesses()->first();
 
         if (!$business) {
-            return redirect()->route('dashboard')->with('error', 'Silakan buat business terlebih dahulu.');
+            return redirect()->route('dashboard')->with('error', 'No business found. Please complete setup first or ask your business owner for access.');
         }
 
         $availableMetrics = $this->getAvailableMetrics();
@@ -123,7 +169,7 @@ class MetricsController extends Controller
             if (!$existingMetric) {
                 $metricData = $availableMetrics[$metricName];
 
-                BusinessMetric::create([
+                $newMetric = BusinessMetric::create([
                     'business_id' => $business->id,
                     'metric_name' => $metricName,
                     'category' => $metricData['category'],
@@ -134,6 +180,18 @@ class MetricsController extends Controller
                     'unit' => $metricData['unit'],
                     'is_active' => true
                 ]);
+
+                // Log activity
+                ActivityLog::logActivity(
+                    $business->id,
+                    $user->id,
+                    'metric_created',
+                    'New Metric Created',
+                    "{$user->name} created metric: {$metricName}",
+                    ['metric_id' => $newMetric->id, 'metric_name' => $metricName],
+                    'bi-graph-up-arrow',
+                    'success'
+                );
 
                 $createdCount++;
             }
@@ -148,8 +206,17 @@ class MetricsController extends Controller
 
     public function edit($id)
     {
+        /** @var User $user */
         $user = Auth::user();
-        $business = Business::where('user_id', $user->id)->first();
+
+        // Get user's primary business or business they're associated with
+        $business = $user->isBusinessOwner()
+            ? $user->primaryBusiness()->first()
+            : $user->businesses()->first();
+
+        if (!$business) {
+            return redirect()->route('dashboard')->with('error', 'No business found. Please complete setup first or ask your business owner for access.');
+        }
 
         $businessMetric = BusinessMetric::where('business_id', $business->id)
                                       ->findOrFail($id);
@@ -164,8 +231,17 @@ class MetricsController extends Controller
             'description' => 'nullable|string|max:500'
         ]);
 
+        /** @var User $user */
         $user = Auth::user();
-        $business = Business::where('user_id', $user->id)->first();
+
+        // Get user's primary business or business they're associated with
+        $business = $user->isBusinessOwner()
+            ? $user->primaryBusiness()->first()
+            : $user->businesses()->first();
+
+        if (!$business) {
+            return redirect()->route('dashboard')->with('error', 'No business found. Please complete setup first or ask your business owner for access.');
+        }
 
         $businessMetric = BusinessMetric::where('business_id', $business->id)
                                       ->findOrFail($id);
@@ -182,8 +258,22 @@ class MetricsController extends Controller
 
     public function destroy($id)
     {
+        /** @var User $user */
         $user = Auth::user();
-        $business = Business::where('user_id', $user->id)->first();
+
+        // Only Business Owner and Administrator can delete metrics
+        if (!$user->canDeleteMetrics()) {
+            abort(403, 'You do not have permission to delete metrics.');
+        }
+
+        // Get user's primary business or business they're associated with
+        $business = $user->isBusinessOwner()
+            ? $user->primaryBusiness()->first()
+            : $user->businesses()->first();
+
+        if (!$business) {
+            return redirect()->route('dashboard')->with('error', 'No business found. Please complete setup first or ask your business owner for access.');
+        }
 
         $businessMetric = BusinessMetric::where('business_id', $business->id)
                                       ->findOrFail($id);

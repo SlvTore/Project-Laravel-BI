@@ -49,13 +49,6 @@
             </li>
             @endif
 
-            <!-- Notifications -->
-            <li class="nav-item">
-                <a href="{{ route('dashboard.notifications') }}" class="nav-link {{ request()->routeIs('dashboard.notifications*') ? 'active' : '' }}">
-                    <i class="bi bi-bell nav-icon"></i>
-                    <span class="nav-text">Notifications</span>
-                </a>
-            </li>
 
             <!-- Settings -->
             <li class="nav-item">

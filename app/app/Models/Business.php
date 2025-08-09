@@ -41,6 +41,7 @@ class Business extends Model
     public function users()
     {
         return $this->belongsToMany(User::class, 'business_user')
+                    ->select('users.*')
                     ->withPivot('joined_at')
                     ->withTimestamps();
     }
@@ -56,7 +57,7 @@ class Business extends Model
         do {
             $publicId = 'BIZ-' . strtoupper(uniqid());
         } while (self::where('public_id', $publicId)->exists());
-        
+
         $this->update(['public_id' => $publicId]);
         return $publicId;
     }

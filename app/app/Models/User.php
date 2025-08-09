@@ -46,6 +46,7 @@ class User extends Authenticatable
     public function businesses()
     {
         return $this->belongsToMany(Business::class, 'business_user')
+                    ->select('businesses.*')
                     ->withPivot('joined_at')
                     ->withTimestamps();
     }
