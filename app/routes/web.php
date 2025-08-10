@@ -33,14 +33,10 @@ Route::middleware(['auth'])->group(function () {
 // Dashboard routes - require authentication and setup completion
 Route::middleware(['auth', 'setup.completed'])->group(function () {
     // Main Dashboard
-    Route::get('/dashboard', function () {
-        return view('dashboard-main.index');
-    })->name('dashboard');
+    Route::get('/dashboard', [App\Http\Controllers\Dashboard\MainDashboardController::class, 'index'])->name('dashboard');
 
     // Dashboard - Main/Overview
-    Route::get('/dashboard/main', function () {
-        return view('dashboard-main.index');
-    })->name('dashboard.main');
+    Route::get('/dashboard/main', [App\Http\Controllers\Dashboard\MainDashboardController::class, 'index'])->name('dashboard.main');
 
     // Dashboard - Metrics (accessible to Business Owner, Administrator, Staff)
     Route::middleware(['role:business-owner,administrator,staff'])->group(function () {
@@ -123,6 +119,19 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
     Route::patch('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
     Route::put('/password', [App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('password.update');
     Route::delete('/profile', [App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+// JSON API for Dashboard Goals and AI Insight (authenticated)
+Route::middleware(['auth', 'setup.completed'])->group(function () {
+    Route::prefix('dashboard')->group(function () {
+        Route::get('/goals', [App\Http\Controllers\Dashboard\GoalController::class, 'index'])->name('dashboard.goals.index');
+        Route::post('/goals', [App\Http\Controllers\Dashboard\GoalController::class, 'store'])->name('dashboard.goals.store');
+        Route::put('/goals/{goal}', [App\Http\Controllers\Dashboard\GoalController::class, 'update'])->name('dashboard.goals.update');
+        Route::delete('/goals/{goal}', [App\Http\Controllers\Dashboard\GoalController::class, 'destroy'])->name('dashboard.goals.destroy');
+        Route::post('/goals/{goal}/toggle', [App\Http\Controllers\Dashboard\GoalController::class, 'toggle'])->name('dashboard.goals.toggle');
+
+        Route::post('/ai/insight', [App\Http\Controllers\Dashboard\MainDashboardAIController::class, 'insight'])->name('dashboard.ai.insight');
+    });
 });
 
 // Redirect authenticated users to appropriate page

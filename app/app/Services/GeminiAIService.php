@@ -14,11 +14,14 @@ class GeminiAIService
 
     public function __construct()
     {
-        $this->client = new Client([
+    $this->client = new Client([
             'timeout' => 30,
             'connect_timeout' => 10,
         ]);
-        $this->apiKey = env('GEMINI_API_KEY');
+    $this->apiKey = env('GEMINI_API_KEY');
+    // Allow overriding model from ENV
+    $model = env('GEMINI_MODEL', 'gemini-1.5-flash-latest');
+    $this->baseUrl = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent";
     }
 
     public function generateBusinessInsight($prompt, $context = [])
