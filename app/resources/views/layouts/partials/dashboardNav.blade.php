@@ -65,7 +65,7 @@
 
             <!-- Help Center -->
             <li class="nav-item">
-                <a href="{{ route('dashboard.help') }}" class="nav-link {{ request()->routeIs('dashboard.help*') ? 'active' : '' }}">
+                <a href="{{ route('help-center.index') }}" class="nav-link {{ request()->routeIs('help-center*') ? 'active' : '' }}">
                     <i class="bi bi-question-circle nav-icon"></i>
                     <span class="nav-text">Help Center</span>
                 </a>
@@ -77,7 +77,7 @@
             <div class="user-dropdown dropdown dropup">
                 <button class="user-btn dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                     <div class="user-avatar">
-                        <i class="bi bi-person-circle"></i>
+                        <img src="{{ Auth::user()->getAvatarUrl() }}" alt="Avatar" class="avatar-img">
                     </div>
                     <div class="user-info">
                         <span class="user-name">{{ Auth::user()->name }}</span>
@@ -88,7 +88,7 @@
 
                 <ul class="dropdown-menu user-dropdown-menu" aria-labelledby="userDropdown">
                     <li>
-                        <a class="dropdown-item" href="{{ route('profile.show') }}">
+                        <a class="dropdown-item" href="{{ route('profile.index') }}">
                             <i class="bi bi-person-circle me-2"></i>
                             Profile
                         </a>
@@ -283,6 +283,20 @@
 .user-avatar {
     font-size: 1.8rem;
     min-width: 30px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-avatar .avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
 }
 
 .user-info {

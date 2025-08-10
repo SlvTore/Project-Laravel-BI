@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
 {
@@ -23,6 +24,9 @@ class User extends Authenticatable
         'business_metrics',
         'setup_completed',
         'setup_completed_at',
+        'theme',
+        'accent_color',
+        'avatar_path',
     ];
 
     protected $hidden = [
@@ -153,5 +157,31 @@ class User extends Authenticatable
     public function isActive()
     {
         return $this->is_active;
+    }
+
+    /**
+     * Get user avatar URL
+     */
+    public function getAvatarUrl()
+    {
+        if ($this->avatar_path) {
+            return Storage::url($this->avatar_path);
+        }
+
+        // Return default avatar or gravatar
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&color=ffffff&background=007bff&size=200';
+    }
+
+    /**
+     * Get user initials for avatar fallback
+     */
+    public function getInitials()
+    {
+        $words = explode(' ', $this->name);
+        $initials = '';
+        foreach ($words as $word) {
+            $initials .= strtoupper(substr($word, 0, 1));
+        }
+        return substr($initials, 0, 2);
     }
 }

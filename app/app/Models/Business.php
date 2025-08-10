@@ -21,6 +21,8 @@ class Business extends Model
         'goals',
         'public_id',
         'invitation_code',
+        'logo_path',
+        'dashboard_display_name',
     ];
 
     protected function casts(): array
@@ -49,6 +51,16 @@ class Business extends Model
     public function metrics()
     {
         return $this->hasMany(BusinessMetric::class);
+    }
+
+    public function goals()
+    {
+        return $this->hasMany(Goal::class);
+    }
+
+    public function activityLogs()
+    {
+        return $this->hasMany(ActivityLog::class);
     }
 
     // Helper methods

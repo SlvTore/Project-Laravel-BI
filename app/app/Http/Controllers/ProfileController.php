@@ -9,15 +9,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
     /**
-     * Display the user's profile.
+     * Display the user's profile page with edit functionality.
      */
-    public function show(Request $request): View
+    public function index(Request $request): View
     {
         $user = $request->user();
 
@@ -30,29 +31,7 @@ class ProfileController extends Controller
             $business = $user->businesses()->first();
         }
 
-        return view('profile.show', [
-            'user' => $user,
-            'business' => $business,
-        ]);
-    }
-
-    /**
-     * Display the user's profile form.
-     */
-    public function edit(Request $request): View
-    {
-        $user = $request->user();
-
-        // Get business information for the user
-        $business = null;
-        if ($user->isBusinessOwner()) {
-            $business = $user->primaryBusiness()->first();
-        } else {
-            // For staff and admin, get the business they're associated with
-            $business = $user->businesses()->first();
-        }
-
-        return view('profile.edit', [
+        return view('profile.index', [
             'user' => $user,
             'business' => $business,
         ]);
@@ -63,15 +42,39 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        // Handle avatar removal first
+        if ($request->input('remove_avatar') === '1' && $user->avatar_path) {
+            // Delete the old avatar file
+            if (Storage::disk('public')->exists($user->avatar_path)) {
+                Storage::disk('public')->delete($user->avatar_path);
+            }
+            $user->avatar_path = null;
         }
 
-        $request->user()->save();
+        // Handle avatar upload
+        if ($request->hasFile('avatar')) {
+            // Delete the old avatar if it exists
+            if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
+                Storage::disk('public')->delete($user->avatar_path);
+            }
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+            // Store the new avatar
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $user->avatar_path = $avatarPath;
+        }
+
+        // Update other profile fields
+        $user->fill($request->validated());
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
+        }
+
+        $user->save();
+
+        return Redirect::route('profile.index')->with('status', 'profile-updated');
     }
 
     /**
@@ -89,7 +92,7 @@ class ProfileController extends Controller
         $user->password = Hash::make($validated['password']);
         $user->save();
 
-        return Redirect::route('profile.edit')->with('status', 'password-updated');
+        return Redirect::route('profile.index')->with('status', 'password-updated');
     }
 
     /**

@@ -3,501 +3,279 @@
 @section('title', 'Settings')
 
 @section('content')
-    <div class="content-header">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="content-title">Settings</h1>
-                <p class="content-subtitle">Manage your account and application preferences</p>
+<div class="container-fluid p-4 ms-4">
+    {{-- Settings Header --}}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h1 class="h3 mb-1 text-primary fw-bold">Settings</h1>
+                            <p class="text-muted mb-0">Manage your business preferences and configuration</p>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-primary-subtle text-primary">Business Owner</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="content-body">
-        <div class="row">
-            <!-- Settings Navigation -->
-            <div class="col-md-3 mb-4">
-                <div class="dashboard-card">
-                    <div class="card-body p-0">
-                        <div class="settings-nav">
-                        <a href="#profile" class="settings-nav-item active" data-target="profile">
-                            <i class="bi bi-person-circle me-3"></i>
-                            Profile Settings
-                        </a>
-                        <a href="#account" class="settings-nav-item" data-target="account">
-                            <i class="bi bi-gear me-3"></i>
-                            Account Settings
-                        </a>
-                        <a href="#security" class="settings-nav-item" data-target="security">
-                            <i class="bi bi-shield-lock me-3"></i>
-                            Security
-                        </a>
-                        <a href="#notifications" class="settings-nav-item" data-target="notifications">
-                            <i class="bi bi-bell me-3"></i>
-                            Notifications
-                        </a>
-                        <a href="#billing" class="settings-nav-item" data-target="billing">
-                            <i class="bi bi-credit-card me-3"></i>
-                            Billing & Plans
-                        </a>
-                        <a href="#team" class="settings-nav-item" data-target="team">
-                            <i class="bi bi-people me-3"></i>
-                            Team Management
-                        </a>
-                        <a href="#integrations" class="settings-nav-item" data-target="integrations">
-                            <i class="bi bi-plug me-3"></i>
-                            Integrations
-                        </a>
-                        <a href="#advanced" class="settings-nav-item" data-target="advanced">
-                            <i class="bi bi-sliders me-3"></i>
-                            Advanced
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
+    {{-- Settings Sections --}}
+    <div class="row">
+        <div class="col-12">
+            <div class="accordion" id="settingsAccordion">
 
-        <!-- Settings Content -->
-        <div class="col-md-9">
-            <!-- Profile Settings -->
-            <div id="profile" class="settings-section">
-                <div class="content-card mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title fw-bold mb-4">Profile Information</h5>
-                        <form>
-                            <div class="row g-3">
-                                <div class="col-12 text-center mb-4">
-                                    <div class="profile-image-container">
-                                        <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&h=120&fit=crop&crop=face"
-                                             alt="Profile" class="profile-image rounded-circle" width="120" height="120">
-                                        <button type="button" class="btn btn-sm btn-primary profile-image-overlay">
-                                            <i class="bi bi-camera"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">First Name</label>
-                                    <input type="text" class="form-control" value="John">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Last Name</label>
-                                    <input type="text" class="form-control" value="Doe">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Email</label>
-                                    <input type="email" class="form-control" value="john.doe@example.com">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Phone</label>
-                                    <input type="tel" class="form-control" value="+1 (555) 123-4567">
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label fw-semibold">Bio</label>
-                                    <textarea class="form-control" rows="3">Business Intelligence Specialist with 5+ years of experience in data analysis and visualization.</textarea>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Company</label>
-                                    <input type="text" class="form-control" value="Tech Solutions Inc.">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Position</label>
-                                    <input type="text" class="form-control" value="Senior BI Analyst">
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-end mt-4">
-                                <button type="button" class="btn btn-outline-secondary me-2">Cancel</button>
-                                <button type="submit" class="btn btn-primary">Save Changes</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Account Settings -->
-            <div id="account" class="settings-section d-none">
-                <div class="content-card mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title fw-bold mb-4">Account Preferences</h5>
-                        <form>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Language</label>
-                                    <select class="form-select">
-                                        <option selected>English (US)</option>
-                                        <option>English (UK)</option>
-                                        <option>Spanish</option>
-                                        <option>French</option>
-                                        <option>German</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Timezone</label>
-                                    <select class="form-select">
-                                        <option selected>UTC-05:00 (Eastern Time)</option>
-                                        <option>UTC-08:00 (Pacific Time)</option>
-                                        <option>UTC+00:00 (GMT)</option>
-                                        <option>UTC+01:00 (Central European Time)</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Date Format</label>
-                                    <select class="form-select">
-                                        <option selected>MM/DD/YYYY</option>
-                                        <option>DD/MM/YYYY</option>
-                                        <option>YYYY-MM-DD</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Currency</label>
-                                    <select class="form-select">
-                                        <option selected>USD ($)</option>
-                                        <option>EUR (€)</option>
-                                        <option>GBP (£)</option>
-                                        <option>JPY (¥)</option>
-                                    </select>
-                                </div>
-                                <div class="col-12">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="darkMode">
-                                        <label class="form-check-label fw-semibold" for="darkMode">
-                                            Enable Dark Mode
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="autoSave" checked>
-                                        <label class="form-check-label fw-semibold" for="autoSave">
-                                            Auto-save changes
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-end mt-4">
-                                <button type="button" class="btn btn-outline-secondary me-2">Reset</button>
-                                <button type="submit" class="btn btn-primary">Save Preferences</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Security Settings -->
-            <div id="security" class="settings-section d-none">
-                <div class="content-card mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title fw-bold mb-4">Password & Security</h5>
-                        <form>
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <label class="form-label fw-semibold">Current Password</label>
-                                    <input type="password" class="form-control">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">New Password</label>
-                                    <input type="password" class="form-control">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Confirm New Password</label>
-                                    <input type="password" class="form-control">
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-end mt-4">
-                                <button type="submit" class="btn btn-primary">Update Password</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <div class="content-card mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title fw-bold mb-4">Two-Factor Authentication</h5>
-                        <div class="d-flex justify-content-between align-items-center">
+                {{-- Dashboard Personalization Section --}}
+                <div class="accordion-item border-0 shadow-sm mb-3">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#personalizationSection" aria-expanded="true">
+                            <i class="fas fa-palette me-3 text-primary"></i>
                             <div>
-                                <p class="mb-1 fw-semibold">Authenticator App</p>
-                                <small class="text-muted">Use an authenticator app to generate verification codes</small>
+                                <div class="fw-semibold">Dashboard Personalization</div>
+                                <small class="text-muted">Customize your dashboard branding and appearance</small>
                             </div>
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="twoFA">
-                                <label class="form-check-label" for="twoFA"></label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="content-card">
-                    <div class="card-body">
-                        <h5 class="card-title fw-bold mb-4">Login Activity</h5>
-                        <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Device</th>
-                                        <th>Location</th>
-                                        <th>Date</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <i class="bi bi-laptop me-2"></i>
-                                            Chrome on Windows
-                                        </td>
-                                        <td>New York, US</td>
-                                        <td>2 hours ago</td>
-                                        <td><span class="badge bg-success">Current</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <i class="bi bi-phone me-2"></i>
-                                            Mobile App
-                                        </td>
-                                        <td>New York, US</td>
-                                        <td>1 day ago</td>
-                                        <td><span class="badge bg-secondary">Inactive</span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Notifications Settings -->
-            <div id="notifications" class="settings-section d-none">
-                <div class="content-card">
-                    <div class="card-body">
-                        <h5 class="card-title fw-bold mb-4">Notification Preferences</h5>
-                        <div class="notification-settings">
-                            <div class="notification-category">
-                                <h6 class="fw-semibold mb-3">Email Notifications</h6>
-                                <div class="mb-3">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="emailReports" checked>
-                                        <label class="form-check-label" for="emailReports">
-                                            Weekly reports
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="emailAlerts" checked>
-                                        <label class="form-check-label" for="emailAlerts">
-                                            System alerts
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="emailMarketing">
-                                        <label class="form-check-label" for="emailMarketing">
-                                            Marketing emails
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <hr>
-
-                            <div class="notification-category">
-                                <h6 class="fw-semibold mb-3">Push Notifications</h6>
-                                <div class="mb-3">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="pushGoals" checked>
-                                        <label class="form-check-label" for="pushGoals">
-                                            Goal achievements
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="pushComments" checked>
-                                        <label class="form-check-label" for="pushComments">
-                                            New comments
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="pushUpdates">
-                                        <label class="form-check-label" for="pushUpdates">
-                                            System updates
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="d-flex justify-content-end mt-4">
-                            <button type="button" class="btn btn-primary">Save Preferences</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Billing Settings -->
-            <div id="billing" class="settings-section d-none">
-                <div class="content-card mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title fw-bold mb-4">Current Plan</h5>
-                        <div class="current-plan">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="fw-bold text-primary">Professional Plan</h6>
-                                    <p class="text-muted mb-0">$29/month • Billed monthly</p>
-                                </div>
-                                <button class="btn btn-outline-primary">Upgrade Plan</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="content-card">
-                    <div class="card-body">
-                        <h5 class="card-title fw-bold mb-4">Payment Methods</h5>
-                        <div class="payment-methods">
-                            <div class="payment-method">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-credit-card text-primary me-3" style="font-size: 1.5rem;"></i>
-                                        <div>
-                                            <p class="mb-0 fw-semibold">•••• •••• •••• 4242</p>
-                                            <small class="text-muted">Expires 12/25</small>
-                                        </div>
-                                    </div>
-                                    <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-secondary">Edit</button>
-                                        <button class="btn btn-outline-danger">Remove</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="btn btn-outline-primary mt-3">
-                            <i class="bi bi-plus-lg me-2"></i>Add Payment Method
                         </button>
-                    </div>
-                </div>
-            </div>
+                    </h2>
+                    <div id="personalizationSection" class="accordion-collapse collapse show" data-bs-parent="#settingsAccordion">
+                        <div class="accordion-body">
+                            <div class="row">
+                                {{-- Logo Upload --}}
+                                <div class="col-md-6 mb-4">
+                                    <h6 class="fw-semibold text-dark mb-3">Business Logo</h6>
+                                    <div class="text-center">
+                                        <div class="logo-preview mb-3" style="height: 120px; width: 120px; margin: 0 auto;">
+                                            @if($business->logo_path)
+                                                <img src="{{ Storage::url($business->logo_path) }}" alt="Business Logo" class="img-fluid rounded border" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+                                            @else
+                                                <div class="d-flex align-items-center justify-content-center h-100 bg-light rounded border">
+                                                    <i class="fas fa-building text-muted" style="font-size: 2.5rem;"></i>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <form id="logoForm" enctype="multipart/form-data">
+                                            @csrf
+                                            <div class="mb-3">
+                                                <input type="file" class="form-control" id="logoInput" name="logo" accept="image/*">
+                                                <div class="form-text">Upload a logo (JPEG, PNG, JPG - Max: 2MB)</div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
 
-            <!-- Team Management -->
-            <div id="team" class="settings-section d-none">
-                <div class="content-card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h5 class="card-title fw-bold mb-0">Team Members</h5>
-                            <button class="btn btn-primary">
-                                <i class="bi bi-plus-lg me-2"></i>Invite Member
-                            </button>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Member</th>
-                                        <th>Role</th>
-                                        <th>Status</th>
-                                        <th>Joined</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=40&h=40&fit=crop&crop=face"
-                                                     alt="User" class="rounded-circle me-3" width="40" height="40">
-                                                <div>
-                                                    <div class="fw-semibold">Jane Smith</div>
-                                                    <small class="text-muted">jane@example.com</small>
+                                {{-- Display Name --}}
+                                <div class="col-md-6 mb-4">
+                                    <h6 class="fw-semibold text-dark mb-3">Dashboard Display Name</h6>
+                                    <form id="brandingForm">
+                                        @csrf
+                                        <div class="mb-3">
+                                            <input type="text" class="form-control" id="dashboardDisplayName" name="dashboard_display_name"
+                                                   value="{{ $business->dashboard_display_name ?? $business->business_name }}"
+                                                   placeholder="Enter dashboard display name">
+                                            <div class="form-text">This name will appear on your dashboard</div>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-2"></i>Update Branding
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            {{-- Theme Preferences --}}
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <h6 class="fw-semibold text-dark mb-3">Theme Preferences</h6>
+                                    <form id="preferencesForm">
+                                        @csrf
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="theme" class="form-label">Theme</label>
+                                                <select class="form-select" id="theme" name="theme">
+                                                    <option value="light" {{ ($user->theme ?? 'light') == 'light' ? 'selected' : '' }}>Light</option>
+                                                    <option value="dark" {{ ($user->theme ?? 'light') == 'dark' ? 'selected' : '' }}>Dark</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="accentColor" class="form-label">Accent Color</label>
+                                                <div class="input-group">
+                                                    <input type="color" class="form-control form-control-color" id="accentColor" name="accent_color"
+                                                           value="{{ $user->accent_color ?? '#007bff' }}" title="Choose accent color">
+                                                    <input type="text" class="form-control" value="{{ $user->accent_color ?? '#007bff' }}" readonly>
                                                 </div>
                                             </div>
-                                        </td>
-                                        <td><span class="badge bg-primary-subtle text-primary">Admin</span></td>
-                                        <td><span class="badge bg-success">Active</span></td>
-                                        <td>Jan 15, 2024</td>
-                                        <td>
-                                            <div class="btn-group btn-group-sm">
-                                                <button class="btn btn-outline-secondary">Edit</button>
-                                                <button class="btn btn-outline-danger">Remove</button>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-2"></i>Update Preferences
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Security & Access Section --}}
+                <div class="accordion-item border-0 shadow-sm mb-3">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#securitySection">
+                            <i class="fas fa-shield-alt me-3 text-success"></i>
+                            <div>
+                                <div class="fw-semibold">Security & Access</div>
+                                <small class="text-muted">Manage invitation codes and ownership settings</small>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="securitySection" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
+                        <div class="accordion-body">
+                            <div class="row">
+                                {{-- Invitation Code --}}
+                                <div class="col-md-6 mb-4">
+                                    <h6 class="fw-semibold text-dark mb-3">
+                                        <i class="fas fa-link me-2"></i>Invitation Code
+                                    </h6>
+                                    <div class="card bg-light border-0">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                                <div>
+                                                    <p class="mb-1 text-muted">Current Code:</p>
+                                                    <span class="badge bg-primary fs-6" id="currentInvitationCode">{{ $business->invitation_code }}</span>
+                                                </div>
+                                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="copyInvitationCode()">
+                                                    <i class="fas fa-copy me-1"></i>Copy
+                                                </button>
                                             </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Integrations -->
-            <div id="integrations" class="settings-section d-none">
-                <div class="content-card">
-                    <div class="card-body">
-                        <h5 class="card-title fw-bold mb-4">Connected Integrations</h5>
-                        <div class="integrations-grid">
-                            <div class="integration-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div class="d-flex align-items-center">
-                                        <div class="integration-icon me-3">
-                                            <i class="bi bi-google text-danger"></i>
-                                        </div>
-                                        <div>
-                                            <h6 class="mb-1">Google Analytics</h6>
-                                            <small class="text-muted">Track website performance</small>
+                                            <p class="text-muted small mb-3">Share this code with team members to join your business.</p>
+                                            <button type="button" class="btn btn-warning btn-sm" onclick="regenerateInvitationCode()">
+                                                <i class="fas fa-refresh me-1"></i>Regenerate Code
+                                            </button>
                                         </div>
                                     </div>
-                                    <button class="btn btn-sm btn-success">Connected</button>
                                 </div>
-                            </div>
-                            <div class="integration-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div class="d-flex align-items-center">
-                                        <div class="integration-icon me-3">
-                                            <i class="bi bi-slack text-primary"></i>
-                                        </div>
-                                        <div>
-                                            <h6 class="mb-1">Slack</h6>
-                                            <small class="text-muted">Get notifications in Slack</small>
+
+                                {{-- Business Information --}}
+                                <div class="col-md-6 mb-4">
+                                    <h6 class="fw-semibold text-dark mb-3">
+                                        <i class="fas fa-info-circle me-2"></i>Business Information
+                                    </h6>
+                                    <div class="card bg-light border-0">
+                                        <div class="card-body">
+                                            <div class="mb-2">
+                                                <strong>Business ID:</strong> {{ $business->public_id }}
+                                            </div>
+                                            <div class="mb-2">
+                                                <strong>Owner:</strong> {{ $user->name }}
+                                            </div>
+                                            <div class="mb-2">
+                                                <strong>Members:</strong> {{ $business->users()->count() }} users
+                                            </div>
+                                            <div>
+                                                <strong>Created:</strong> {{ $business->created_at->format('M d, Y') }}
+                                            </div>
                                         </div>
                                     </div>
-                                    <button class="btn btn-sm btn-outline-primary">Connect</button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Advanced Settings -->
-            <div id="advanced" class="settings-section d-none">
-                <div class="content-card">
-                    <div class="card-body">
-                        <h5 class="card-title fw-bold mb-4">Advanced Settings</h5>
-                        <div class="alert alert-warning">
-                            <i class="bi bi-exclamation-triangle me-2"></i>
-                            These settings are for advanced users only. Changing these settings may affect your account functionality.
+                {{-- Danger Zone Section --}}
+                <div class="accordion-item border-0 shadow-sm mb-3">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dangerSection">
+                            <i class="fas fa-exclamation-triangle me-3 text-danger"></i>
+                            <div>
+                                <div class="fw-semibold">Danger Zone</div>
+                                <small class="text-muted">Irreversible actions - proceed with caution</small>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="dangerSection" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
+                        <div class="accordion-body">
+                            <div class="row">
+                                {{-- Transfer Ownership --}}
+                                <div class="col-md-6 mb-4">
+                                    <div class="card border-warning">
+                                        <div class="card-header bg-warning-subtle">
+                                            <h6 class="mb-0 fw-semibold">
+                                                <i class="fas fa-exchange-alt me-2"></i>Transfer Ownership
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="text-muted small mb-3">Transfer business ownership to another team member.</p>
+                                            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#transferOwnershipModal">
+                                                <i class="fas fa-exchange-alt me-2"></i>Transfer Ownership
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Delete Business --}}
+                                <div class="col-md-6 mb-4">
+                                    <div class="card border-danger">
+                                        <div class="card-header bg-danger-subtle">
+                                            <h6 class="mb-0 fw-semibold">
+                                                <i class="fas fa-trash me-2"></i>Delete Business
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="text-muted small mb-3">Permanently delete this business and all associated data.</p>
+                                            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteBusinessModal">
+                                                <i class="fas fa-trash me-2"></i>Delete Business
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="debugMode">
-                                    <label class="form-check-label fw-semibold" for="debugMode">
-                                        Enable Debug Mode
-                                    </label>
-                                </div>
+                    </div>
+                </div>
+
+                {{-- App Information Section --}}
+                <div class="accordion-item border-0 shadow-sm">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#appInfoSection">
+                            <i class="fas fa-info me-3 text-info"></i>
+                            <div>
+                                <div class="fw-semibold">App Information</div>
+                                <small class="text-muted">System information and support</small>
                             </div>
-                            <div class="col-12">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="apiAccess">
-                                    <label class="form-check-label fw-semibold" for="apiAccess">
-                                        API Access
-                                    </label>
+                        </button>
+                    </h2>
+                    <div id="appInfoSection" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
+                        <div class="accordion-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="fw-semibold text-dark mb-3">System Information</h6>
+                                    <div class="card bg-light border-0">
+                                        <div class="card-body">
+                                            <div class="mb-2"><strong>Laravel Version:</strong> {{ app()->version() }}</div>
+                                            <div class="mb-2"><strong>PHP Version:</strong> {{ PHP_VERSION }}</div>
+                                            <div class="mb-2"><strong>Environment:</strong> {{ app()->environment() }}</div>
+                                            <div><strong>Last Update:</strong> {{ date('M d, Y') }}</div>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-12">
-                                <hr>
-                                <h6 class="text-danger fw-bold">Danger Zone</h6>
-                                <button class="btn btn-outline-danger me-2">Export Data</button>
-                                <button class="btn btn-danger">Delete Account</button>
+                                <div class="col-md-6">
+                                    <h6 class="fw-semibold text-dark mb-3">Support & Resources</h6>
+                                    <div class="card bg-light border-0">
+                                        <div class="card-body">
+                                            <div class="d-grid gap-2">
+                                                <a href="#" class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-question-circle me-2"></i>Help Center
+                                                </a>
+                                                <a href="#" class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-envelope me-2"></i>Contact Support
+                                                </a>
+                                                <a href="#" class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-file-alt me-2"></i>Documentation
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -505,167 +283,328 @@
             </div>
         </div>
     </div>
+</div>
+
+{{-- Transfer Ownership Modal --}}
+<div class="modal fade" id="transferOwnershipModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exchange-alt me-2"></i>Transfer Ownership
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="transferOwnershipForm">
+                @csrf
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> This action cannot be undone. You will lose ownership of this business.
+                    </div>
+                    <div class="mb-3">
+                        <label for="newOwnerEmail" class="form-label">New Owner Email</label>
+                        <input type="email" class="form-control" id="newOwnerEmail" name="new_owner_email" required>
+                        <div class="form-text">Enter the email address of the team member who will become the new owner.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Transfer Ownership</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Delete Business Modal --}}
+<div class="modal fade" id="deleteBusinessModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-trash me-2"></i>Delete Business
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="deleteBusinessForm">
+                @csrf
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Danger:</strong> This action is irreversible! All business data, metrics, and user associations will be permanently deleted.
+                    </div>
+                    <p>To confirm deletion, type <strong>DELETE</strong> in the field below:</p>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="deleteConfirmation" name="confirmation" placeholder="Type DELETE to confirm" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger" disabled id="deleteConfirmButton">Delete Business</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection
 
-@push('styles')
-<style>
-    .settings-nav {
-        padding: 0;
-    }
-
-    .settings-nav-item {
-        display: block;
-        padding: 1rem 1.25rem;
-        color: #6c757d;
-        text-decoration: none;
-        border-bottom: 1px solid #f0f0f0;
-        transition: all 0.3s ease;
-    }
-
-    .settings-nav-item:hover,
-    .settings-nav-item.active {
-        background: linear-gradient(135deg, rgba(124, 185, 71, 0.1) 0%, rgba(30, 60, 128, 0.1) 100%);
-        color: #1e3c80;
-        border-left: 3px solid #7cb947;
-    }
-
-    .settings-nav-item:last-child {
-        border-bottom: none;
-    }
-
-    .profile-image-container {
-        position: relative;
-        display: inline-block;
-    }
-
-    .profile-image {
-        object-fit: cover;
-        border: 4px solid #fff;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .profile-image-overlay {
-        position: absolute;
-        bottom: 0;
-        right: 0;
-        border-radius: 50%;
-        width: 36px;
-        height: 36px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .notification-category {
-        margin-bottom: 1.5rem;
-    }
-
-    .form-check-input:checked {
-        background-color: #7cb947;
-        border-color: #7cb947;
-    }
-
-    .payment-method {
-        border: 1px solid #e9ecef;
-        border-radius: 8px;
-        padding: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    .integration-item {
-        border: 1px solid #e9ecef;
-        border-radius: 8px;
-        padding: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    .integration-icon {
-        width: 40px;
-        height: 40px;
-        background: #f8f9fa;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.25rem;
-    }
-</style>
-@endpush
-
-@push('scripts')
+@section('scripts')
 <script>
-    $(function() {
-        // Settings Navigation
-        $('.settings-nav-item').click(function(e) {
-            e.preventDefault();
-
-            // Remove active class from all nav items
-            $('.settings-nav-item').removeClass('active');
-
-            // Add active class to clicked item
-            $(this).addClass('active');
-
-            // Hide all settings sections
-            $('.settings-section').addClass('d-none');
-
-            // Show target section
-            const target = $(this).data('target');
-            $('#' + target).removeClass('d-none');
-        });
-
-        // Profile image upload simulation
-        $('.profile-image-overlay').click(function() {
-            // Create a file input
-            const fileInput = $('<input type="file" accept="image/*" style="display: none;">');
-
-            fileInput.change(function() {
-                const file = this.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        $('.profile-image').attr('src', e.target.result);
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-
-            // Append to body and trigger click
-            $('body').append(fileInput);
-            fileInput.click();
-            fileInput.remove();
-        });
-
-        // Form submissions (simulated)
-        $('form').submit(function(e) {
-            e.preventDefault();
-
-            // Show success toast
-            const toast = `
-                <div class="toast-container position-fixed bottom-0 end-0 p-3">
-                    <div class="toast show" role="alert">
-                        <div class="toast-header">
-                            <i class="bi bi-check-circle-fill text-success me-2"></i>
-                            <strong class="me-auto">Success</strong>
-                            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-                        </div>
-                        <div class="toast-body">
-                            Settings saved successfully!
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            $('body').append(toast);
-
-            // Remove toast after 3 seconds
-            setTimeout(() => {
-                $('.toast-container').remove();
-            }, 3000);
-        });
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle logo upload
+    document.getElementById('logoInput').addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            handleLogoUpload();
+        }
     });
-</script>
-@endpush
 
+    // Handle branding form
+    document.getElementById('brandingForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        updateBranding();
+    });
+
+    // Handle preferences form
+    document.getElementById('preferencesForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        updatePreferences();
+    });
+
+    // Handle transfer ownership form
+    document.getElementById('transferOwnershipForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        transferOwnership();
+    });
+
+    // Handle delete business form
+    document.getElementById('deleteBusinessForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        deleteBusiness();
+    });
+
+    // Enable/disable delete button based on confirmation text
+    document.getElementById('deleteConfirmation').addEventListener('input', function() {
+        const deleteButton = document.getElementById('deleteConfirmButton');
+        deleteButton.disabled = this.value !== 'DELETE';
+    });
+
+    // Update accent color text when color picker changes
+    document.getElementById('accentColor').addEventListener('change', function() {
+        this.nextElementSibling.value = this.value;
+    });
+});
+
+// Logo upload function
+function handleLogoUpload() {
+    const formData = new FormData();
+    const logoFile = document.getElementById('logoInput').files[0];
+    const displayName = document.getElementById('dashboardDisplayName').value;
+
+    formData.append('logo', logoFile);
+    formData.append('dashboard_display_name', displayName);
+    formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+
+    fetch('/settings/branding', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.logo_url) {
+                document.querySelector('.logo-preview img, .logo-preview div').outerHTML =
+                    `<img src="${data.logo_url}" alt="Business Logo" class="img-fluid rounded border" style="max-height: 100%; max-width: 100%; object-fit: contain;">`;
+            }
+            showAlert('success', data.message);
+        } else {
+            showAlert('danger', data.error || 'Failed to upload logo');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'An error occurred while uploading the logo');
+    });
+}
+
+// Update branding function
+function updateBranding() {
+    const formData = new FormData(document.getElementById('brandingForm'));
+
+    fetch('/settings/branding', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message);
+        } else {
+            showAlert('danger', data.error || 'Failed to update branding');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'An error occurred while updating branding');
+    });
+}
+
+// Update preferences function
+function updatePreferences() {
+    const formData = new FormData(document.getElementById('preferencesForm'));
+
+    fetch('/settings/preferences', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message);
+            // Apply theme changes immediately if needed
+            applyThemeChanges(formData.get('theme'), formData.get('accent_color'));
+        } else {
+            showAlert('danger', data.error || 'Failed to update preferences');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'An error occurred while updating preferences');
+    });
+}
+
+// Copy invitation code function
+function copyInvitationCode() {
+    const code = document.getElementById('currentInvitationCode').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+        showAlert('success', 'Invitation code copied to clipboard!');
+    }).catch(() => {
+        showAlert('warning', 'Failed to copy to clipboard');
+    });
+}
+
+// Regenerate invitation code function
+function regenerateInvitationCode() {
+    if (!confirm('Are you sure you want to regenerate the invitation code? The old code will no longer work.')) {
+        return;
+    }
+
+    fetch('/settings/invitation/regenerate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('currentInvitationCode').textContent = data.new_code;
+            showAlert('success', data.message);
+        } else {
+            showAlert('danger', data.error || 'Failed to regenerate invitation code');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'An error occurred while regenerating invitation code');
+    });
+}
+
+// Transfer ownership function
+function transferOwnership() {
+    const formData = new FormData(document.getElementById('transferOwnershipForm'));
+
+    fetch('/settings/ownership/transfer', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message);
+            bootstrap.Modal.getInstance(document.getElementById('transferOwnershipModal')).hide();
+            // Redirect to dashboard after successful transfer
+            setTimeout(() => {
+                window.location.href = '/dashboard';
+            }, 2000);
+        } else {
+            showAlert('danger', data.error || 'Failed to transfer ownership');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'An error occurred while transferring ownership');
+    });
+}
+
+// Delete business function
+function deleteBusiness() {
+    const formData = new FormData(document.getElementById('deleteBusinessForm'));
+
+    fetch('/settings/business', {
+        method: 'DELETE',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message);
+            bootstrap.Modal.getInstance(document.getElementById('deleteBusinessModal')).hide();
+            // Redirect after successful deletion
+            setTimeout(() => {
+                window.location.href = data.redirect || '/dashboard';
+            }, 2000);
+        } else {
+            showAlert('danger', data.error || 'Failed to delete business');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'An error occurred while deleting business');
+    });
+}
+
+// Apply theme changes function
+function applyThemeChanges(theme, accentColor) {
+    // Apply theme changes to the current page
+    if (theme === 'dark') {
+        document.body.classList.add('dark-theme');
+    } else {
+        document.body.classList.remove('dark-theme');
+    }
+
+    // Update CSS custom properties for accent color
+    document.documentElement.style.setProperty('--bs-primary', accentColor);
+}
+
+// Show alert function
+function showAlert(type, message) {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    </div>
+    `;
+
+    // Remove existing alerts
+    document.querySelectorAll('.alert').forEach(alert => alert.remove());
+
+    // Add new alert at the top of the container
+    const container = document.querySelector('.container-fluid');
+    container.insertAdjacentHTML('afterbegin', alertHtml);
+
+    // Auto-hide success alerts after 5 seconds
+    if (type === 'success') {
+        setTimeout(() => {
+            const alert = document.querySelector('.alert');
+            if (alert) {
+                bootstrap.Alert.getOrCreateInstance(alert).close();
+            }
+        }, 5000);
+    }
+}
+</script>
 @endsection

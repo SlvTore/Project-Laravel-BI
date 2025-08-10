@@ -92,9 +92,14 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
     });
 
     // Dashboard - Settings
-    Route::get('/dashboard/settings', function () {
-        return view('dashboard-settings.index');
-    })->name('dashboard.settings');
+    Route::middleware(['role:business-owner'])->group(function () {
+        Route::get('/dashboard/settings', [\App\Http\Controllers\SettingsController::class, 'index'])->name('dashboard.settings');
+        Route::post('/settings/branding', [\App\Http\Controllers\SettingsController::class, 'updateBranding'])->name('settings.branding.update');
+        Route::post('/settings/preferences', [\App\Http\Controllers\SettingsController::class, 'updatePreferences'])->name('settings.preferences.update');
+        Route::post('/settings/invitation/regenerate', [\App\Http\Controllers\SettingsController::class, 'regenerateInvitationCode'])->name('settings.invitation.regenerate');
+        Route::post('/settings/ownership/transfer', [\App\Http\Controllers\SettingsController::class, 'transferOwnership'])->name('settings.ownership.transfer');
+        Route::delete('/settings/business', [\App\Http\Controllers\SettingsController::class, 'destroy'])->name('settings.business.destroy');
+    });
 
     // Dashboard - Feeds (accessible to Business Owner, Administrator, Staff)
     Route::middleware(['role:business-owner,administrator,staff'])->group(function () {
@@ -104,17 +109,14 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
 
     // Dashboard - Help (accessible to all authenticated users)
     Route::get('/dashboard/help', function () {
-        return view('dashboard-main.index')->with('page_title', 'Help & Support');
+        return view('dashboard-main.help')->with('page_title', 'Help & Support');
     })->name('dashboard.help');
 
-    // Profile routes (accessible to all authenticated users)
-    Route::get('/profile', function () {
-        return view('profile.show');
-    })->name('profile.show');
+    // Help Center routes (accessible to all authenticated users)
+    Route::get('/help-center', [App\Http\Controllers\HelpCenterController::class, 'index'])->name('help-center.index');
 
-    Route::get('/profile/edit', function () {
-        return view('profile.edit');
-    })->name('profile.edit');
+    // Profile routes (accessible to all authenticated users)
+    Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'index'])->name('profile.index');
 
     Route::patch('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
     Route::put('/password', [App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('password.update');
