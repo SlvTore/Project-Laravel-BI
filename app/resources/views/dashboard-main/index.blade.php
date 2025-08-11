@@ -332,111 +332,27 @@
 @endsection
 
 @push('styles')
-<style>
-    .hero-avatar{width:56px;height:56px}
-    .metric-card{border:1px solid white !important}
-    .stat-tile{border:1px solid var(--bs-border-color);border-radius:10px;padding:12px;background:var(--card-bg,rgba(255,255,255,0.03));}
-    .stat-label{color:#A0AEC0;font-size:.8rem}
-    .stat-value{color:#fff;font-weight:700;font-size:1.1rem}
-    .ai-box{border:1px dashed var(--bs-border-color);border-radius:10px;padding:12px;background:rgba(13,110,253,.05)}
-    .org-tree{display:flex;flex-direction:column;gap:10px}
-    .org-item{display:flex;gap:10px;align-items:center}
-    .org-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center}
-    .news-placeholder{width:100%;height:180px;background:rgba(255,255,255,.05);border-radius:8px;border:1px dashed var(--bs-border-color)}
-    .goals-list .list-group-item{background:transparent;color:#fff}
-    .goals-list .progress{height:6px}
-    .content-card{background:rgba(255,255,255,.04);border:1px solid var(--bs-border-color);border-radius:12px}
-    .card-title{font-weight:600}
-    .chart-container{background:rgba(255,255,255,0.02);border-radius:8px;padding:10px}
-
-    /* Metrics Carousel */
-    #metricsCarousel .carousel-control-prev,
-    #metricsCarousel .carousel-control-next{opacity:0.6;width:50px;height:50px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.1);border-radius:50%;border:2px solid rgba(255,255,255,0.3)}
-    #metricsCarousel .carousel-control-prev:hover,
-    #metricsCarousel .carousel-control-next:hover{opacity:1;background:rgba(255,255,255,0.2)}
-    #metricsCarousel .carousel-control-prev{left:-25px}
-    #metricsCarousel .carousel-control-next{right:-25px}
-
-    /* News Card Styles */
-    .news-card{background:rgba(255,255,255,0.06);border-radius:12px;border:1px solid var(--bs-border-color);overflow:hidden;min-height:200px}
-    .news-image{object-fit:cover}
-    .news-content{height:100%}
-    .news-title{line-height:1.4;font-weight:600}
-    .news-description{line-height:1.5;font-size:0.9rem}
-
-    /* Statistics Slideshow */
-    #statsCarousel .carousel-control-prev,
-    #statsCarousel .carousel-control-next{opacity:0.7;width:40px;height:40px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.1);border-radius:50%}
-    #statsCarousel .carousel-control-prev:hover,
-    #statsCarousel .carousel-control-next:hover{opacity:1;background:rgba(255,255,255,0.2)}
-
-    /* News Carousel Indicators */
-    #newsCarousel .carousel-indicators{bottom:-40px}
-    #newsCarousel .carousel-indicators button{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,0.5)}
-    #newsCarousel .carousel-indicators button.active{background:white}
-</style>
+<link rel="stylesheet" href="{{ asset('css/dashboard/dashboard-main.css') }}">
 @endpush
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-        // Load goals
-        fetch("{{ route('dashboard.goals.index') }}")
-            .then(r => r.json())
-            .then(renderGoals)
-            .catch(()=>{});
-
-        // Refresh AI insight
-        const aiBtn = document.getElementById('refreshInsight');
-        if (aiBtn) aiBtn.addEventListener('click', function(){
-                const box = document.getElementById('aiInsight');
-                if (box) box.innerHTML = '<div class="text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Meminta insight...</div>';
-                fetch("{{ route('dashboard.ai.insight') }}", {method: 'POST', headers: {'X-CSRF-TOKEN': '{{ csrf_token() }}' }})
-                    .then(r => r.json())
-                    .then(d => { box.innerHTML = d.success ? d.response.replaceAll('\n','<br>') : '<span class="text-danger">'+(d.error||'AI error')+'</span>'; })
-                    .catch(()=>{ box.innerHTML = '<span class="text-danger">Gagal memuat insight</span>'; });
-        });
-});
-
-function renderGoals(goals){
-        const list = document.getElementById('goalList');
-        if (!list) return;
-        list.innerHTML = '';
-        goals.forEach(g => {
-                const li = document.createElement('li');
-                li.className = 'list-group-item d-flex align-items-start justify-content-between gap-3';
-                li.innerHTML = `
-                        <div class="form-check">
-                                <input class="form-check-input" type="checkbox" ${g.is_done ? 'checked' : ''} onchange="toggleGoal(${g.id})">
-                                <label class="form-check-label text-white">${escapeHtml(g.title)}</label>
-                                <div class="small text-muted">Target ${g.target_percent}%</div>
-                                <div class="progress mt-1">
-                                        <div class="progress-bar ${g.is_done ? 'bg-success' : 'bg-primary'}" style="width:${g.current_percent}%"></div>
-                                </div>
-                        </div>
-                        <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-light" onclick="editGoal(${g.id})"><i class="bi bi-pencil"></i></button>
-                                <button class="btn btn-outline-danger" onclick="deleteGoal(${g.id})"><i class="bi bi-trash"></i></button>
-                        </div>`;
-                list.appendChild(li);
-        });
-}
-
-function toggleGoal(id){
-        fetch(`{{ url('/dashboard/goals') }}/${id}/toggle`, {method:'POST', headers:{'X-CSRF-TOKEN': '{{ csrf_token() }}'}})
-            .then(()=>fetch("{{ route('dashboard.goals.index') }}").then(r=>r.json()).then(renderGoals));
-}
-
-function deleteGoal(id){
-        if (!confirm('Delete this goal?')) return;
-        fetch(`{{ url('/dashboard/goals') }}/${id}`, {method:'DELETE', headers:{'X-CSRF-TOKEN': '{{ csrf_token() }}'}})
-            .then(()=>fetch("{{ route('dashboard.goals.index') }}").then(r=>r.json()).then(renderGoals));
-}
-
-function escapeHtml(s){
-        return (s||'').replace(/[&<>"]+/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-}
+    // Configuration for external scripts
+    window.routes = {
+        goals: {
+            index: "{{ route('dashboard.goals.index') }}",
+            store: "{{ route('dashboard.goals.store') }}",
+            base: "{{ url('/dashboard/goals') }}"
+        },
+        ai: {
+            insight: "{{ route('dashboard.ai.insight') }}"
+        }
+    };
+    window.csrfToken = "{{ csrf_token() }}";
+    window.combinedChartData = @json($combinedChartData ?? []);
+    window.metricsChartData = @json($metrics ?? []);
 </script>
+<script src="{{ asset('js/dashboard/dashboard-main/index.js') }}"></script>
 
 <!-- Goal Modal -->
 <div class="modal fade" id="goalModal" tabindex="-1" aria-hidden="true">
@@ -468,214 +384,10 @@ function escapeHtml(s){
             </div>
         </div>
     </div>
-    <script>
-    function submitGoal(){
-        const form = document.getElementById('goalForm');
-        const fd = new FormData(form);
-        fetch("{{ route('dashboard.goals.store') }}", {method:'POST', headers:{'X-CSRF-TOKEN':'{{ csrf_token() }}'}, body: fd})
-            .then(r=>r.json())
-            .then(()=>{ form.reset(); bootstrap.Modal.getInstance(document.getElementById('goalModal')).hide(); return fetch("{{ route('dashboard.goals.index') }}") })
-            .then(r=>r.json()).then(renderGoals)
-            .catch(()=>{});
-    }
-    function editGoal(id){ alert('Inline edit can be implemented similarly (update endpoint available).'); }
-    </script>
-
     <!-- ApexCharts Library -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-
-    <!-- Chart Rendering JavaScript -->
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Combined Metrics Chart Data from server
-        const combinedChartData = @json($combinedChartData ?? []);
-
-        // Individual Metrics Chart Data from server
-        const metricsChartData = @json($metrics ?? []);
-
-        // Render Combined Metrics Chart
-        if (document.getElementById('combinedMetricsChart')) {
-            if (combinedChartData.labels && combinedChartData.labels.length > 0) {
-                const combinedOptions = {
-                    series: combinedChartData.datasets.map(dataset => ({
-                        name: dataset.label,
-                        data: dataset.data
-                    })),
-                    chart: {
-                        type: 'line',
-                        height: 200,
-                        background: 'transparent',
-                        toolbar: {
-                            show: false
-                        }
-                    },
-                    colors: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6f42c1', '#20c997'],
-                    stroke: {
-                        curve: 'smooth',
-                        width: 2
-                    },
-                    xaxis: {
-                        categories: combinedChartData.labels,
-                        labels: {
-                            style: {
-                                colors: '#ffffff'
-                            }
-                        }
-                    },
-                    yaxis: {
-                        labels: {
-                            style: {
-                                colors: '#ffffff'
-                            }
-                        }
-                    },
-                    grid: {
-                        borderColor: 'rgba(255, 255, 255, 0.1)'
-                    },
-                    legend: {
-                        labels: {
-                            colors: '#ffffff'
-                        }
-                    },
-                    theme: {
-                        mode: 'dark'
-                    }
-                };
-
-                const combinedChart = new ApexCharts(document.querySelector("#combinedMetricsChart"), combinedOptions);
-                combinedChart.render();
-            } else {
-                // Show empty chart with X/Y axes only
-                const emptyOptions = {
-                    series: [],
-                    chart: {
-                        type: 'line',
-                        height: 200,
-                        background: 'transparent',
-                        toolbar: {
-                            show: false
-                        }
-                    },
-                    xaxis: {
-                        categories: ['Day 1', 'Day 2', 'Day 3'],
-                        labels: {
-                            style: {
-                                colors: '#ffffff'
-                            }
-                        }
-                    },
-                    yaxis: {
-                        labels: {
-                            style: {
-                                colors: '#ffffff'
-                            }
-                        }
-                    },
-                    grid: {
-                        borderColor: 'rgba(255, 255, 255, 0.1)'
-                    },
-                    theme: {
-                        mode: 'dark'
-                    },
-                    noData: {
-                        text: 'No data available',
-                        style: {
-                            color: '#ffffff'
-                        }
-                    }
-                };
-
-                const emptyChart = new ApexCharts(document.querySelector("#combinedMetricsChart"), emptyOptions);
-                emptyChart.render();
-            }
-        }
-
-        // Render Mini Charts for Each Metric Card
-        metricsChartData.forEach(function(metric, index) {
-            const chartId = '#metricChart' + metric.id;
-            const chartElement = document.querySelector(chartId);
-
-            if (chartElement) {
-                if (metric.chart_data && metric.chart_data.length > 0) {
-                    const miniOptions = {
-                        series: [{
-                            name: metric.metric_name,
-                            data: metric.chart_data
-                        }],
-                        chart: {
-                            type: 'line',
-                            height: 60,
-                            background: 'transparent',
-                            sparkline: {
-                                enabled: true
-                            }
-                        },
-                        colors: ['#ffffff'],
-                        stroke: {
-                            curve: 'smooth',
-                            width: 2
-                        },
-                        fill: {
-                            type: 'gradient',
-                            gradient: {
-                                shadeIntensity: 1,
-                                opacityFrom: 0.7,
-                                opacityTo: 0.1,
-                                colorStops: [{
-                                    offset: 0,
-                                    color: '#ffffff',
-                                    opacity: 0.4
-                                }, {
-                                    offset: 100,
-                                    color: '#ffffff',
-                                    opacity: 0.1
-                                }]
-                            }
-                        },
-                        xaxis: {
-                            categories: metric.chart_labels || []
-                        }
-                    };
-
-                    const miniChart = new ApexCharts(chartElement, miniOptions);
-                    miniChart.render();
-                } else {
-                    // Show empty mini chart
-                    const emptyMiniOptions = {
-                        series: [],
-                        chart: {
-                            type: 'line',
-                            height: 60,
-                            background: 'transparent',
-                            sparkline: {
-                                enabled: true
-                            }
-                        },
-                        colors: ['#ffffff'],
-                        stroke: {
-                            curve: 'smooth',
-                            width: 1
-                        },
-                        grid: {
-                            show: true,
-                            borderColor: 'rgba(255, 255, 255, 0.1)'
-                        },
-                        noData: {
-                            text: 'No data',
-                            style: {
-                                color: '#ffffff',
-                                fontSize: '10px'
-                            }
-                        }
-                    };
-
-                    const emptyMiniChart = new ApexCharts(chartElement, emptyMiniOptions);
-                    emptyMiniChart.render();
-                }
-            }
-        });
-    });
-    </script>
+    <!-- Charts JavaScript -->
+    <script src="{{ asset('js/dashboard/dashboard-main/charts.js') }}"></script>
 </div>
 @endpush
 
