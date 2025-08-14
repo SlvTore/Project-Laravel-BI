@@ -10,6 +10,7 @@ use App\Models\ProductSales;
 use App\Models\Customer;
 use App\Models\ActivityLog;
 use App\Services\GeminiAIService;
+use App\Services\DataIntegrityService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -24,7 +25,7 @@ class MetricRecordsController extends Controller
     private function authorizeMetricAccess(BusinessMetric $businessMetric)
     {
         $user = Auth::user();
-        $userBusinessIds = $user->businesses()->pluck('businesses.id')->toArray();
+        $userBusinessIds = $user->businesses()->pluck('business_id')->toArray();
 
         // Debug: Show what's happening
         if (empty($userBusinessIds)) {
@@ -188,74 +189,155 @@ class MetricRecordsController extends Controller
     {
         $this->authorizeMetricAccess($businessMetric);
 
-        // Basic validation for common fields
-        $validated = $request->validate([
-            'record_date' => 'required|date|before_or_equal:today',
-            'value' => 'nullable|numeric|min:0',
-            'notes' => 'nullable|string|max:1000',
-        ], [
-            'record_date.before_or_equal' => 'Record date cannot be in the future.',
-            'value.min' => 'Value must be positive.',
-            'record_date.required' => 'Date is required.'
-        ]);
-
-        // Handle metric-specific data and validation
-        $metricSpecificData = $this->handleMetricSpecificValidation($request, $businessMetric);
-
-        // Merge specific data with validated data
-        $validated = array_merge($validated, $metricSpecificData);
-
-        // Handle specific metric types (store additional data)
-        $this->handleSpecificMetricStore($request, $businessMetric);
-
-        // Calculate the value if not provided (for computed metrics)
-        if (!isset($validated['value']) || $validated['value'] === null) {
-            $validated['value'] = $this->calculateMetricValue($request, $businessMetric);
-        }
-
-        // Store the metric record using updateOrCreate to prevent duplicates
-        $record = MetricRecord::updateOrCreate(
-            [
-                'business_metric_id' => $businessMetric->id,
-                'record_date' => $validated['record_date'],
-            ],
-            [
-                'user_id' => Auth::id(),
-                'value' => $validated['value'],
-                'notes' => $validated['notes'],
-            ]
-        );
-
-        // Update the business metric current and previous values
-        $this->updateBusinessMetricValues($businessMetric);
-
-        // Log activity
-        $user = Auth::user();
-        ActivityLog::logDataInput(
-            $businessMetric->business_id,
-            $user->id,
-            $businessMetric->id,
-            $validated['value']
-        );
-
-        // Return JSON response for AJAX requests
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => $record->wasRecentlyCreated ? 'Record created successfully' : 'Record updated successfully',
-                'record' => [
-                    'id' => $record->id,
-                    'record_date' => $record->record_date->format('Y-m-d'),
-                    'value' => (float) $record->value,
-                    'formatted_value' => $record->formatted_value,
-                    'notes' => $record->notes ?? '',
-                    'created_at' => $record->created_at->format('Y-m-d H:i:s'),
-                    'was_recently_created' => $record->wasRecentlyCreated
-                ]
+        // Start database transaction for data safety
+        DB::beginTransaction();
+        
+        try {
+            // Basic validation for common fields
+            $validated = $request->validate([
+                'record_date' => 'required|date|before_or_equal:today',
+                'value' => 'nullable|numeric|min:0',
+                'notes' => 'nullable|string|max:1000',
+            ], [
+                'record_date.before_or_equal' => 'Record date cannot be in the future.',
+                'value.min' => 'Value must be positive.',
+                'record_date.required' => 'Date is required.'
             ]);
-        }
 
-        return redirect()->back()->with('success', 'Data berhasil disimpan!');
+            // Handle metric-specific data and validation
+            $metricSpecificData = $this->handleMetricSpecificValidation($request, $businessMetric);
+
+            // Merge specific data with validated data
+            $validated = array_merge($validated, $metricSpecificData);
+
+            // Pre-validate data integrity for customer metrics
+            if (in_array($businessMetric->metric_name, ['Jumlah Pelanggan Baru', 'Jumlah Pelanggan Setia'])) {
+                $newCustomerCount = $request->input('new_customer_count', 0);
+                $totalCustomerCount = $request->input('total_customer_count', 0);
+                
+                $validationErrors = DataIntegrityService::validateCustomerData(
+                    $businessMetric->business_id,
+                    $validated['record_date'],
+                    $newCustomerCount,
+                    $totalCustomerCount
+                );
+                
+                if (!empty($validationErrors)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Data validation failed',
+                        'errors' => $validationErrors
+                    ], 422);
+                }
+            }
+
+            // Pre-validate data integrity for sales metrics
+            if (in_array($businessMetric->metric_name, ['Total Penjualan', 'Biaya Pokok Penjualan (COGS)'])) {
+                $totalRevenue = $request->input('total_revenue', 0);
+                $totalCogs = $request->input('total_cogs', null);
+                
+                $validationErrors = DataIntegrityService::validateSalesData(
+                    $businessMetric->business_id,
+                    $validated['record_date'],
+                    $totalRevenue,
+                    $totalCogs
+                );
+                
+                if (!empty($validationErrors)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Data validation failed',
+                        'errors' => $validationErrors
+                    ], 422);
+                }
+            }
+
+            // Calculate the value if not provided (for computed metrics)
+            if (!isset($validated['value']) || $validated['value'] === null) {
+                $validated['value'] = $this->calculateMetricValue($request, $businessMetric);
+            }
+
+            // Check for existing record to backup before update
+            $existingRecord = MetricRecord::where('business_metric_id', $businessMetric->id)
+                ->where('record_date', $validated['record_date'])
+                ->first();
+
+            if ($existingRecord) {
+                DataIntegrityService::backupData($existingRecord, 'update');
+            }
+
+            // Store the metric record using updateOrCreate to prevent duplicates
+            $record = MetricRecord::updateOrCreate(
+                [
+                    'business_metric_id' => $businessMetric->id,
+                    'record_date' => $validated['record_date'],
+                ],
+                [
+                    'user_id' => Auth::id(),
+                    'value' => $validated['value'],
+                    'notes' => $validated['notes'],
+                ]
+            );
+
+            // Handle specific metric types (store additional data)
+            $this->handleSpecificMetricStore($request, $businessMetric);
+
+            // Update the business metric current and previous values
+            $this->updateBusinessMetricValues($businessMetric);
+
+            // Log activity
+            $user = Auth::user();
+            ActivityLog::logDataInput(
+                $businessMetric->business_id,
+                $user->id,
+                $businessMetric->id,
+                $validated['value']
+            );
+
+            // Commit transaction
+            DB::commit();
+
+            // Return JSON response for AJAX requests
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $record->wasRecentlyCreated ? 'Record created successfully' : 'Record updated successfully',
+                    'record' => [
+                        'id' => $record->id,
+                        'record_date' => $record->record_date->format('Y-m-d'),
+                        'value' => (float) $record->value,
+                        'formatted_value' => $record->formatted_value,
+                        'notes' => $record->notes ?? '',
+                        'created_at' => $record->created_at->format('Y-m-d H:i:s'),
+                        'was_recently_created' => $record->wasRecentlyCreated
+                    ]
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Data berhasil disimpan!');
+
+        } catch (\Exception $e) {
+            // Rollback transaction on error
+            DB::rollback();
+            
+            Log::error('Metric store error: ' . $e->getMessage(), [
+                'business_metric_id' => $businessMetric->id,
+                'user_id' => Auth::id(),
+                'request_data' => $request->all()
+            ]);
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.',
+                    'error' => $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()
+                ->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data.'])
+                ->withInput();
+        }
     }
 
     /**
@@ -547,7 +629,7 @@ class MetricRecordsController extends Controller
 
         try {
             // Get user's business IDs
-            $userBusinessIds = auth()->user()->businesses()->pluck('businesses.id')->toArray();
+            $userBusinessIds = Auth::user()->businesses()->pluck('business_id')->toArray();
 
             // Get records with their business metrics
             $records = MetricRecord::with('businessMetric')

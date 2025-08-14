@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('avatar_path')->nullable()->after('accent_color');
+            // Place after an always-present column to avoid ordering dependency
+            $table->string('avatar_path')->nullable()->after('email_verified_at');
         });
     }
 

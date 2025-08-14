@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\SetupWizardController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
     return view('landing.welcome');
@@ -91,20 +92,43 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
         });
     });
 
-    // Dashboard - Settings
-    Route::middleware(['role:business-owner'])->group(function () {
-        Route::get('/dashboard/settings', [\App\Http\Controllers\SettingsController::class, 'index'])->name('dashboard.settings');
-        Route::post('/settings/branding', [\App\Http\Controllers\SettingsController::class, 'updateBranding'])->name('settings.branding.update');
-        Route::post('/settings/preferences', [\App\Http\Controllers\SettingsController::class, 'updatePreferences'])->name('settings.preferences.update');
-        Route::post('/settings/invitation/regenerate', [\App\Http\Controllers\SettingsController::class, 'regenerateInvitationCode'])->name('settings.invitation.regenerate');
-        Route::post('/settings/ownership/transfer', [\App\Http\Controllers\SettingsController::class, 'transferOwnership'])->name('settings.ownership.transfer');
-        Route::delete('/settings/business', [\App\Http\Controllers\SettingsController::class, 'destroy'])->name('settings.business.destroy');
+        // Dashboard - Settings (accessible to Business Owner and Administrator)
+    Route::middleware(['role:business-owner,administrator'])->group(function () {
+        Route::get('/dashboard/settings', [App\Http\Controllers\Dashboard\SettingsController::class, 'index'])->name('dashboard.settings');
+        Route::put('/dashboard/settings', [App\Http\Controllers\Dashboard\SettingsController::class, 'update'])->name('dashboard.settings.update');
     });
+
+    // Dashboard - Users Management (only Business Owner)
+    Route::middleware(['role:business-owner'])->group(function () {
+        Route::get('/dashboard/users', [App\Http\Controllers\Dashboard\UsersController::class, 'index'])->name('dashboard.users');
+        Route::post('/dashboard/users/{user}/promote', [App\Http\Controllers\Dashboard\UsersController::class, 'promote'])->name('dashboard.users.promote');
+    });
+
+    // Dashboard - Data Integrity (accessible to Business Owner and Administrator)
+    Route::middleware(['role:business-owner,administrator'])->group(function () {
+        Route::get('/dashboard/data-integrity', [App\Http\Controllers\Dashboard\DataIntegrityController::class, 'index'])->name('data-integrity.index');
+        Route::get('/dashboard/data-integrity/anomalies', [App\Http\Controllers\Dashboard\DataIntegrityController::class, 'detectAnomalies'])->name('data-integrity.detect-anomalies');
+        Route::post('/dashboard/data-integrity/recover', [App\Http\Controllers\Dashboard\DataIntegrityController::class, 'recoverData'])->name('data-integrity.recover-data');
+        Route::get('/dashboard/data-integrity/download-report', [App\Http\Controllers\Dashboard\DataIntegrityController::class, 'downloadReport'])->name('data-integrity.download-report');
+        Route::get('/dashboard/data-integrity/backup-history', [App\Http\Controllers\Dashboard\DataIntegrityController::class, 'getBackupHistory'])->name('data-integrity.backup-history');
+    });
+
+    // Dashboard - Feeds
+    Route::get('/dashboard/feeds', [App\Http\Controllers\Dashboard\FeedsController::class, 'index'])->name('dashboard.feeds');
+
+    // Help Center
+    Route::get('/help', [App\Http\Controllers\HelpCenterController::class, 'index'])->name('help.center');
+
+    // Profile Routes  
+    Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'index'])->name('profile.index');
+    Route::patch('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/password', [App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('password.update');
+    Route::delete('/profile', [App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Dashboard - Feeds (accessible to Business Owner, Administrator, Staff)
     Route::middleware(['role:business-owner,administrator,staff'])->group(function () {
-        Route::get('/dashboard/feeds', [App\Http\Controllers\FeedsController::class, 'index'])->name('dashboard.feeds');
-        Route::get('/dashboard/feeds/activities', [App\Http\Controllers\FeedsController::class, 'getActivitiesData'])->name('dashboard.feeds.activities');
+        Route::get('/dashboard/feeds', [App\Http\Controllers\Dashboard\FeedsController::class, 'index'])->name('dashboard.feeds');
+        Route::get('/dashboard/feeds/activities', [App\Http\Controllers\Dashboard\FeedsController::class, 'getActivitiesData'])->name('dashboard.feeds.activities');
     });
 
     // Dashboard - Help (accessible to all authenticated users)
@@ -114,13 +138,6 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
 
     // Help Center routes (accessible to all authenticated users)
     Route::get('/help-center', [App\Http\Controllers\HelpCenterController::class, 'index'])->name('help-center.index');
-
-    // Profile routes (accessible to all authenticated users)
-    Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'index'])->name('profile.index');
-
-    Route::patch('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
-    Route::put('/password', [App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('password.update');
-    Route::delete('/profile', [App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 // JSON API for Dashboard Goals and AI Insight (authenticated)
@@ -139,7 +156,7 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
 // Redirect authenticated users to appropriate page
 Route::middleware(['auth'])->group(function () {
     Route::get('/app', function () {
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Jika setup belum completed, redirect ke wizard
         if (!$user->setup_completed) {
