@@ -11,11 +11,11 @@
 
         <!-- Navigation Menu -->
         <ul class="sidebar-nav">
-            <!-- Dashboard -->
+            <!-- Home -->
             <li class="nav-item">
                 <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard*') ? 'active' : '' }}">
-                    <i class="bi bi-grid-fill nav-icon"></i>
-                    <span class="nav-text">Dashboard</span>
+                    <i class="bi bi-house-fill nav-icon"></i>
+                    <span class="nav-text">Home</span>
                 </a>
             </li>
 
@@ -29,12 +29,12 @@
             </li>
             @endif
 
-            <!-- Data Feeds (accessible to Business Owner, Administrator, Staff) -->
+            <!-- Activity Log (accessible to Business Owner, Administrator, Staff) -->
             @if(auth()->user()->isBusinessOwner() || auth()->user()->isAdministrator() || auth()->user()->isStaff())
             <li class="nav-item">
                 <a href="{{ route('dashboard.feeds') }}" class="nav-link {{ request()->routeIs('dashboard.feeds*') ? 'active' : '' }}">
-                    <i class="bi bi-rss nav-icon"></i>
-                    <span class="nav-text">Data Feeds</span>
+                    <i class="bi bi-activity nav-icon"></i>
+                    <span class="nav-text">Activity Log</span>
                 </a>
             </li>
             @endif

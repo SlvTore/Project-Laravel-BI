@@ -89,45 +89,10 @@
         </div>
     </div>
 
-    <!-- Excel-like Data Table with Inline Editing -->
-    <div class="datatable-container">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0 text-white">Data Records - Live Excel Interface</h5>
-            <div>
-                <button class="btn btn-excel btn-sm me-2" data-bs-toggle="modal" data-bs-target="#addRecordModal">
-                    <i class="fas fa-plus"></i> Add New Row
-                </button>
-                <button class="btn btn-outline-success btn-sm me-2" onclick="exportToExcel()">
-                    <i class="fas fa-file-excel"></i> Export Excel
-                </button>
-                <button class="btn btn-outline-primary btn-sm me-2" onclick="refreshTable()">
-                    <i class="fas fa-sync"></i> Refresh
-                </button>
-                <button class="btn btn-outline-danger btn-sm" onclick="deleteSelected()">
-                    <i class="fas fa-trash"></i> Delete Selected
-                </button>
-            </div>
-        </div>
-
-        <div class="table-responsive">
-            <table id="recordsTable" class="table table-striped table-hover w-100">
-                <thead class="mt-2">
-                    <tr>
-                        <th width="50">#</th>
-                        <th width="50"><input type="checkbox" id="selectAll"></th>
-                        <th width="120">Date</th>
-                        <th width="120">Value</th>
-                        <th width="150">Formatted Value</th>
-                        <th>Notes</th>
-                        <th width="130">Created At</th>
-                        <th width="100">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Data will be loaded via AJAX -->
-                </tbody>
-            </table>
-        </div>
+    <!-- Records section disabled (CRUD/DataTables) -->
+    <div class="content-card p-4 mt-3">
+        <h5 class="mb-2 text-white">Data Records</h5>
+        <p class="text-white-50 mb-0">Fitur tambah baris baru dan tabel interaktif (CRUD/DataTables) dinonaktifkan sementara.</p>
     </div>
 
     <!-- Sidebar Information -->
@@ -200,122 +165,7 @@
     </div>
 </div>
 
-<!-- Add Record Modal -->
-<div class="modal fade" id="addRecordModal" tabindex="-1" aria-labelledby="addRecordModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content modal-glass">
-            <div class="modal-header border-0">
-                <h5 class="modal-title text-white" id="addRecordModalLabel">
-                    <i class="fas fa-plus-circle me-2"></i>Add New {{ $businessMetric->metric_name }} Record
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="addRecordForm">
-                <div class="modal-body p-4">
-                    <!-- Common Fields -->
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="record_date" class="form-label text-white">
-                                    <i class="fas fa-calendar me-1"></i>Date <span class="text-danger">*</span>
-                                </label>
-                                <input type="date" class="form-control form-control-lg modal-input"
-                                       id="record_date" name="record_date" required>
-                                <div class="form-text text-light opacity-75">Select the date for this record</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6" id="generic-value-field">
-                            <div class="mb-3">
-                                <label for="record_value" class="form-label text-white">
-                                    <i class="fas fa-calculator me-1"></i>Value <span class="text-danger">*</span>
-                                </label>
-                                <div class="input-group">
-                                    @if($businessMetric->unit === 'currency')
-                                        <span class="input-group-text modal-input-addon">Rp</span>
-                                    @endif
-                                    <input type="number" class="form-control form-control-lg modal-input"
-                                           id="record_value" name="value" step="0.01" min="0" required>
-                                    @if($businessMetric->unit === 'percentage')
-                                        <span class="input-group-text modal-input-addon">%</span>
-                                    @endif
-                                </div>
-                                <div class="form-text text-light opacity-75">Enter the {{ strtolower($businessMetric->metric_name) }} value</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Metric-Specific Forms -->
-                    @if($businessMetric->metric_name === 'Total Penjualan')
-                        @include('dashboard-metrics.partials.total-penjualan-form')
-                    @elseif($businessMetric->metric_name === 'Biaya Pokok Penjualan (COGS)')
-                        @include('dashboard-metrics.partials.cogs-form')
-                    @elseif($businessMetric->metric_name === 'Margin Keuntungan (Profit Margin)')
-                        @include('dashboard-metrics.partials.margin-keuntungan-form')
-                    @elseif($businessMetric->metric_name === 'Jumlah Pelanggan Baru')
-                        @include('dashboard-metrics.partials.pelanggan-baru-form')
-                    @elseif($businessMetric->metric_name === 'Jumlah Pelanggan Setia')
-                        @include('dashboard-metrics.partials.pelanggan-setia-form')
-                    @elseif($businessMetric->metric_name === 'Penjualan Produk Terlaris')
-                        @include('dashboard-metrics.partials.produk-terlaris-form')
-                    @endif
-
-                    <!-- Generic Notes Field -->
-                    <div class="mb-3">
-                        <label for="record_notes" class="form-label text-white">
-                            <i class="fas fa-sticky-note me-1"></i>Notes <span class="text-muted">(Optional)</span>
-                        </label>
-                        <textarea class="form-control modal-input" id="record_notes" name="notes"
-                                  rows="3" placeholder="Add any additional notes or context for this record..."></textarea>
-                        <div class="form-text text-light opacity-75">Optional notes or comments about this record</div>
-                    </div>
-
-                    <!-- Preview Section -->
-                    <div class="mt-4 p-3 preview-section">
-                        <h6 class="text-white mb-2">
-                            <i class="fas fa-eye me-1"></i>Preview
-                        </h6>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="preview-item">
-                                    <small class="text-muted">Date</small>
-                                    <div class="preview-value text-white" id="preview_date">-</div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="preview-item">
-                                    <small class="text-muted">Value</small>
-                                    <div class="preview-value text-white" id="preview_value">-</div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="preview-item">
-                                    <small class="text-muted">Formatted</small>
-                                    <div class="preview-value text-success" id="preview_formatted">-</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-12">
-                                <div class="preview-item">
-                                    <small class="text-muted">Notes</small>
-                                    <div class="preview-value text-white" id="preview_notes">No notes</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer border-0 justify-content-between">
-                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Cancel
-                    </button>
-                    <button type="submit" class="btn btn-excel-gradient">
-                        <i class="fas fa-save me-1"></i>Save Record
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+<!-- Add Record Modal removed per request -->
 
     <!-- AI Business Assistant Card -->
     <div class="datatable-container mt-2 ms-5">
@@ -410,9 +260,6 @@
 @endsection
 
 @push('styles')
-<link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.bootstrap5.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap5.min.css">
 <style>
     .stats-card {
         background-color: rgba(255, 255, 255, 0.1);
@@ -481,29 +328,7 @@
         box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
     }
 
-    .table-responsive {
-        border-radius: 10px;
-        overflow: hidden;
-    }
-
-    #recordsTable {
-        border-radius: 10px;
-    }
-
-    #recordsTable thead th {
-        background-color: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(8px);
-        color: white;
-        border: none;
-        font-weight: 600;
-        padding: 15px 10px;
-    }
-
-    #recordsTable tbody td {
-        padding: 12px 10px;
-        vertical-align: middle;
-        border-color: #f1f3f4;
-    }
+    .table-responsive { border-radius: 10px; overflow: hidden; }
 
     .growth-positive {
         color: #28a745;
@@ -621,29 +446,7 @@
         100% { background-color: transparent; }
     }
 
-    /* Excel-like table styling */
-    #recordsTable {
-        border-collapse: separate !important;
-        border-spacing: 0 !important;
-    }
-
-    #recordsTable tbody tr:hover {
-        background-color: rgba(102, 126, 234, 0.08) !important;
-    }
-
-    #recordsTable tbody td {
-        border-left: 1px solid #e9ecef;
-        border-bottom: 1px solid #e9ecef;
-        position: relative;
-    }
-
-    #recordsTable tbody td:first-child {
-        border-left: none;
-    }
-
-    #recordsTable tbody tr:last-child td {
-        border-bottom: 2px solid #dee2e6;
-    }
+    /* Records table styles removed */
 
     /* Tooltip for editable cells */
     .editable-cell::before {
@@ -1106,17 +909,9 @@
 @push('scripts')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.bootstrap5.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js"></script>
-<script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
-<script src="https://cdn.datatables.net/responsive/2.2.9/js/responsive.bootstrap5.min.js"></script>
 
 <script>
-let trendChart, summaryChart, recordsTable;
+let trendChart, summaryChart;
 const businessMetricId = {{ $businessMetric->id }};
 
 $(document).ready(function() {
@@ -1140,9 +935,14 @@ $(document).ready(function() {
     };
 
     initializeCharts();
-    initializeDataTable();
-    bindEvents();
-    initializeModal();
+    // Bind chart period buttons (keep charts interactive)
+    $('.chart-period').on('click', function() {
+        $('.chart-period').removeClass('active btn-primary').addClass('btn-outline-light');
+        $(this).removeClass('btn-outline-light').addClass('active btn-primary');
+        const period = $(this).data('period');
+        updateChart(period);
+    });
+    // Records table and CRUD disabled per request
 });
 
 function initializeCharts() {
@@ -1247,240 +1047,21 @@ function initializeCharts() {
     summaryChart.render();
 }
 
-function initializeDataTable() {
-    recordsTable = $('#recordsTable').DataTable({
-        processing: true,
-        serverSide: true,
-        ajax: {
-            url: '{{ route("dashboard.metrics.records.edit", $businessMetric->id) }}',
-            data: function(d) {
-                d.draw = d.draw;
-                d.start = d.start;
-                d.length = d.length;
-                d.search = d.search.value;
-                d.order = d.order;
-                d.columns = d.columns;
-            },
-            error: function(xhr, error, thrown) {
-                console.error('DataTables AJAX error:', xhr.responseText);
-                toastr.error('Failed to load data: ' + xhr.statusText);
-            }
-        },
-        columns: [
-            {
-                data: null,
-                name: 'row_number',
-                orderable: false,
-                searchable: false,
-                render: function(data, type, row, meta) {
-                    return meta.row + meta.settings._iDisplayStart + 1;
-                }
-            },
-            {
-                data: 'id',
-                name: 'select',
-                orderable: false,
-                searchable: false,
-                render: function(data) {
-                    return '<input type="checkbox" class="record-checkbox" value="' + data + '">';
-                }
-            },
-            {
-                data: 'record_date',
-                name: 'record_date',
-                render: function(data, type, row) {
-                    if (type === 'display') {
-                        return '<span class="editable-cell" data-field="record_date" data-id="' + row.id + '" data-type="date">' +
-                               moment(data).format('DD/MM/YYYY') + '</span>';
-                    }
-                    return data;
-                }
-            },
-            {
-                data: 'value',
-                name: 'value',
-                render: function(data, type, row) {
-                    if (type === 'display') {
-                        return '<span class="editable-cell" data-field="value" data-id="' + row.id + '" data-type="number">' +
-                               formatValue(data) + '</span>';
-                    }
-                    return data;
-                }
-            },
-            {
-                data: 'formatted_value',
-                name: 'formatted_value',
-                orderable: false,
-                searchable: false
-            },
-            {
-                data: 'notes',
-                name: 'notes',
-                render: function(data, type, row) {
-                    if (type === 'display') {
-                        const displayText = data ? (data.length > 50 ? data.substring(0, 50) + '...' : data) : '-';
-                        return '<span class="editable-cell" data-field="notes" data-id="' + row.id + '" data-type="text" title="Click to edit" data-full-text="' + (data || '') + '">' +
-                               displayText + '</span>';
-                    }
-                    return data || '';
-                }
-            },
-            {
-                data: 'created_at',
-                name: 'created_at',
-                render: function(data) {
-                    return moment(data).format('DD/MM/YYYY HH:mm');
-                }
-            },
-            {
-                data: 'id',
-                name: 'actions',
-                orderable: false,
-                searchable: false,
-                render: function(data) {
-                    return `
-                        <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-success btn-sm" onclick="saveInlineEdit(${data})" title="Save Changes" style="display:none;" id="save-${data}">
-                                <i class="fas fa-check"></i>
-                            </button>
-                            <button class="btn btn-outline-secondary btn-sm" onclick="cancelInlineEdit(${data})" title="Cancel Edit" style="display:none;" id="cancel-${data}">
-                                <i class="fas fa-times"></i>
-                            </button>
-                            <button class="btn btn-outline-danger btn-sm" onclick="deleteRecord(${data})" title="Delete">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    `;
-                }
-            }
-        ],
-        order: [[2, 'asc']], // Order by date column ascending (oldest first, new records at bottom)
-        pageLength: 25,
-        responsive: true,
-        dom: '<"d-flex justify-content-between"lf>rtip',
-        language: {
-            search: "Search records:",
-            lengthMenu: "Show _MENU_ records per page",
-            info: "Showing _START_ to _END_ of _TOTAL_ records",
-            infoEmpty: "No records available",
-            infoFiltered: "(filtered from _MAX_ total records)",
-            zeroRecords: "No matching records found",
-            emptyTable: "No data available in table",
-            paginate: {
-                first: "First",
-                last: "Last",
-                next: "Next",
-                previous: "Previous"
-            },
-            processing: "Loading data..."
-        },
-        drawCallback: function(settings) {
-            bindInlineEditEvents();
-            // Update statistics after table draw
-            updateStatistics();
-        }
-    });
-}
+// Records DataTable removed per request
 
-function bindEvents() {
-    // Chart period buttons
-    $('.chart-period').on('click', function() {
-        $('.chart-period').removeClass('active btn-primary').addClass('btn-outline-primary');
-        $(this).removeClass('btn-outline-primary').addClass('active btn-primary');
+// bindEvents related to DataTable/CRUD removed per request
 
-        const period = $(this).data('period');
-        updateChart(period);
-    });
+// addNewRecord removed
 
-    // Select all checkbox
-    $('#selectAll').on('change', function() {
-        $('.record-checkbox').prop('checked', this.checked);
-    });
+// editRecord removed
 
-    // Bind inline editing events (will be called after each table draw)
-    bindInlineEditEvents();
-}
+// deleteRecord removed
 
-function addNewRecord() {
-    // Use inline editing instead
-    addInlineRecord();
-}
+// deleteSelected removed
 
-function editRecord(id) {
-    // Records are now edited inline - this function can trigger inline edit mode
-    const $row = recordsTable.row(`#record-${id}`).node();
-    if ($row) {
-        $($row).find('.editable-cell[data-field="record_date"]').click();
-    }
-    toastr.info('Click on any cell to edit it directly');
-}
+// refreshTable removed
 
-function deleteRecord(id) {
-    if (confirm('Are you sure you want to delete this record?')) {
-        $.ajax({
-            url: `{{ url('/dashboard/metrics/records') }}/${id}`,
-            method: 'DELETE',
-            data: {
-                _token: '{{ csrf_token() }}'
-            },
-            success: function(response) {
-                recordsTable.ajax.reload();
-                updateChart($('.chart-period.active').data('period'));
-                toastr.success(response.message || 'Record deleted successfully');
-            },
-            error: function() {
-                toastr.error('Failed to delete record');
-            }
-        });
-    }
-}
-
-function deleteSelected() {
-    const selectedIds = $('.record-checkbox:checked').map(function() {
-        return this.value;
-    }).get();
-
-    if (selectedIds.length === 0) {
-        toastr.warning('Please select records to delete');
-        return;
-    }
-
-    if (confirm(`Are you sure you want to delete ${selectedIds.length} selected record(s)?`)) {
-        $.ajax({
-            url: '{{ route("dashboard.metrics.records.bulk-delete") }}',
-            method: 'POST',
-            data: {
-                _token: '{{ csrf_token() }}',
-                ids: selectedIds
-            },
-            success: function(response) {
-                toastr.success(response.message || 'Records deleted successfully');
-
-                // Reload table to update row numbers
-                recordsTable.ajax.reload();
-                updateChart($('.chart-period.active').data('period') || 30);
-                $('#selectAll').prop('checked', false);
-
-                // Update statistics
-                setTimeout(updateStatistics, 500);
-            },
-            error: function(xhr) {
-                toastr.error('Failed to delete selected records: ' + (xhr.responseJSON?.message || xhr.statusText));
-            }
-        });
-    }
-}
-
-function refreshTable() {
-    recordsTable.ajax.reload();
-    updateChart($('.chart-period.active').data('period') || 30);
-    setTimeout(updateStatistics, 500);
-    toastr.info('Table refreshed');
-}
-
-function exportToExcel() {
-    window.location.href = '{{ route("dashboard.metrics.records.export", $businessMetric->id) }}';
-}
+// exportToExcel removed
 
 function updateChart(days) {
     $.ajax({
@@ -1599,64 +1180,9 @@ function bindInlineEditEvents() {
     });
 }
 
-function addInlineRecord() {
-    console.log('addInlineRecord called'); // Debug log
-
-    // Check if recordsTable is initialized
-    if (!recordsTable) {
-        toastr.error('Table not initialized');
-        return;
-    }
-
-    // Get current date as default for new record
-    const today = moment().format('YYYY-MM-DD');
-    const newRowId = 'new_' + Date.now();
-
-    try {
-        // Add a new row with today's date so it appears at the bottom (with ascending order)
-        const newRow = recordsTable.row.add({
-            id: newRowId,
-            record_date: today,
-            value: 0,
-            formatted_value: formatValue(0),
-            notes: '',
-            created_at: moment().format('YYYY-MM-DD HH:mm:ss')
-        }).draw(false);
-
-        console.log('New row added successfully'); // Debug log
-
-        // Make the new row editable immediately
-        const $newRowNode = $(newRow.node());
-        $newRowNode.addClass('new-record');
-        $newRowNode.attr('id', 'record-' + newRowId);
-
-        // Rebind events to include the new row
-        setTimeout(() => {
-            bindInlineEditEvents();
-
-            // Focus on the value field instead of date (since date is already set to today)
-            const $valueCell = $newRowNode.find('.editable-cell[data-field="value"]');
-            console.log('Value cell found:', $valueCell.length); // Debug log
-
-            if ($valueCell.length > 0) {
-                $valueCell.click();
-                toastr.success('New row added! Enter the value for today\'s record.');
-            } else {
-                toastr.warning('Row added, but editing may not work properly. Try refreshing the table.');
-            }
-        }, 300);
-
-    } catch (error) {
-        console.error('Error adding row:', error);
-        toastr.error('Failed to add new row: ' + error.message);
-    }
-}
+// addInlineRecord removed
 
 function updateStatistics() {
-    // Update the total records count from table info
-    const info = recordsTable.page.info();
-    $('#totalRecords').text(info.recordsTotal);
-
     // Fetch updated statistics from server
     $.ajax({
         url: `{{ route('dashboard.metrics.overview', $businessMetric->id) }}`,
@@ -1686,62 +1212,11 @@ function updateStatistics() {
         },
         error: function(xhr) {
             console.error('Failed to update statistics:', xhr.responseText);
-        }
+    }
     });
 }
 
-function formatNumber(value) {
-    if (!value) return '0';
-    return new Intl.NumberFormat('id-ID').format(value);
-}
-
-function saveInlineEdit(id, callback) {
-    const $inputs = $(`.inline-edit-input[data-id="${id}"]`);
-
-    if ($inputs.length === 0) {
-        toastr.warning('No changes to save');
-        return;
-    }
-
-    const data = {
-        _token: '{{ csrf_token() }}'
-    };
-
-    let hasChanges = false;
-
-    // Only send the fields that are actually being edited
-    $inputs.each(function() {
-        const field = $(this).data('field');
-        let value = $(this).val();
-
-        if (field === 'record_date') {
-            data.record_date = value;
-            hasChanges = true;
-        } else if (field === 'value') {
-            data.value = parseFloat(value) || 0;
-            hasChanges = true;
-        } else if (field === 'notes') {
-            data.notes = value;
-            hasChanges = true;
-        }
-    });
-
-    if (!hasChanges) {
-        toastr.warning('No changes detected');
-        cancelInlineEdit(id);
-        return;
-    }
-
-    // Client-side validation
-    if (data.record_date && moment(data.record_date).isAfter(moment())) {
-        toastr.error('Date cannot be in the future');
-        return;
-    }
-
-    if (data.value !== undefined && data.value < 0) {
-        toastr.error('Value must be positive');
-        return;
-    }
+// addInlineRecord removed
 
     // Determine if this is a new record or update
     const isNewRecord = id.toString().startsWith('new_');
@@ -1784,12 +1259,10 @@ function saveInlineEdit(id, callback) {
             $(`#save-${id}, #cancel-${id}`).hide();
             $(`#save-${id}`).html('<i class="fas fa-check"></i>').prop('disabled', false);
 
-            // Reload table to get fresh data and maintain proper order
-            recordsTable.ajax.reload(function() {
-                if (callback && typeof callback === 'function') {
-                    callback();
-                }
-            }, false);
+            // Table disabled; call callback directly if provided
+            if (callback && typeof callback === 'function') {
+                callback();
+            }
 
             // Update charts
             updateChart($('.chart-period.active').data('period') || 30);
@@ -1838,11 +1311,6 @@ function cancelInlineEdit(id) {
     if (editingData[id]) {
         delete editingData[id];
     }
-
-    // Remove new record row if cancelling a new record
-    if (id.toString().startsWith('new_')) {
-        recordsTable.ajax.reload();
-    }
 }
 
 function formatValue(value) {
@@ -1864,31 +1332,7 @@ function formatValue(value) {
     }
 }
 
-// Test function to ensure everything is working
-function testAddRecord() {
-    console.log('=== DEBUG TEST ===');
-    console.log('recordsTable initialized:', !!recordsTable);
-    console.log('moment available:', typeof moment !== 'undefined');
-    console.log('jQuery available:', typeof $ !== 'undefined');
-    console.log('formatValue test:', formatValue(1000));
-    console.log('businessMetricId:', businessMetricId);
-
-    if (recordsTable) {
-        console.log('Table info:', recordsTable.page.info());
-    }
-
-    // Test adding a row directly
-    try {
-        addInlineRecord();
-    } catch (error) {
-        console.error('Error in addInlineRecord:', error);
-        toastr.error('Error: ' + error.message);
-    }
-}
-
-// Make functions available globally for debugging
-window.addInlineRecord = addInlineRecord;
-window.testAddRecord = testAddRecord;
+// Test helpers removed
 
 // Modal Functions
 function initializeModal() {
@@ -2318,8 +1762,7 @@ function handleFormSubmit(e) {
             // Hide modal
             $('#addRecordModal').modal('hide');
 
-            // Reload table
-            recordsTable.ajax.reload();
+            // Table disabled
 
             // Update charts
             updateChart($('.chart-period.active').data('period') || 30);

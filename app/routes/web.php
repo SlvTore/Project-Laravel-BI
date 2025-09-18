@@ -112,7 +112,7 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
     });
 
     // Dashboard - Feeds
-    Route::get('/dashboard/feeds', [App\Http\Controllers\Dashboard\FeedsController::class, 'index'])->name('dashboard.feeds');
+    Route::get('/dashboard/feeds', [App\Http\Controllers\Dashboard\LogController::class, 'index'])->name('dashboard.feeds');
 
     // Help Center
     Route::get('/help', [App\Http\Controllers\HelpCenterController::class, 'index'])->name('help.center');
@@ -125,13 +125,13 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
 
     // Dashboard - Feeds (accessible to Business Owner, Administrator, Staff)
     Route::middleware(['role:business-owner,administrator,staff'])->group(function () {
-        Route::get('/dashboard/feeds', [App\Http\Controllers\Dashboard\FeedsController::class, 'index'])->name('dashboard.feeds');
-        Route::get('/dashboard/feeds/activities', [App\Http\Controllers\Dashboard\FeedsController::class, 'getActivitiesData'])->name('dashboard.feeds.activities');
+        Route::get('/dashboard/feeds', [App\Http\Controllers\Dashboard\LogController::class, 'index'])->name('dashboard.feeds');
+        Route::get('/dashboard/feeds/activities', [App\Http\Controllers\Dashboard\LogController::class, 'getActivitiesData'])->name('dashboard.feeds.activities');
     });
 
     // Dashboard - Help (accessible to all authenticated users)
     Route::get('/dashboard/help', function () {
-        return view('dashboard-main.help')->with('page_title', 'Help & Support');
+        return view('home.help')->with('page_title', 'Help & Support');
     })->name('dashboard.help');
 
     // Help Center routes (accessible to all authenticated users)

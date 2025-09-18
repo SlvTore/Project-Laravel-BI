@@ -116,7 +116,7 @@ class MainDashboardController extends Controller
         $news = app(NewsService::class);
         $articles = $news->getBusinessNews();
 
-        return view('dashboard-main.index', compact(
+        return view('home.index', compact(
             'greeting', 'now', 'user', 'business', 'weatherData', 'metrics', 'combinedChartData', 'stats', 'aiResponse', 'recentActivities', 'orgUsers', 'articles'
         ));
     }

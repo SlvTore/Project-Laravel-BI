@@ -8,10 +8,10 @@ use App\Models\Business;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class FeedsController extends Controller
+class LogController extends Controller
 {
     /**
-     * Display activity feeds
+     * Display activity log
      */
     public function index()
     {
@@ -22,7 +22,7 @@ class FeedsController extends Controller
             return redirect()->route('dashboard')->with('error', 'No business found');
         }
 
-        return view('dashboard-feeds.index', compact('business'));
+        return view('log.index', compact('business'));
     }
 
     /**
@@ -125,12 +125,12 @@ class FeedsController extends Controller
         $business = Business::whereHas('users', function($query) use ($user) {
             $query->where('user_id', $user->id);
         })->first();
-        
+
         // Fallback to owned business
         if (!$business) {
             $business = Business::where('user_id', $user->id)->first();
         }
-        
+
         return $business;
     }
 }

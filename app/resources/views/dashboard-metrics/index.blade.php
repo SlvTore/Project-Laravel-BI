@@ -117,7 +117,7 @@
                             <hr class="border-white opacity-10 my-3">
 
                             <div class="table-responsive">
-                                <table class="table table-hover" id="metricsTable">
+                <table class="table table-hover" id="metricsTable">
                                     <thead class="table-light">
                                         <tr>
                                             <th>Metric Name</th>
@@ -125,12 +125,11 @@
                                             <th>Changes</th>
                                             <th>Created At</th>
                                             <th>Updated At</th>
-                                            <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach($businessMetrics as $businessMetric)
-                                        <tr>
+                    <tr class="clickable-row" data-href="{{ route('dashboard.metrics.records.show', ['businessMetric' => $businessMetric->id]) }}">
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <div class="metric-icon me-2">
@@ -157,28 +156,6 @@
                                             </td>
                                             <td>{{ $businessMetric->created_at->format('M d, Y') }}</td>
                                             <td>{{ $businessMetric->updated_at->diffForHumans() }}</td>
-                                            <td>
-                                                <div class="btn-group btn-group-sm">
-                                                    <button class="btn btn-outline-success" title="View Records Overview" onclick="showMetricOverview({{ $businessMetric->id }})">
-                                                        <i class="bi bi-graph-up"></i>
-                                                    </button>
-                                                    <a href="{{ route('dashboard.metrics.records.edit', $businessMetric) }}" class="btn btn-outline-primary" title="Manage Records">
-                                                        <i class="bi bi-pencil"></i>
-                                                    </a>
-                                                    <button class="btn btn-outline-info" title="View Details" onclick="viewMetricDetails({{ $businessMetric->id }})">
-                                                        <i class="bi bi-eye"></i>
-                                                    </button>
-                                                    @if(Auth::user()->canDeleteMetrics())
-                                                    <form action="{{ route('dashboard.metrics.destroy', $businessMetric->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this metric?')">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-outline-danger" title="Delete">
-                                                            <i class="bi bi-trash"></i>
-                                                        </button>
-                                                    </form>
-                                                    @endif
-                                                </div>
-                                            </td>
                                         </tr>
                                         @endforeach
                                     </tbody>
@@ -192,6 +169,27 @@
 
 
     </div>
+
+    @push('styles')
+    <style>
+        /* Make table rows visibly clickable */
+        #metricsTable tbody tr.clickable-row { cursor: pointer; }
+        #metricsTable tbody tr.clickable-row:hover { background-color: rgba(255,255,255,0.05); }
+    </style>
+    @endpush
+
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('#metricsTable tbody tr.clickable-row').forEach(function (row) {
+                row.addEventListener('click', function () {
+                    const href = this.getAttribute('data-href');
+                    if (href) window.location.href = href;
+                });
+            });
+        });
+    </script>
+    @endpush
 
     <!-- Metric Overview Modal -->
     <div class="modal fade" id="metricOverviewModal" tabindex="-1" aria-labelledby="metricOverviewModalLabel" aria-hidden="true">
