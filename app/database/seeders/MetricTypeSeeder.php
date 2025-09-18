@@ -8,7 +8,7 @@ use App\Models\MetricType;
 class MetricTypeSeeder extends Seeder
 {
     /**
-     * Run the database seeder.
+     * Seed default metric types available to all businesses.
      */
     public function run(): void
     {
@@ -25,6 +25,7 @@ class MetricTypeSeeder extends Seeder
                     'target_type' => 'monthly',
                     'calculation' => 'sum'
                 ],
+                'is_active' => true,
                 'sort_order' => 1
             ],
             [
@@ -39,6 +40,7 @@ class MetricTypeSeeder extends Seeder
                     'target_type' => 'monthly',
                     'calculation' => 'sum'
                 ],
+                'is_active' => true,
                 'sort_order' => 2
             ],
             [
@@ -53,6 +55,7 @@ class MetricTypeSeeder extends Seeder
                     'target_type' => 'monthly',
                     'calculation' => 'percentage'
                 ],
+                'is_active' => true,
                 'sort_order' => 3
             ],
             [
@@ -67,6 +70,7 @@ class MetricTypeSeeder extends Seeder
                     'target_type' => 'monthly',
                     'calculation' => 'count'
                 ],
+                'is_active' => true,
                 'sort_order' => 4
             ],
             [
@@ -81,6 +85,7 @@ class MetricTypeSeeder extends Seeder
                     'target_type' => 'monthly',
                     'calculation' => 'count'
                 ],
+                'is_active' => true,
                 'sort_order' => 5
             ],
             [
@@ -95,6 +100,7 @@ class MetricTypeSeeder extends Seeder
                     'target_type' => 'monthly',
                     'calculation' => 'count'
                 ],
+                'is_active' => true,
                 'sort_order' => 6
             ]
         ];
@@ -105,19 +111,5 @@ class MetricTypeSeeder extends Seeder
                 $metricType
             );
         }
-    }
-}Database\Seeders;
-
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-
-class MetricTypeSeeder extends Seeder
-{
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
-    {
-        //
     }
 }

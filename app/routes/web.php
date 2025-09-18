@@ -42,8 +42,6 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
     // Dashboard - Metrics (accessible to Business Owner, Administrator, Staff)
     Route::middleware(['role:business-owner,administrator,staff'])->group(function () {
         Route::get('/dashboard/metrics', [App\Http\Controllers\MetricsController::class, 'index'])->name('dashboard.metrics');
-        Route::get('/dashboard/metrics/create', [App\Http\Controllers\MetricsController::class, 'create'])->name('dashboard.metrics.create');
-        Route::post('/dashboard/metrics', [App\Http\Controllers\MetricsController::class, 'store'])->name('dashboard.metrics.store');
         Route::get('/dashboard/metrics/{id}/edit', [App\Http\Controllers\MetricsController::class, 'edit'])->name('dashboard.metrics.edit');
         Route::put('/dashboard/metrics/{id}', [App\Http\Controllers\MetricsController::class, 'update'])->name('dashboard.metrics.update');
 
@@ -119,7 +117,7 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
     // Help Center
     Route::get('/help', [App\Http\Controllers\HelpCenterController::class, 'index'])->name('help.center');
 
-    // Profile Routes  
+    // Profile Routes
     Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'index'])->name('profile.index');
     Route::patch('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
     Route::put('/password', [App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('password.update');

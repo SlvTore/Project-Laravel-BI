@@ -93,7 +93,7 @@
             @else
             <div class="col-12">
                 <div class="content-card p-3 text-center text-muted">
-                    <i class="bi bi-graph-up"></i> No metrics yet. <a href="{{ route('dashboard.metrics') }}">Import or create metrics</a>.
+                    <i class="bi bi-graph-up"></i> No metrics yet. Metrics will be assigned automatically after business setup.
                 </div>
             </div>
             @endif

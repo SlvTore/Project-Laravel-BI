@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Role;
 use App\Models\Business;
+use App\Models\MetricType;
+use App\Models\BusinessMetric;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -21,7 +23,7 @@ class SetupWizardController extends Controller
         $roles = Role::where('is_active', true)
                     ->whereIn('name', ['business-owner', 'staff', 'business-investigator'])
                     ->get();
-        
+
         return view('wizard', compact('roles'));
     }
 
@@ -145,6 +147,27 @@ class SetupWizardController extends Controller
             if (!$business->invitation_code) {
                 $business->generateInvitationCode();
             }
+        }
+
+        // Auto-assign default metrics for the newly created business
+        // Idempotent: won't duplicate existing metrics
+        $metricTypes = MetricType::active()->ordered()->get();
+        foreach ($metricTypes as $type) {
+            BusinessMetric::firstOrCreate(
+                [
+                    'business_id' => $business->id,
+                    'metric_name' => $type->display_name,
+                ],
+                [
+                    'category' => $type->category,
+                    'icon' => $type->icon ?? 'bi-graph-up',
+                    'description' => $type->description,
+                    'current_value' => 0,
+                    'previous_value' => 0,
+                    'unit' => $type->unit,
+                    'is_active' => true,
+                ]
+            );
         }
 
         return response()->json([
