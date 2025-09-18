@@ -7,11 +7,47 @@ use App\Models\BusinessMetric;
 use App\Models\Business;
 use App\Models\User;
 use App\Models\ActivityLog;
+use App\Models\MetricType;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class MetricsController extends Controller
 {
+    /**
+     * Ensure default metrics exist for the given business. Fallback-seed MetricType if empty.
+     */
+    private function provisionDefaultMetricsForBusiness(Business $business): void
+    {
+        $types = MetricType::active()->ordered()->get();
+        if ($types->count() === 0) {
+            // Minimal inline seed to avoid empty state after migrate without --seed
+            $defaults = [
+                ['name' => 'total_penjualan', 'display_name' => 'Total Penjualan', 'description' => 'Total nilai penjualan yang dihasilkan dalam periode tertentu', 'category' => 'Penjualan', 'icon' => 'bi-currency-dollar', 'unit' => 'Rp', 'format' => 'currency', 'settings' => ['target_type' => 'monthly','calculation' => 'sum'], 'is_active' => true, 'sort_order' => 1],
+                ['name' => 'biaya_pokok_penjualan', 'display_name' => 'Biaya Pokok Penjualan (COGS)', 'description' => 'Total biaya langsung yang dikeluarkan untuk menghasilkan produk yang dijual', 'category' => 'Keuangan', 'icon' => 'bi-receipt', 'unit' => 'Rp', 'format' => 'currency', 'settings' => ['target_type' => 'monthly','calculation' => 'sum'], 'is_active' => true, 'sort_order' => 2],
+                ['name' => 'margin_keuntungan', 'display_name' => 'Margin Keuntungan (Profit Margin)', 'description' => 'Persentase keuntungan dari penjualan setelah dikurangi biaya pokok penjualan', 'category' => 'Keuangan', 'icon' => 'bi-percent', 'unit' => '%', 'format' => 'percentage', 'settings' => ['target_type' => 'monthly','calculation' => 'percentage'], 'is_active' => true, 'sort_order' => 3],
+                ['name' => 'penjualan_produk_terlaris', 'display_name' => 'Penjualan Produk Terlaris', 'description' => 'Jumlah unit produk terlaris yang terjual dalam periode tertentu', 'category' => 'Produk', 'icon' => 'bi-star-fill', 'unit' => 'unit', 'format' => 'number', 'settings' => ['target_type' => 'monthly','calculation' => 'count'], 'is_active' => true, 'sort_order' => 4],
+                ['name' => 'jumlah_pelanggan_baru', 'display_name' => 'Jumlah Pelanggan Baru', 'description' => 'Jumlah pelanggan baru yang diperoleh dalam periode tertentu', 'category' => 'Pelanggan', 'icon' => 'bi-person-plus', 'unit' => 'orang', 'format' => 'number', 'settings' => ['target_type' => 'monthly','calculation' => 'count'], 'is_active' => true, 'sort_order' => 5],
+                ['name' => 'jumlah_pelanggan_setia', 'display_name' => 'Jumlah Pelanggan Setia', 'description' => 'Jumlah pelanggan yang melakukan pembelian berulang dalam periode tertentu', 'category' => 'Pelanggan', 'icon' => 'bi-heart-fill', 'unit' => 'orang', 'format' => 'number', 'settings' => ['target_type' => 'monthly','calculation' => 'count'], 'is_active' => true, 'sort_order' => 6],
+            ];
+            foreach ($defaults as $d) { MetricType::updateOrCreate(['name' => $d['name']], $d); }
+            $types = MetricType::active()->ordered()->get();
+        }
+
+        foreach ($types as $type) {
+            BusinessMetric::firstOrCreate(
+                ['business_id' => $business->id, 'metric_name' => $type->display_name],
+                [
+                    'category' => $type->category,
+                    'icon' => $type->icon ?? 'bi-graph-up',
+                    'description' => $type->description,
+                    'current_value' => 0,
+                    'previous_value' => 0,
+                    'unit' => $type->unit,
+                    'is_active' => true,
+                ]
+            );
+        }
+    }
     /**
      * Predefined metric types available for selection
      */
@@ -78,6 +114,11 @@ class MetricsController extends Controller
             return redirect()->route('dashboard')->with('error', 'No business found. Please complete setup first or ask your business owner for access.');
         }
 
+        // Ensure metrics exist for this business (auto-heal if empty)
+        if (!BusinessMetric::where('business_id', $business->id)->exists()) {
+            $this->provisionDefaultMetricsForBusiness($business);
+        }
+
         // Get metrics for this business
         $businessMetrics = BusinessMetric::where('business_id', $business->id)
                                       ->orderBy('created_at', 'desc')
@@ -86,15 +127,14 @@ class MetricsController extends Controller
         // Filter metrics based on user role for staff
         if ($user->isStaff()) {
             // Staff can only see metrics they can edit/input data
-            $businessMetrics = $businessMetrics->filter(function($metric) {
-                return in_array($metric->metric_type, [
-                    'Total Penjualan',
-                    'Biaya Pokok Penjualan (COGS)',
-                    'Penjualan Produk Terlaris',
-                    'Jumlah Pelanggan Baru',
-                    'Jumlah Pelanggan Setia'
-                ]);
-            });
+            $allowed = [
+                'Total Penjualan',
+                'Biaya Pokok Penjualan (COGS)',
+                'Penjualan Produk Terlaris',
+                'Jumlah Pelanggan Baru',
+                'Jumlah Pelanggan Setia'
+            ];
+            $businessMetrics = $businessMetrics->filter(fn($m) => in_array($m->metric_name, $allowed));
         }
 
         return view('dashboard-metrics.index', compact('businessMetrics', 'business'));

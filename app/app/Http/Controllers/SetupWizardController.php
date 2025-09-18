@@ -12,6 +12,137 @@ use Illuminate\Support\Facades\Log;
 
 class SetupWizardController extends Controller
 {
+    /**
+     * Ensure a business has default metrics. If MetricType is empty (e.g., after migrate without seed),
+     * seed the default types on the fly, then create BusinessMetric records idempotently.
+     */
+    private function provisionDefaultMetricsForBusiness(Business $business): void
+    {
+        // Load available metric types
+        $metricTypes = MetricType::active()->ordered()->get();
+
+        // Fallback: seed defaults if none exist (handles migrate without --seed)
+        if ($metricTypes->count() === 0) {
+            $defaults = [
+                [
+                    'name' => 'total_penjualan',
+                    'display_name' => 'Total Penjualan',
+                    'description' => 'Total nilai penjualan yang dihasilkan dalam periode tertentu',
+                    'category' => 'Penjualan',
+                    'icon' => 'bi-currency-dollar',
+                    'unit' => 'Rp',
+                    'format' => 'currency',
+                    'settings' => [
+                        'target_type' => 'monthly',
+                        'calculation' => 'sum'
+                    ],
+                    'is_active' => true,
+                    'sort_order' => 1
+                ],
+                [
+                    'name' => 'biaya_pokok_penjualan',
+                    'display_name' => 'Biaya Pokok Penjualan (COGS)',
+                    'description' => 'Total biaya langsung yang dikeluarkan untuk menghasilkan produk yang dijual',
+                    'category' => 'Keuangan',
+                    'icon' => 'bi-receipt',
+                    'unit' => 'Rp',
+                    'format' => 'currency',
+                    'settings' => [
+                        'target_type' => 'monthly',
+                        'calculation' => 'sum'
+                    ],
+                    'is_active' => true,
+                    'sort_order' => 2
+                ],
+                [
+                    'name' => 'margin_keuntungan',
+                    'display_name' => 'Margin Keuntungan (Profit Margin)',
+                    'description' => 'Persentase keuntungan dari penjualan setelah dikurangi biaya pokok penjualan',
+                    'category' => 'Keuangan',
+                    'icon' => 'bi-percent',
+                    'unit' => '%',
+                    'format' => 'percentage',
+                    'settings' => [
+                        'target_type' => 'monthly',
+                        'calculation' => 'percentage'
+                    ],
+                    'is_active' => true,
+                    'sort_order' => 3
+                ],
+                [
+                    'name' => 'penjualan_produk_terlaris',
+                    'display_name' => 'Penjualan Produk Terlaris',
+                    'description' => 'Jumlah unit produk terlaris yang terjual dalam periode tertentu',
+                    'category' => 'Produk',
+                    'icon' => 'bi-star-fill',
+                    'unit' => 'unit',
+                    'format' => 'number',
+                    'settings' => [
+                        'target_type' => 'monthly',
+                        'calculation' => 'count'
+                    ],
+                    'is_active' => true,
+                    'sort_order' => 4
+                ],
+                [
+                    'name' => 'jumlah_pelanggan_baru',
+                    'display_name' => 'Jumlah Pelanggan Baru',
+                    'description' => 'Jumlah pelanggan baru yang diperoleh dalam periode tertentu',
+                    'category' => 'Pelanggan',
+                    'icon' => 'bi-person-plus',
+                    'unit' => 'orang',
+                    'format' => 'number',
+                    'settings' => [
+                        'target_type' => 'monthly',
+                        'calculation' => 'count'
+                    ],
+                    'is_active' => true,
+                    'sort_order' => 5
+                ],
+                [
+                    'name' => 'jumlah_pelanggan_setia',
+                    'display_name' => 'Jumlah Pelanggan Setia',
+                    'description' => 'Jumlah pelanggan yang melakukan pembelian berulang dalam periode tertentu',
+                    'category' => 'Pelanggan',
+                    'icon' => 'bi-heart-fill',
+                    'unit' => 'orang',
+                    'format' => 'number',
+                    'settings' => [
+                        'target_type' => 'monthly',
+                        'calculation' => 'count'
+                    ],
+                    'is_active' => true,
+                    'sort_order' => 6
+                ],
+            ];
+
+            foreach ($defaults as $d) {
+                MetricType::updateOrCreate(['name' => $d['name']], $d);
+            }
+
+            $metricTypes = MetricType::active()->ordered()->get();
+        }
+
+        // Create business metrics idempotently
+        foreach ($metricTypes as $type) {
+            BusinessMetric::firstOrCreate(
+                [
+                    'business_id' => $business->id,
+                    'metric_name' => $type->display_name,
+                ],
+                [
+                    'category' => $type->category,
+                    'icon' => $type->icon ?? 'bi-graph-up',
+                    'description' => $type->description,
+                    'current_value' => 0,
+                    'previous_value' => 0,
+                    'unit' => $type->unit,
+                    'is_active' => true,
+                ]
+            );
+        }
+    }
+
     public function index()
     {
         // Redirect jika sudah setup
@@ -82,7 +213,8 @@ class SetupWizardController extends Controller
             ], 422);
         }
 
-        $user = Auth::user();
+    /** @var \App\Models\User $user */
+    $user = Auth::user();
         $role = Role::find($request->role_id);
         $user->update(['role_id' => $request->role_id]);
 
@@ -123,7 +255,8 @@ class SetupWizardController extends Controller
             ], 422);
         }
 
-        $user = Auth::user();
+    /** @var \App\Models\User $user */
+    $user = Auth::user();
 
         // Create business for business owner
         $business = $user->ownedBusinesses()->updateOrCreate(
@@ -149,26 +282,8 @@ class SetupWizardController extends Controller
             }
         }
 
-        // Auto-assign default metrics for the newly created business
-        // Idempotent: won't duplicate existing metrics
-        $metricTypes = MetricType::active()->ordered()->get();
-        foreach ($metricTypes as $type) {
-            BusinessMetric::firstOrCreate(
-                [
-                    'business_id' => $business->id,
-                    'metric_name' => $type->display_name,
-                ],
-                [
-                    'category' => $type->category,
-                    'icon' => $type->icon ?? 'bi-graph-up',
-                    'description' => $type->description,
-                    'current_value' => 0,
-                    'previous_value' => 0,
-                    'unit' => $type->unit,
-                    'is_active' => true,
-                ]
-            );
-        }
+    // Auto-assign default metrics for the newly created business (always provision)
+    $this->provisionDefaultMetricsForBusiness($business);
 
         return response()->json([
             'success' => true,
@@ -195,7 +310,8 @@ class SetupWizardController extends Controller
             ], 422);
         }
 
-        $user = Auth::user();
+    /** @var \App\Models\User $user */
+    $user = Auth::user();
         $business = $user->ownedBusinesses()->first();
 
         if ($business) {
@@ -211,7 +327,7 @@ class SetupWizardController extends Controller
         }
 
         // Mark setup as completed
-        $user->markSetupCompleted();
+    $user->markSetupCompleted();
 
         return response()->json([
             'success' => true,
@@ -223,7 +339,8 @@ class SetupWizardController extends Controller
 
     private function handleInvitationStep(Request $request)
     {
-        $user = Auth::user();
+    /** @var \App\Models\User $user */
+    $user = Auth::user();
         $role = $user->userRole;
 
         if (!$role || !in_array($role->name, ['staff', 'business-investigator'])) {
@@ -274,6 +391,11 @@ class SetupWizardController extends Controller
 
         // Add user to business
         $business->addUser($user);
+
+        // Ensure the business has metrics (in case it was created before seeding or by import)
+        if ($business->metrics()->count() === 0) {
+            $this->provisionDefaultMetricsForBusiness($business);
+        }
 
         // Mark setup as completed
         $user->markSetupCompleted();
