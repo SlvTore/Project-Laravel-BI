@@ -127,6 +127,43 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
     Route::middleware(['role:business-owner,administrator,staff'])->group(function () {
         Route::get('/dashboard/feeds', [App\Http\Controllers\Dashboard\LogController::class, 'index'])->name('dashboard.feeds');
         Route::get('/dashboard/feeds/activities', [App\Http\Controllers\Dashboard\LogController::class, 'getActivitiesData'])->name('dashboard.feeds.activities');
+
+        // Data Feeds main page
+        Route::get('/dashboard/data-feeds', [App\Http\Controllers\Dashboard\DataFeedController::class, 'index'])->name('dashboard.data-feeds.index');
+
+        // API routes for Product Management Modal
+        Route::prefix('api/products')->group(function () {
+            Route::post('/update-title', [App\Http\Controllers\Dashboard\ProductController::class, 'updateTitle'])->name('api.products.update-title');
+            Route::delete('/delete', [App\Http\Controllers\Dashboard\ProductController::class, 'deleteByCardId'])->name('api.products.delete');
+            Route::get('/get/{cardId}', [App\Http\Controllers\Dashboard\ProductController::class, 'getByCardId'])->name('api.products.get');
+            Route::post('/save', [App\Http\Controllers\Dashboard\ProductController::class, 'saveFromModal'])->name('api.products.save');
+            Route::post('/save-bom', [App\Http\Controllers\Dashboard\ProductController::class, 'saveBom'])->name('api.products.save-bom');
+        });
+
+        // Manual sales input
+        Route::post('/dashboard/data-feeds/manual-sales', [App\Http\Controllers\Dashboard\DataFeedController::class, 'storeManualSales'])->name('dashboard.data-feeds.manual-sales.store');
+
+        // File upload for import
+        Route::post('/dashboard/data-feeds/upload', [App\Http\Controllers\Dashboard\DataFeedController::class, 'upload'])->name('dashboard.data-feeds.upload');
+
+        // Product Catalog CRUD
+        Route::get('/dashboard/products', [App\Http\Controllers\Dashboard\ProductController::class, 'index'])->name('dashboard.products.index');
+        Route::get('/dashboard/products/datatable', [App\Http\Controllers\Dashboard\ProductController::class, 'datatable'])->name('dashboard.products.datatable');
+        Route::post('/dashboard/products', [App\Http\Controllers\Dashboard\ProductController::class, 'store'])->name('dashboard.products.store');
+        Route::get('/dashboard/products/{product}', [App\Http\Controllers\Dashboard\ProductController::class, 'show'])->name('dashboard.products.show');
+        Route::put('/dashboard/products/{product}', [App\Http\Controllers\Dashboard\ProductController::class, 'update'])->name('dashboard.products.update');
+        Route::delete('/dashboard/products/{product}', [App\Http\Controllers\Dashboard\ProductController::class, 'destroy'])->name('dashboard.products.destroy');
+
+        // Data Feeds History datatable (server-side)
+        Route::get('/dashboard/data-feeds/history', [App\Http\Controllers\Dashboard\DataFeedController::class, 'history'])->name('dashboard.data-feeds.history');
+
+        // Data Feeds Template Downloads
+        Route::get('/dashboard/data-feeds/template/{type}', [App\Http\Controllers\Dashboard\DataFeedController::class, 'downloadTemplate'])->name('dashboard.data-feeds.template.download');
+
+        // Production Costs Management
+        Route::post('/dashboard/products/{product}/production-costs', [App\Http\Controllers\Dashboard\DataFeedController::class, 'storeProductionCost'])->name('dashboard.products.production-costs.store');
+        Route::get('/dashboard/products/{product}/production-costs', [App\Http\Controllers\Dashboard\DataFeedController::class, 'getProductionCosts'])->name('dashboard.products.production-costs.index');
+        Route::delete('/dashboard/production-costs/{productionCost}', [App\Http\Controllers\Dashboard\DataFeedController::class, 'deleteProductionCost'])->name('dashboard.production-costs.destroy');
     });
 
     // Dashboard - Help (accessible to all authenticated users)

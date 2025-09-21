@@ -1,0 +1,28 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('staging_costs', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('data_feed_id')->constrained('data_feeds')->onDelete('cascade');
+            $table->string('category');
+            $table->string('description');
+            $table->decimal('amount', 15, 2);
+            $table->string('vendor')->nullable();
+            $table->string('invoice_number')->nullable();
+            $table->date('cost_date');
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('staging_costs');
+    }
+};

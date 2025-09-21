@@ -11,9 +11,19 @@
 
         <!-- Navigation Menu -->
         <ul class="sidebar-nav">
+            <!-- Data Feeds (accessible to Business Owner, Administrator, Staff) -->
+            @if(auth()->user()->isBusinessOwner() || auth()->user()->isAdministrator() || auth()->user()->isStaff())
+            <li class="nav-item">
+                <a href="{{ route('dashboard.data-feeds.index') }}" class="nav-link {{ request()->routeIs('dashboard.data-feeds*') ? 'active' : '' }}">
+                    <i class="bi bi-database-fill nav-icon"></i>
+                    <span class="nav-text">Data Feeds</span>
+                </a>
+            </li>
+            @endif
+
             <!-- Home -->
             <li class="nav-item">
-                <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard*') ? 'active' : '' }}">
+                <a href="{{ route('dashboard') }}" class="nav-link {{ Route::currentRouteName() == 'dashboard' ? 'active' : '' }}">
                     <i class="bi bi-house-fill nav-icon"></i>
                     <span class="nav-text">Home</span>
                 </a>

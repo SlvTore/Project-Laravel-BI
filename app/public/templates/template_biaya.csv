@@ -1,0 +1,4 @@
+category,description,amount,vendor,invoice_number,cost_date
+"Bahan Baku","Deskripsi bahan baku yang dibeli",150000,"Nama Supplier","INV-001","2024-01-15"
+"Operasional","Deskripsi biaya operasional",85000,"Vendor/Penyedia","INV-002","2024-01-15"
+"Pemasaran","Deskripsi biaya pemasaran",50000,"Platform/Vendor","INV-003","2024-01-15"
