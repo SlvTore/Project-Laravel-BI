@@ -101,6 +101,56 @@ class ProductController extends Controller
     }
 
     // API Methods for Modal Management
+    public function getAllProducts(Request $request)
+    {
+        try {
+            $business = $request->user()->primaryBusiness()->firstOrFail();
+
+            $products = Product::where('business_id', $business->id)
+                             ->whereNotNull('card_id')
+                             ->get();
+
+            return response()->json([
+                'success' => true,
+                'products' => $products
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function createDraft(Request $request)
+    {
+        try {
+            $request->validate([
+                'card_id' => 'required|string',
+                'name' => 'required|string|max:255',
+                'status' => 'required|string|in:draft,active'
+            ]);
+
+            $business = $request->user()->primaryBusiness()->firstOrFail();
+
+            $product = Product::create([
+                'business_id' => $business->id,
+                'card_id' => $request->card_id,
+                'name' => $request->name,
+                'category' => 'Uncategorized',
+                'selling_price' => 0,
+                'cost_price' => 0,
+                'unit' => 'Pcs',
+                'status' => $request->status ?? 'draft'
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'product' => $product,
+                'message' => 'Draft product created successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
     public function updateTitle(Request $request)
     {
         try {

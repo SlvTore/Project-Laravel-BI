@@ -3,12 +3,12 @@
 @section('content')
 <div class="container-fluid ms-4" id="data-feeds-content">
     <!-- Clean Header -->
-    <div class="row mb-4">
+    <div class="row mb-4 p-3">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h1 class="display-5 fw-bold text-white mb-0">Data Feeds Management</h1>
-                    <p class="text-white">Kelola data produk dengan interface yang bersih</p>
+                    <p class="text-white">Kelola data produk Anda!</p>
                 </div>
                 <div class="d-flex gap-3">
                     <button onclick="showImportModal()" class="btn btn-liquid-glass btn-import">
@@ -21,7 +21,7 @@
     </div>
 
     <!-- Products Management Card -->
-    <div class="row">
+    <div class="row p-3">
         <div class="col-12">
             <div class="card card-liquid-transparent mb-4">
                 <div class="card-body">
@@ -83,11 +83,31 @@
 
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-semibold text-white">Nama Produk</label>
+                                    <label class="form-label fw-semibold text-white">
+                                        Nama Produk
+                                        <i class="bi bi-info-circle text-info ms-1"
+                                           data-bs-toggle="popover"
+                                           data-bs-placement="top"
+                                           data-bs-trigger="hover focus"
+                                           data-bs-title="Tips Naming Produk"
+                                           data-bs-content="Gunakan nama yang mudah diingat dan menjelaskan produk. Contoh: <br>• <b>Nasi Goreng Spesial</b> (tidak hanya 'Nasi Goreng')<br>• <b>Kopi Arabica Premium</b><br>• <b>Kaos Polos Cotton Combed</b>"
+                                           data-bs-html="true"
+                                           style="cursor: pointer; font-size: 0.9em;"></i>
+                                    </label>
                                     <input type="text" class="form-control bg-dark text-white border-secondary" style="border-color: rgba(255,255,255,0.2) !important;" id="productName" name="name" placeholder="Masukkan nama produk" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-semibold text-white">Kategori</label>
+                                    <label class="form-label fw-semibold text-white">
+                                        Kategori
+                                        <i class="bi bi-info-circle text-info ms-1"
+                                           data-bs-toggle="popover"
+                                           data-bs-placement="top"
+                                           data-bs-trigger="hover focus"
+                                           data-bs-title="Pentingnya Kategorisasi"
+                                           data-bs-content="Kategori membantu analisis bisnis:<br>• <b>Performa per kategori</b><br>• <b>Identifikasi produk terlaris</b><br>• <b>Perencanaan stok yang tepat</b><br>• <b>Laporan penjualan yang rapi</b>"
+                                           data-bs-html="true"
+                                           style="cursor: pointer; font-size: 0.9em;"></i>
+                                    </label>
                                     <select class="form-select bg-dark text-white border-secondary" style="border-color: rgba(255,255,255,0.2) !important;" id="productCategory" name="category" required>
                                         <option value="">Pilih Kategori</option>
                                         <option value="Makanan">Makanan</option>
@@ -100,15 +120,43 @@
                             </div>
                             <div class="row">
                                 <div class="col-md-4 mb-3">
-                                    <label class="form-label fw-semibold text-white">Harga Jual (Rp)</label>
+                                    <label class="form-label fw-semibold text-white">
+                                        Harga Jual (Rp)
+                                        <i class="bi bi-info-circle text-info ms-1"
+                                           data-bs-toggle="popover"
+                                           data-bs-placement="top"
+                                           data-bs-trigger="hover focus"
+                                           data-bs-title="Strategi Pricing"
+                                           data-bs-content="Rumus sederhana: <br><b>Harga Jual = Harga Pokok + Margin Keuntungan</b><br><br>Tips:<br>• Riset harga kompetitor<br>• Pertimbangkan target market<br>• Margin 30-50% untuk produk baru<br>• Sesuaikan dengan positioning brand"
+                                           data-bs-html="true"
+                                           style="cursor: pointer; font-size: 0.9em;"></i>
+                                    </label>
                                     <input type="number" class="form-control bg-dark text-white border-secondary" style="border-color: rgba(255,255,255,0.2) !important;" id="productSellingPrice" name="selling_price" placeholder="0" min="0" step="0.01">
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <label class="form-label fw-semibold text-white">Harga Pokok (Rp)</label>
+                                    <label class="form-label fw-semibold text-white">
+                                        Harga Pokok (Rp)
+                                        <i class="bi bi-info-circle text-info ms-1"
+                                           data-bs-toggle="popover"
+                                           data-bs-placement="top"
+                                           data-bs-trigger="hover focus"
+                                           data-bs-title="Menghitung Harga Pokok"
+                                           data-bs-content="Komponen Harga Pokok:<br>• <b>Bahan baku</b> (gunakan BOM tab)<br>• <b>Tenaga kerja</b><br>• <b>Overhead</b> (listrik, sewa)<br>• <b>Packaging</b><br><br>💡 <i>Akan otomatis terhitung jika menggunakan Bill of Materials</i>"
+                                           data-bs-html="true"
+                                           style="cursor: pointer; font-size: 0.9em;"></i>
+                                    </label>
                                     <input type="number" class="form-control bg-dark text-white border-secondary" style="border-color: rgba(255,255,255,0.2) !important;" id="productCostPrice" name="cost_price" placeholder="0" min="0" step="0.01">
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <label class="form-label fw-semibold text-white">Unit</label>
+                                    <label class="form-label fw-semibold text-white">
+                                        Unit
+                                        <i class="bi bi-info-circle text-info ms-1"
+                                           data-bs-toggle="popover"
+                                           data-bs-placement="top"
+                                           data-bs-trigger="hover focus"
+                                           data-bs-content="Satuan penjualan produk. Pilih satuan yang paling umum digunakan untuk produk ini"
+                                           style="cursor: pointer; font-size: 0.9em;"></i>
+                                    </label>
                                     <select class="form-select bg-dark text-white border-secondary" style="border-color: rgba(255,255,255,0.2) !important;" id="productUnit" name="unit" required>
                                         <option value="Pcs">Pcs</option>
                                         <option value="Kg">Kg</option>
@@ -118,7 +166,15 @@
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label fw-semibold text-white">Deskripsi</label>
+                                <label class="form-label fw-semibold text-white">
+                                    Deskripsi
+                                    <i class="bi bi-info-circle text-info ms-1"
+                                       data-bs-toggle="popover"
+                                       data-bs-placement="top"
+                                       data-bs-trigger="hover focus"
+                                       data-bs-content="Informasi tambahan tentang produk seperti bahan, ukuran, rasa, atau keunggulan khusus produk"
+                                       style="cursor: pointer; font-size: 0.9em;"></i>
+                                </label>
                                 <textarea class="form-control bg-dark text-white border-secondary" style="border-color: rgba(255,255,255,0.2) !important;" rows="3" id="productDescription" name="description" placeholder="Deskripsi produk (opsional)"></textarea>
                             </div>
                             <div class="d-flex gap-2">
@@ -143,12 +199,43 @@
                                     @csrf
                                     <div class="row">
                                         <div class="col-md-3 mb-2">
+                                            <label class="form-label fw-semibold text-white small">
+                                                Nama Bahan
+                                                <i class="bi bi-info-circle text-info ms-1"
+                                                   data-bs-toggle="popover"
+                                                   data-bs-placement="top"
+                                                   data-bs-trigger="hover focus"
+                                                   data-bs-title="Bill of Materials (BOM)"
+                                                   data-bs-content="BOM adalah daftar bahan yang dibutuhkan:<br>• <b>Tepung terigu</b> - bahan utama<br>• <b>Telur ayam</b> - protein<br>• <b>Kemasan plastik</b> - packaging<br>• <b>Label sticker</b> - branding<br><br>💡 <i>Semakin detail, semakin akurat cost calculation</i>"
+                                                   data-bs-html="true"
+                                                   style="cursor: pointer; font-size: 0.8em;"></i>
+                                            </label>
                                             <input type="text" class="form-control bg-dark text-white border-secondary" style="border-color: rgba(255,255,255,0.2) !important;" id="bomMaterialName" name="material_name" placeholder="Nama Bahan" required>
                                         </div>
                                         <div class="col-md-2 mb-2">
+                                            <label class="form-label fw-semibold text-white small">
+                                                Qty
+                                                <i class="bi bi-info-circle text-info ms-1"
+                                                   data-bs-toggle="popover"
+                                                   data-bs-placement="top"
+                                                   data-bs-trigger="hover focus"
+                                                   data-bs-title="Quantity Planning"
+                                                   data-bs-content="Berapa banyak bahan yang diperlukan untuk <b>1 unit produk</b>:<br><br>Contoh untuk Kue Brownies:<br>• Tepung: <b>0.2</b> Kg<br>• Telur: <b>2</b> Pcs<br>• Coklat: <b>0.1</b> Kg<br>• Kemasan: <b>1</b> Pcs<br><br>⚠️ <i>Hitung dengan tepat untuk akurasi cost</i>"
+                                                   data-bs-html="true"
+                                                   style="cursor: pointer; font-size: 0.8em;"></i>
+                                            </label>
                                             <input type="number" step="0.01" class="form-control bg-dark text-white border-secondary" style="border-color: rgba(255,255,255,0.2) !important;" id="bomQuantity" name="quantity" placeholder="Qty" required min="0">
                                         </div>
                                         <div class="col-md-2 mb-2">
+                                            <label class="form-label fw-semibold text-white small">
+                                                Unit
+                                                <i class="bi bi-info-circle text-info ms-1"
+                                                   data-bs-toggle="popover"
+                                                   data-bs-placement="top"
+                                                   data-bs-trigger="hover focus"
+                                                   data-bs-content="Satuan ukuran untuk bahan ini. Pilih yang sesuai dengan cara pembelian bahan"
+                                                   style="cursor: pointer; font-size: 0.8em;"></i>
+                                            </label>
                                             <select class="form-select bg-dark text-white border-secondary" style="border-color: rgba(255,255,255,0.2) !important;" id="bomUnit" name="unit" required>
                                                 <option value="kg">Kg</option>
                                                 <option value="gram">Gram</option>
@@ -158,9 +245,29 @@
                                             </select>
                                         </div>
                                         <div class="col-md-3 mb-2">
+                                            <label class="form-label fw-semibold text-white small">
+                                                Harga/Unit
+                                                <i class="bi bi-info-circle text-info ms-1"
+                                                   data-bs-toggle="popover"
+                                                   data-bs-placement="top"
+                                                   data-bs-trigger="hover focus"
+                                                   data-bs-title="Cost Per Unit Calculation"
+                                                   data-bs-content="Harga bahan per satuan unit:<br><br><b>Cara menghitung:</b><br>• Beli tepung 25kg = Rp 250.000<br>• Harga per Kg = Rp 10.000<br>• Input: <b>10000</b><br><br><b>Tips:</b> Gunakan harga rata-rata dari beberapa supplier untuk akurasi yang lebih baik"
+                                                   data-bs-html="true"
+                                                   style="cursor: pointer; font-size: 0.8em;"></i>
+                                            </label>
                                             <input type="number" step="0.01" class="form-control bg-dark text-white border-secondary" style="border-color: rgba(255,255,255,0.2) !important;" id="bomCostPerUnit" name="cost_per_unit" placeholder="Harga/Unit" required min="0">
                                         </div>
                                         <div class="col-md-2 mb-2">
+                                            <label class="form-label fw-semibold text-white small">
+                                                Tambah
+                                                <i class="bi bi-info-circle text-info ms-1"
+                                                   data-bs-toggle="popover"
+                                                   data-bs-placement="top"
+                                                   data-bs-trigger="hover focus"
+                                                   data-bs-content="Klik untuk menambahkan bahan ke daftar BOM"
+                                                   style="cursor: pointer; font-size: 0.8em;"></i>
+                                            </label>
                                             <button type="submit" class="btn btn-warning btn-sm w-100">
                                                 <i class="bi bi-plus"></i>
                                             </button>
@@ -370,6 +477,70 @@
     outline: none;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
 }
+
+/* Custom Popover Styling */
+.custom-popover.popover {
+    --bs-popover-max-width: 350px;
+    --bs-popover-border-color: rgba(59, 130, 246, 0.3);
+    --bs-popover-header-bg: rgba(15, 15, 15, 0.98);
+    --bs-popover-header-color: #60a5fa;
+    --bs-popover-body-bg: rgba(20, 20, 20, 0.98);
+    --bs-popover-body-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 12px;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.custom-popover.popover .popover-arrow::before {
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.custom-popover.popover .popover-arrow::after {
+    border-color: rgba(20, 20, 20, 0.98);
+}
+
+.custom-popover.popover .popover-body {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    background-color: rgba(20, 20, 20, 0.98) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.custom-popover.popover .popover-header {
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+    background-color: rgba(15, 15, 15, 0.98) !important;
+    color: #60a5fa !important;
+}
+
+/* Info icon hover effect */
+.bi-info-circle:hover {
+    color: rgba(59, 130, 246, 0.9) !important;
+    transform: scale(1.15);
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.4));
+}
+
+/* Override Bootstrap popover styling for dark theme */
+.popover {
+    --bs-popover-bg: rgba(20, 20, 20, 0.98) !important;
+    --bs-popover-body-color: rgba(255, 255, 255, 0.95) !important;
+    --bs-popover-header-bg: rgba(15, 15, 15, 0.98) !important;
+    --bs-popover-header-color: #60a5fa !important;
+    --bs-popover-border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+.popover .popover-body {
+    background-color: rgba(20, 20, 20, 0.98) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.popover .popover-header {
+    background-color: rgba(15, 15, 15, 0.98) !important;
+    color: #60a5fa !important;
+}
 </style>
 
 <script>
@@ -382,7 +553,23 @@ let currentProductId = null;
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Data Feeds App initialized');
     initializeEventListeners();
+    loadExistingProducts();
+    initializePopovers();
 });
+
+// Initialize Bootstrap popovers
+function initializePopovers() {
+    // Initialize all popovers
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+        return new bootstrap.Popover(popoverTriggerEl, {
+            html: true,
+            trigger: 'hover focus',
+            container: 'body',
+            customClass: 'custom-popover'
+        });
+    });
+}
 
 // Initialize all event listeners
 function initializeEventListeners() {
@@ -403,11 +590,34 @@ function initializeEventListeners() {
     if (modal) {
         modal.addEventListener('shown.bs.modal', function () {
             loadProductData(currentCardId);
+            // Re-initialize popovers after modal is shown
+            setTimeout(() => {
+                initializePopovers();
+            }, 100);
         });
 
         modal.addEventListener('hidden.bs.modal', function () {
             resetForms();
         });
+    }
+}
+
+// Load existing products on page load
+async function loadExistingProducts() {
+    try {
+        const response = await fetch('/api/products/all');
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.products) {
+                result.products.forEach(product => {
+                    if (product.card_id) {
+                        createProductCard(product.card_id, product);
+                    }
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error loading existing products:', error);
     }
 }
 
@@ -417,14 +627,47 @@ function showImportModal() {
 }
 
 // Add new product card
-function addProductCard() {
+async function addProductCard() {
     const cardId = 'product-card-' + Date.now();
-    createProductCard(cardId);
+
+    try {
+        // Create draft product in backend first
+        const response = await fetch('/api/products/create-draft', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            },
+            body: JSON.stringify({
+                card_id: cardId,
+                name: 'Produk Baru',
+                status: 'draft'
+            })
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+                createProductCard(cardId, result.product);
+            } else {
+                showAlert('Gagal membuat produk: ' + result.message, 'danger');
+            }
+        } else {
+            showAlert('Terjadi kesalahan saat membuat produk', 'danger');
+        }
+    } catch (error) {
+        console.error('Error creating product draft:', error);
+        showAlert('Terjadi kesalahan saat membuat produk', 'danger');
+    }
 }
 
 // Create product card HTML
-function createProductCard(cardId) {
+function createProductCard(cardId, product = null) {
     const container = document.getElementById('productCardsContainer');
+    const productName = product?.name || 'Produk Baru';
+    const category = product?.category || '-';
+    const sellingPrice = product?.selling_price ?
+        new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(product.selling_price) : '-';
 
     const cardHTML = `
         <div class="col-md-6 col-lg-4 mb-4" id="${cardId}">
@@ -432,22 +675,22 @@ function createProductCard(cardId) {
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <h5 class="card-title editable-title" onclick="makeEditable(this, '${cardId}')">
-                            Produk Baru
+                            ${productName}
                         </h5>
                         <button class="btn btn-sm btn-outline-danger" onclick="removeCard('${cardId}')">
                             <i class="bi bi-x"></i>
                         </button>
                     </div>
                     <div class="card-info">
-                        <p class="card-text text-muted mb-2">
-                            <small>Kategori: <span class="category-text">-</span></small>
+                        <p class="card-text text-white mb-2">
+                            <small>Kategori: <span class="category-text">${category}</span></small>
                         </p>
-                        <p class="card-text text-muted mb-2">
-                            <small>Harga: <span class="price-text">-</span></small>
+                        <p class="card-text text-white  mb-2">
+                            <small>Harga: <span class="price-text">${sellingPrice}</span></small>
                         </p>
                     </div>
                     <div class="d-grid gap-2">
-                        <button class="btn btn-outline-primary btn-sm" onclick="openManageDataModal('${cardId}')">
+                        <button class="btn btn-outline-light btn-sm" onclick="openManageDataModal('${cardId}')">
                             <i class="bi bi-table me-2"></i>
                             Kelola Data
                         </button>
@@ -508,6 +751,17 @@ async function updateCardTitle(cardId, title) {
         }
     } catch (error) {
         console.error('Error updating card title:', error);
+    }
+}
+
+// Sync name with card title (live sync)
+function syncNameWithCard(cardId, newName) {
+    const card = document.getElementById(cardId);
+    if (card) {
+        const titleElement = card.querySelector('.card-title');
+        if (titleElement && !titleElement.querySelector('input')) {
+            titleElement.textContent = newName || 'Produk Baru';
+        }
     }
 }
 
@@ -590,6 +844,15 @@ function populateProductForm(product) {
     document.getElementById('productCostPrice').value = product.cost_price || '';
     document.getElementById('productUnit').value = product.unit || 'Pcs';
     document.getElementById('productDescription').value = product.description || '';
+
+    // Add event listener to sync name changes with card title
+    const nameField = document.getElementById('productName');
+    if (nameField && !nameField.hasAttribute('data-sync-listener')) {
+        nameField.addEventListener('input', function() {
+            syncNameWithCard(currentCardId, this.value);
+        });
+        nameField.setAttribute('data-sync-listener', 'true');
+    }
 }
 
 // Reset product form
@@ -661,6 +924,11 @@ function updateCardDisplay(cardId, product) {
 
         if (titleElement && product.name) {
             titleElement.textContent = product.name;
+            // Sync with modal name field if modal is open
+            const modalNameField = document.getElementById('productName');
+            if (modalNameField && currentCardId === cardId) {
+                modalNameField.value = product.name;
+            }
         }
 
         if (categoryElement && product.category) {

@@ -133,6 +133,8 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
 
         // API routes for Product Management Modal
         Route::prefix('api/products')->group(function () {
+            Route::get('/all', [App\Http\Controllers\Dashboard\ProductController::class, 'getAllProducts'])->name('api.products.all');
+            Route::post('/create-draft', [App\Http\Controllers\Dashboard\ProductController::class, 'createDraft'])->name('api.products.create-draft');
             Route::post('/update-title', [App\Http\Controllers\Dashboard\ProductController::class, 'updateTitle'])->name('api.products.update-title');
             Route::delete('/delete', [App\Http\Controllers\Dashboard\ProductController::class, 'deleteByCardId'])->name('api.products.delete');
             Route::get('/get/{cardId}', [App\Http\Controllers\Dashboard\ProductController::class, 'getByCardId'])->name('api.products.get');
