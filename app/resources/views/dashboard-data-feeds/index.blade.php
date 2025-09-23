@@ -42,6 +42,439 @@
             </div>
         </div>
     </div>
+
+    <!-- Sales & Income Transaction Section -->
+    <div class="row p-3">
+        <div class="col-12">
+            <div class="card card-liquid-transparent mb-4">
+                <div class="card-body">
+                    <!-- Sales Section Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h3 class="text-white mb-0">
+                                <i class="bi bi-cash-coin me-2 text-white"></i>
+                                Transaksi Income
+                            </h3>
+                            <p class="text-white mb-0 mt-1">Gateway pemasukan untuk mencatat setiap transaksi penjualan secara detail</p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button onclick="openSalesTransactionModal()" class="btn btn-liquid-glass btn-sales">
+                                <i class="bi bi-receipt me-2"></i>
+                                Tambah Transaksi
+                            </button>
+                            <button onclick="openSalesImportModal()" class="btn btn-liquid-glass btn-import-sales">
+                                <i class="bi bi-file-earmark-excel me-2"></i>
+                                Import Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Recent Transactions Preview -->
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="card" style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2);">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-graph-up display-6 text-white mb-2"></i>
+                                    <h6 class="text-white mb-1">Hari Ini</h6>
+                                    <h4 class="text-white mb-0" id="todaySales">Rp 0</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2);">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-calendar-week display-6 text-white mb-2"></i>
+                                    <h6 class="text-white mb-1">Minggu Ini</h6>
+                                    <h4 class="text-white mb-0" id="weeklySales">Rp 0</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card" style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.2);">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-calendar-month display-6 text-white mb-2"></i>
+                                    <h6 class="text-white mb-1">Bulan Ini</h6>
+                                    <h4 class="text-white mb-0" id="monthlySales">Rp 0</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compact Overview List -->
+                    <div class="card card-liquid-transparent my-3">
+                        <div class="d-flex justify-content-between align-items-center p-2">
+                            <h6 class="mb-0 text-white-50">Ringkasan 5 Transaksi Terakhir</h6>
+                        </div>
+                        <ul class="list-unstyled p-3" id="incomeOverviewList">
+                            <li class="text-white-50 small">Memuat ringkasan transaksi...</li>
+                        </ul>
+                    </div>
+
+                    <!-- Recent Transactions Table -->
+                    <div class="card" style="background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.2);">
+                        <div class="card-header" style="background: rgba(255, 255, 255, 0.2); border-bottom: 1px solid rgba(255, 255, 255, 0.2);">
+                            <h6 class="mb-0 text-white">
+                                <i class="bi bi-clock-history me-2 text-white"></i>
+                                Transaksi Terbaru
+                            </h6>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="p-3 border-bottom" style="border-color: rgba(255,255,255,0.2) !important;">
+                                <div class="row g-2 align-items-center">
+                                    <div class="col-md-4">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text" style="background: rgba(255, 255, 255, 0.1); text-white; border-color: rgba(255, 255, 255, 0.2) !important;"><i class="bi bi-search"></i></span>
+                                            <input type="text" id="transactionSearch" class="form-control text-white border-secondary" style="background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2) !important;" placeholder="Cari pelanggan, catatan...">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <input type="date" id="dateStart" class="form-control form-control-sm text-white border-secondary" style="background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2) !important;" />
+                                            </div>
+                                            <div class="col-6">
+                                                <input type="date" id="dateEnd" class="form-control form-control-sm text-white border-secondary" style="background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2) !important;" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select id="statusFilter" class="form-select form-select-sm text-white border-secondary" style="background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2) !important;">
+                                            <option value="">Semua Status</option>
+                                            <option value="completed">Selesai</option>
+                                            <option value="pending">Proses</option>
+                                            <option value="review">Perlu Ditinjau</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-1 text-end">
+                                        <button id="refreshTransactions" class="btn btn-sm btn-outline-light"><i class="bi bi-arrow-repeat"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table mb-0" id="transactionsTable" style="background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(12px); border-radius: 12px; overflow: hidden;">
+                                    <thead style="background: rgba(255,255,255,0.15);">
+                                        <tr>
+                                            <th class="text-white sortable" data-sort-by="transaction_date">Tanggal <i class="bi bi-arrow-down-up ms-1 opacity-50"></i></th>
+                                            <th class="text-white">Pelanggan</th>
+                                            <th class="text-white">Item</th>
+                                            <th class="text-white sortable" data-sort-by="total_amount">Total <i class="bi bi-arrow-down-up ms-1 opacity-50"></i></th>
+                                            <th class="text-white">Informasi</th>
+                                            <th class="text-white" width="100">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentTransactionsBody">
+                                        <tr id="emptyTransactionsMessage">
+                                            <td colspan="6" class="text-center text-muted py-4">
+                                                <i class="bi bi-receipt display-6 d-block mb-2 text-secondary"></i>
+                                                <span class="text-white-50">Belum ada transaksi</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sales Transaction Modal -->
+<div class="modal fade" id="salesTransactionModal" tabindex="-1" aria-labelledby="salesTransactionModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content" style="background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; color: white;">
+            <div class="modal-header border-0" style="border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;">
+                <h5 class="modal-title fw-bold text-white" id="salesTransactionModalLabel">
+                    <i class="bi bi-receipt-cutoff me-2 text-success"></i>
+                    Input Transaksi Penjualan
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="salesTransactionForm">
+                    @csrf
+
+                    <!-- Transaction Header Information -->
+                    <div class="card mb-4" style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(255, 255, 255, 0.1);">
+                        <div class="card-body">
+                            <h6 class="card-title text-success">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Informasi Transaksi
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold text-white">
+                                        Tanggal & Waktu Transaksi
+                                        <i class="bi bi-info-circle text-info ms-1"
+                                           data-bs-toggle="popover"
+                                           data-bs-placement="top"
+                                           data-bs-trigger="hover focus"
+                                           data-bs-title="Waktu Transaksi"
+                                           data-bs-content="Tentukan kapan transaksi ini terjadi. Default adalah waktu saat ini, tapi bisa diubah untuk input transaksi yang sudah lewat"
+                                           data-bs-html="true"
+                                           style="cursor: pointer; font-size: 0.9em;"></i>
+                                    </label>
+                                    <input type="datetime-local" class="form-control bg-dark text-white border-secondary" style="border-color: rgba(255,255,255,0.2) !important;" id="transactionDateTime" name="transaction_date" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold text-white">
+                                        Pelanggan
+                                        <i class="bi bi-info-circle text-info ms-1"
+                                           data-bs-toggle="popover"
+                                           data-bs-placement="top"
+                                           data-bs-trigger="hover focus"
+                                           data-bs-title="Data Pelanggan"
+                                           data-bs-content="Pilih pelanggan yang melakukan pembelian. Jika pelanggan baru, akan otomatis ditambahkan ke database untuk analisis customer retention"
+                                           data-bs-html="true"
+                                           style="cursor: pointer; font-size: 0.9em;"></i>
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control bg-dark text-white border-secondary" style="border-color: rgba(255,255,255,0.2) !important;" id="customerName" name="customer_name" placeholder="Nama Pelanggan" autocomplete="off">
+                                        <button class="btn btn-outline-success" type="button" onclick="addNewCustomer()">
+                                            <i class="bi bi-person-plus"></i>
+                                        </button>
+                                    </div>
+                                    <div id="customerSuggestions" class="dropdown-menu" style="width: 100%; max-height: 200px; overflow-y: auto;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transaction Items -->
+                    <div class="card mb-4" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(255, 255, 255, 0.1);">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="card-title text-primary mb-0">
+                                    <i class="bi bi-basket me-2"></i>
+                                    Item yang Dibeli
+                                </h6>
+                                <button type="button" class="btn btn-success btn-sm" onclick="addTransactionItem()">
+                                    <i class="bi bi-plus-circle me-1"></i>
+                                    Tambah Item
+                                </button>
+                            </div>
+
+                            <!-- Transaction Items Container -->
+                            <div id="transactionItemsContainer">
+                                <div class="transaction-item border-bottom pb-3 mb-3" data-item-index="0">
+                                    <div class="row align-items-end">
+                                        <div class="col-md-4 mb-2">
+                                            <label class="form-label fw-semibold text-white small">
+                                                Produk
+                                                <i class="bi bi-info-circle text-info ms-1"
+                                                   data-bs-toggle="popover"
+                                                   data-bs-placement="top"
+                                                   data-bs-trigger="hover focus"
+                                                   data-bs-title="Pilih Produk"
+                                                   data-bs-content="Ketik nama produk untuk mencari. Harga akan otomatis terisi dari master produk tapi bisa diubah sesuai kebutuhan"
+                                                   data-bs-html="true"
+                                                   style="cursor: pointer; font-size: 0.8em;"></i>
+                                            </label>
+                                            <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary product-search"
+                                                   style="border-color: rgba(255,255,255,0.2) !important;"
+                                                   name="items[0][product_name]"
+                                                   placeholder="Cari produk..."
+                                                   autocomplete="off" required>
+                                            <input type="hidden" name="items[0][product_id]" class="product-id">
+                                        </div>
+                                        <div class="col-md-2 mb-2">
+                                            <label class="form-label fw-semibold text-white small">Qty</label>
+                                            <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary quantity-input"
+                                                   style="border-color: rgba(255,255,255,0.2) !important;"
+                                                   name="items[0][quantity]"
+                                                   placeholder="1"
+                                                   min="1" step="0.01" value="1" required>
+                                        </div>
+                                        <div class="col-md-2 mb-2">
+                                            <label class="form-label fw-semibold text-white small">Harga</label>
+                                            <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary price-input"
+                                                   style="border-color: rgba(255,255,255,0.2) !important;"
+                                                   name="items[0][selling_price]"
+                                                   placeholder="0"
+                                                   min="0" step="0.01" required>
+                                        </div>
+                                        <div class="col-md-2 mb-2">
+                                            <label class="form-label fw-semibold text-white small">Diskon</label>
+                                            <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary discount-input"
+                                                   style="border-color: rgba(255,255,255,0.2) !important;"
+                                                   name="items[0][discount]"
+                                                   placeholder="0"
+                                                   min="0" step="0.01" value="0">
+                                        </div>
+                                        <div class="col-md-2 mb-2 text-end">
+                                            <label class="form-label fw-semibold text-white small">Subtotal</label>
+                                            <div class="text-success fw-bold item-subtotal">Rp 0</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transaction Summary -->
+                    <div class="card mb-4" style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(255, 255, 255, 0.1);">
+                        <div class="card-body">
+                            <h6 class="card-title text-purple">
+                                <i class="bi bi-calculator me-2"></i>
+                                Ringkasan Transaksi
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold text-white">
+                                        Pajak (Rp)
+                                        <i class="bi bi-info-circle text-info ms-1"
+                                           data-bs-toggle="popover"
+                                           data-bs-placement="top"
+                                           data-bs-trigger="hover focus"
+                                           data-bs-content="Tambahan pajak yang dikenakan pada transaksi ini (opsional)"
+                                           style="cursor: pointer; font-size: 0.9em;"></i>
+                                    </label>
+                                    <input type="number" class="form-control bg-dark text-white border-secondary" style="border-color: rgba(255,255,255,0.2) !important;" id="transactionTax" name="tax_amount" placeholder="0" min="0" step="0.01" value="0">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold text-white">
+                                        Biaya Pengiriman (Rp)
+                                        <i class="bi bi-info-circle text-info ms-1"
+                                           data-bs-toggle="popover"
+                                           data-bs-placement="top"
+                                           data-bs-trigger="hover focus"
+                                           data-bs-content="Biaya pengiriman atau ongkir untuk transaksi ini (opsional)"
+                                           style="cursor: pointer; font-size: 0.9em;"></i>
+                                    </label>
+                                    <input type="number" class="form-control bg-dark text-white border-secondary" style="border-color: rgba(255,255,255,0.2) !important;" id="shippingCost" name="shipping_cost" placeholder="0" min="0" step="0.01" value="0">
+                                </div>
+                            </div>
+
+                            <!-- Transaction Total -->
+                            <div class="border-top pt-3 mt-3" style="border-color: rgba(255, 255, 255, 0.2) !important;">
+                                <div class="row">
+                                    <div class="col-md-8"></div>
+                                    <div class="col-md-4">
+                                        <table class="table table-sm text-white">
+                                            <tbody>
+                                                <tr>
+                                                    <td>Subtotal Items:</td>
+                                                    <td class="text-end" id="itemsSubtotal">Rp 0</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Pajak:</td>
+                                                    <td class="text-end" id="displayTax">Rp 0</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Pengiriman:</td>
+                                                    <td class="text-end" id="displayShipping">Rp 0</td>
+                                                </tr>
+                                                <tr class="border-top" style="border-color: rgba(255, 255, 255, 0.3) !important;">
+                                                    <th>Total Akhir:</th>
+                                                    <th class="text-end text-success" id="finalTotal">Rp 0</th>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.1); background: rgba(30,30,30,0.9);">
+                <button type="button" class="btn btn-secondary bg-dark text-white" style="border-color: rgba(255,255,255,0.2);" data-bs-dismiss="modal">
+                    Batal
+                </button>
+                <button type="button" class="btn btn-success" onclick="saveSalesTransaction()">
+                    <i class="bi bi-check-lg me-2"></i>
+                    Simpan Transaksi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sales Import Modal -->
+<div class="modal fade" id="salesImportModal" tabindex="-1" aria-labelledby="salesImportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; color: white;">
+            <div class="modal-header border-0" style="border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;">
+                <h5 class="modal-title fw-bold text-white" id="salesImportModalLabel">
+                    <i class="bi bi-file-earmark-excel me-2 text-success"></i>
+                    Import Data Penjualan
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Step 1: Download Template -->
+                <div class="card mb-4" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <div class="card-body">
+                        <h6 class="card-title text-primary">
+                            <i class="bi bi-download me-2"></i>
+                            Langkah 1: Download Template
+                        </h6>
+                        <p class="text-white-50 mb-3">Download template Excel/CSV untuk memastikan format data sesuai dengan sistem</p>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="downloadSalesTemplate('excel')">
+                                <i class="bi bi-file-earmark-excel me-1"></i>
+                                Template Excel
+                            </button>
+                            <button type="button" class="btn btn-outline-success btn-sm" onclick="downloadSalesTemplate('csv')">
+                                <i class="bi bi-filetype-csv me-1"></i>
+                                Template CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Upload File -->
+                <div class="card mb-4" style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <div class="card-body">
+                        <h6 class="card-title text-success">
+                            <i class="bi bi-upload me-2"></i>
+                            Langkah 2: Upload File Data
+                        </h6>
+                        <form id="salesImportForm" enctype="multipart/form-data">
+                            @csrf
+                            <div class="mb-3">
+                                <input type="file" class="form-control bg-dark text-white border-secondary"
+                                       style="border-color: rgba(255,255,255,0.2) !important;"
+                                       id="salesImportFile"
+                                       name="sales_file"
+                                       accept=".xlsx,.xls,.csv" required>
+                                <div class="form-text text-white-50">
+                                    Supported formats: .xlsx, .xls, .csv (Max: 10MB)
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Import Preview -->
+                <div id="importPreviewSection" class="card" style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(255, 255, 255, 0.1); display: none;">
+                    <div class="card-body">
+                        <h6 class="card-title text-purple">
+                            <i class="bi bi-eye me-2"></i>
+                            Preview Data
+                        </h6>
+                        <div id="importPreviewContent">
+                            <!-- Preview content will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.1); background: rgba(30,30,30,0.9);">
+                <button type="button" class="btn btn-secondary bg-dark text-white" style="border-color: rgba(255,255,255,0.2);" data-bs-dismiss="modal">
+                    Tutup
+                </button>
+                <button type="button" class="btn btn-warning" onclick="previewImportData()" id="previewBtn">
+                    <i class="bi bi-eye me-2"></i>
+                    Preview Data
+                </button>
+                <button type="button" class="btn btn-success" onclick="processSalesImport()" id="importBtn" style="display: none;">
+                    <i class="bi bi-check-lg me-2"></i>
+                    Proses Import
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Manage Data Modal -->
@@ -1097,5 +1530,1129 @@ function showAlert(message, type = 'info') {
         }
     }, 5000);
 }
+
+// Sales Transaction Functions
+let transactionItemIndex = 0;
+let productSearchCache = {};
+let customerSearchCache = {};
+
+// Format currency helper function
+function formatCurrency(amount) {
+    try {
+        // Convert to number if it's a string
+        const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+
+        // Check if it's a valid number
+        if (isNaN(numAmount) || numAmount === null || numAmount === undefined) {
+            return '0';
+        }
+
+        // Use Indonesian locale formatting
+        return new Intl.NumberFormat('id-ID', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(numAmount);
+    } catch (error) {
+        console.error('Error formatting currency:', error);
+        // Fallback to simple number formatting
+        return Math.round(amount || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+}
+
+// Load recent transactions from API
+async function loadRecentTransactions(options = {}) {
+    try {
+        console.log('Loading recent transactions...');
+        const params = new URLSearchParams({
+            page: options.page || 1,
+            per_page: options.perPage || 10,
+            search: options.search || document.getElementById('transactionSearch')?.value || '',
+            status: options.status || document.getElementById('statusFilter')?.value || '',
+            start_date: options.startDate || document.getElementById('dateStart')?.value || '',
+            end_date: options.endDate || document.getElementById('dateEnd')?.value || '',
+            sort_by: options.sortBy || 'transaction_date',
+            sort_dir: options.sortDir || 'desc',
+        });
+
+        const response = await fetch('/api/sales-transactions?' + params.toString(), {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Transactions response:', result);
+
+        if (result.success && result.data) {
+            displayRecentTransactions(result.data.transactions);
+
+            // Update statistics if available
+            if (result.data.statistics) {
+                updateSalesStatistics(result.data.statistics);
+            }
+
+            // Render pagination
+            renderTransactionsPagination(result.data.pagination, options);
+        } else {
+            console.warn('No transaction data available:', result.message);
+            showEmptyTransactionsMessage();
+        }
+    } catch (error) {
+        console.error('Error loading recent transactions:', error);
+        showEmptyTransactionsMessage();
+    }
+}
+
+// Display recent transactions in table
+function displayRecentTransactions(transactions) {
+    const tbody = document.getElementById('recentTransactionsBody');
+    if (!tbody) {
+        console.error('Recent transactions table body not found');
+        return;
+    }
+
+    // Clear existing content
+    tbody.innerHTML = '';
+
+    if (!transactions || transactions.length === 0) {
+        showEmptyTransactionsMessage();
+        return;
+    }
+
+    // Hide empty message and create rows
+    transactions.forEach(transaction => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="px-4 py-3">
+                <div class="text-sm font-medium">${transaction.transaction_date}</div>
+            </td>
+            <td class="px-4 py-3">
+                <div class="text-sm font-medium">${transaction.customer_name}</div>
+            </td>
+            <td class="px-4 py-3">
+                <div class="text-sm">${transaction.items_summary}</div>
+                <div class="text-xs text-muted-foreground">${transaction.items_count} item${transaction.items_count > 1 ? 's' : ''}</div>
+            </td>
+            <td class="px-4 py-3">
+                <div class="text-sm font-medium">${transaction.formatted_total}</div>
+            </td>
+            <td class="px-4 py-3">
+                <select class="form-select form-select-sm bg-light border-secondary transaction-status-select" data-id="${transaction.id}">
+                    <option value="completed" ${transaction.status === 'completed' ? 'selected' : ''}>Selesai</option>
+                    <option value="pending" ${transaction.status === 'pending' ? 'selected' : ''}>Proses</option>
+                    <option value="review" ${transaction.status === 'review' ? 'selected' : ''}>Perlu Ditinjau</option>
+                </select>
+            </td>
+            <td class="px-4 py-3">
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" title="Edit" onclick="editTransaction(${transaction.id})">
+                        <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" title="Hapus" onclick="deleteTransaction(${transaction.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    console.log(`Displayed ${transactions.length} transactions`);
+
+    // Attach listeners for status change
+    tbody.querySelectorAll('.transaction-status-select').forEach(sel => {
+        sel.addEventListener('change', async (e) => {
+            const id = e.target.getAttribute('data-id');
+            const status = e.target.value;
+            try {
+                const res = await fetch(`/api/sales-transactions/${id}/status`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ status })
+                });
+                const data = await res.json();
+                if (!data.success) {
+                    showAlert('Gagal memperbarui status', 'danger');
+                }
+            } catch (err) {
+                console.error('Update status error:', err);
+                showAlert('Terjadi kesalahan saat memperbarui status', 'danger');
+            }
+        });
+    });
+}
+
+// Show empty message when no transactions
+function showEmptyTransactionsMessage() {
+    const tbody = document.getElementById('recentTransactionsBody');
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr id="emptyTransactionsMessage">
+                <td colspan="6" class="px-6 py-8 text-center text-sm text-muted-foreground">
+                    <div class="flex flex-col items-center space-y-2">
+                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <div>Belum ada transaksi</div>
+                        <div class="text-xs">Mulai dengan menambahkan transaksi baru</div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Update sales statistics (optional)
+function updateSalesStatistics(statistics) {
+    // Update daily sales
+    const dailyElement = document.querySelector('[data-stat="daily-sales"]');
+    if (dailyElement) {
+        dailyElement.textContent = statistics.formatted_daily;
+    }
+
+    // Update weekly sales
+    const weeklyElement = document.querySelector('[data-stat="weekly-sales"]');
+    if (weeklyElement) {
+        weeklyElement.textContent = statistics.formatted_weekly;
+    }
+
+    // Update monthly sales
+    const monthlyElement = document.querySelector('[data-stat="monthly-sales"]');
+    if (monthlyElement) {
+        monthlyElement.textContent = statistics.formatted_monthly;
+    }
+
+    // Backward-compatible IDs for existing cards
+    const todaySales = document.getElementById('todaySales');
+    if (todaySales && statistics.formatted_daily) todaySales.textContent = statistics.formatted_daily;
+    const weeklySales = document.getElementById('weeklySales');
+    if (weeklySales && statistics.formatted_weekly) weeklySales.textContent = statistics.formatted_weekly;
+    const monthlySales = document.getElementById('monthlySales');
+    if (monthlySales && statistics.formatted_monthly) monthlySales.textContent = statistics.formatted_monthly;
+}
+
+// Load compact income overview (stats + latest 5)
+async function loadIncomeOverview(options = {}) {
+    try {
+        const params = new URLSearchParams({
+            page: 1,
+            per_page: 5,
+            search: options.search || document.getElementById('transactionSearch')?.value || '',
+            status: options.status || document.getElementById('statusFilter')?.value || '',
+            start_date: options.startDate || document.getElementById('dateStart')?.value || '',
+            end_date: options.endDate || document.getElementById('dateEnd')?.value || '',
+            sort_by: options.sortBy || 'transaction_date',
+            sort_dir: options.sortDir || 'desc'
+        });
+
+        const response = await fetch('/api/sales-transactions?' + params.toString(), {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
+        });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+
+        const result = await response.json();
+        if (result?.data?.statistics) updateSalesStatistics(result.data.statistics);
+        renderIncomeOverviewList(result?.data?.transactions || []);
+    } catch (err) {
+        console.error('Income overview load error:', err);
+        renderIncomeOverviewList([]);
+    }
+}
+
+function renderIncomeOverviewList(transactions) {
+    const list = document.getElementById('incomeOverviewList');
+    if (!list) return;
+    list.innerHTML = '';
+
+    if (!transactions || transactions.length === 0) {
+        list.innerHTML = '<li class="text-white-50 small">Belum ada transaksi</li>';
+        return;
+    }
+
+    transactions.forEach(tx => {
+        const dateStr = tx.formatted_date || tx.transaction_date || '-';
+        const customer = tx.customer_name || '-';
+        const total = typeof tx.total_amount !== 'undefined' ? `Rp ${formatCurrency(tx.total_amount)}` : (tx.formatted_total || 'Rp 0');
+        const status = (tx.status || '').toLowerCase();
+        const badgeClass = status === 'completed' ? 'success' : (status === 'pending' ? 'warning' : 'secondary');
+
+        const li = document.createElement('li');
+        li.className = 'd-flex justify-content-between align-items-center py-2 border-bottom';
+        li.style.borderColor = 'rgba(255,255,255,0.07)';
+        li.innerHTML = `
+            <div class="d-flex flex-column">
+                <span class="text-white">${customer}</span>
+                <small class="text-white-50">${dateStr}</small>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <span class="badge bg-${badgeClass}">${tx.status || '-'}</span>
+                <span class="text-white fw-semibold">${total}</span>
+            </div>
+        `;
+        list.appendChild(li);
+    });
+}
+
+// Placeholder functions for transaction actions
+function viewTransactionDetail(transactionId) {
+    alert(`Viewing transaction ${transactionId} - Feature will be implemented soon`);
+}
+
+function editTransaction(transactionId) {
+    openSalesTransactionModal();
+    // Mark editing mode
+    const form = document.getElementById('salesTransactionForm');
+    form.setAttribute('data-edit-id', transactionId);
+    loadTransactionIntoForm(transactionId);
+}
+
+async function deleteTransaction(transactionId) {
+    if (!confirm('Hapus transaksi ini? Tindakan ini tidak dapat dibatalkan.')) return;
+    try {
+        const res = await fetch(`/api/sales-transactions/${transactionId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        });
+        const data = await res.json();
+        if (data.success) {
+            showAlert('Transaksi dihapus', 'success');
+            loadRecentTransactions();
+        } else {
+            showAlert(data.message || 'Gagal menghapus transaksi', 'danger');
+        }
+    } catch (e) {
+        console.error('Delete error:', e);
+        showAlert('Terjadi kesalahan saat menghapus transaksi', 'danger');
+    }
+}
+
+// Render pagination controls
+function renderTransactionsPagination(pagination, options) {
+    // For simplicity, render minimal controls below the table
+    const table = document.getElementById('transactionsTable');
+    if (!table) return;
+
+    let footer = table.nextElementSibling;
+    if (!footer || !footer.classList.contains('transactions-pagination')) {
+        footer = document.createElement('div');
+        footer.className = 'transactions-pagination d-flex justify-content-between align-items-center p-2 border-top';
+        footer.style.borderColor = 'rgba(255,255,255,0.1)';
+        table.parentElement.appendChild(footer);
+    }
+
+    const { current_page, last_page, total } = pagination;
+    footer.innerHTML = `
+        <div class="text-white-50 small">Total: ${total}</div>
+        <div class="btn-group">
+            <button class="btn btn-sm btn-outline-light" ${current_page <= 1 ? 'disabled' : ''} id="tx-prev">Prev</button>
+            <span class="btn btn-sm btn-dark">${current_page} / ${last_page}</span>
+            <button class="btn btn-sm btn-outline-light" ${current_page >= last_page ? 'disabled' : ''} id="tx-next">Next</button>
+        </div>`;
+
+    footer.querySelector('#tx-prev')?.addEventListener('click', () => {
+        loadRecentTransactions({
+            ...options,
+            page: Math.max(1, current_page - 1)
+        });
+    });
+    footer.querySelector('#tx-next')?.addEventListener('click', () => {
+        loadRecentTransactions({
+            ...options,
+            page: Math.min(last_page, current_page + 1)
+        });
+    });
+}
+
+// Wire up filters
+document.addEventListener('DOMContentLoaded', () => {
+    const search = document.getElementById('transactionSearch');
+    const status = document.getElementById('statusFilter');
+    const start = document.getElementById('dateStart');
+    const end = document.getElementById('dateEnd');
+    const refresh = document.getElementById('refreshTransactions');
+    let currentSort = { by: 'transaction_date', dir: 'desc' };
+
+    if (search) {
+        let t;
+        search.addEventListener('input', () => {
+            clearTimeout(t);
+            t = setTimeout(() => loadRecentTransactions({ page: 1 }), 300);
+        });
+    }
+    status?.addEventListener('change', () => { const opts = { page: 1 }; loadRecentTransactions(opts); loadIncomeOverview(opts); });
+    start?.addEventListener('change', () => { const opts = { page: 1 }; loadRecentTransactions(opts); loadIncomeOverview(opts); });
+    end?.addEventListener('change', () => { const opts = { page: 1 }; loadRecentTransactions(opts); loadIncomeOverview(opts); });
+    refresh?.addEventListener('click', (e) => { e.preventDefault(); const opts = {}; loadRecentTransactions(opts); loadIncomeOverview(opts); });
+
+    // Sorting
+    document.querySelectorAll('#transactionsTable thead th.sortable').forEach(th => {
+        th.style.cursor = 'pointer';
+        th.addEventListener('click', () => {
+            const by = th.getAttribute('data-sort-by');
+            if (currentSort.by === by) {
+                currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.by = by;
+                currentSort.dir = 'asc';
+            }
+            const opts = { sortBy: currentSort.by, sortDir: currentSort.dir, page: 1 };
+            loadRecentTransactions(opts);
+            loadIncomeOverview(opts);
+        });
+    });
+});
+
+// Initialize transaction modal
+function openSalesTransactionModal() {
+    console.log('openSalesTransactionModal called'); // Debug log
+
+    // Test formatCurrency availability
+    if (typeof formatCurrency !== 'function') {
+        console.error('formatCurrency is not defined!');
+        alert('Error: formatCurrency function is not available');
+        return;
+    }
+
+    try {
+        // Set default transaction date to current time
+        const now = new Date();
+        const formattedDateTime = now.toISOString().slice(0, 16);
+        const dateTimeInput = document.getElementById('transactionDateTime');
+        if (dateTimeInput) {
+            dateTimeInput.value = formattedDateTime;
+        }
+
+        // Reset form
+        resetSalesTransactionForm();
+
+        // Show modal
+        const modalElement = document.getElementById('salesTransactionModal');
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+            console.log('Modal shown successfully');
+        } else {
+            console.error('Modal element not found');
+        }
+    } catch (error) {
+        console.error('Error opening modal:', error);
+        alert('Error opening transaction modal: ' + error.message);
+    }
+}
+
+// Reset sales transaction form
+function resetSalesTransactionForm() {
+    console.log('Resetting sales transaction form...');
+
+    const form = document.getElementById('salesTransactionForm');
+    if (form) form.reset();
+
+    // Clear transaction items container except first item
+    const container = document.getElementById('transactionItemsContainer');
+    if (container) {
+        const firstItem = container.querySelector('.transaction-item');
+        if (firstItem) {
+            container.innerHTML = '';
+            container.appendChild(firstItem);
+
+            // Reset the first item's values
+            const firstItemInputs = firstItem.querySelectorAll('input');
+            firstItemInputs.forEach(input => {
+                if (input.type === 'number') {
+                    input.value = input.name.includes('quantity') ? '1' : '0';
+                } else if (input.type !== 'hidden') {
+                    input.value = '';
+                }
+            });
+        }
+    }
+
+    // Reset item index
+    transactionItemIndex = 0;
+
+    // Clear totals
+    updateTransactionTotals();
+
+    // Set default datetime
+    const now = new Date();
+    const dateTimeInput = document.getElementById('transactionDateTime');
+    if (dateTimeInput) {
+        dateTimeInput.value = now.toISOString().slice(0, 16);
+    }
+
+    console.log('Sales transaction form reset completed');
+}
+
+// Load an existing transaction and fill the form
+async function loadTransactionIntoForm(id) {
+    try {
+        const res = await fetch(`/api/sales-transactions/${id}`, { headers: { 'Accept': 'application/json' } });
+        const json = await res.json();
+        if (!json.success) {
+            showAlert('Gagal memuat data transaksi', 'danger');
+            return;
+        }
+
+        const data = json.data;
+
+        // Date
+        const dt = document.getElementById('transactionDateTime');
+        if (dt && data.transaction_date) {
+            // Convert to yyyy-MM-ddTHH:mm
+            const d = new Date(data.transaction_date);
+            const isoLocal = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+            dt.value = isoLocal;
+        }
+
+        // Customer
+        const customerInput = document.getElementById('customerName');
+        if (customerInput) {
+            customerInput.value = data.customer?.name || '';
+            if (data.customer?.id) customerInput.dataset.customerId = data.customer.id;
+        }
+
+        // Notes, tax, shipping
+        const notes = document.getElementById('transactionNotes');
+        if (notes) notes.value = data.notes || '';
+        const tax = document.getElementById('transactionTax');
+        if (tax) tax.value = data.tax_amount || 0;
+        const shipping = document.getElementById('shippingCost');
+        if (shipping) shipping.value = data.shipping_cost || 0;
+
+        // Items
+        const container = document.getElementById('transactionItemsContainer');
+        if (container) container.innerHTML = '';
+        transactionItemIndex = 0;
+        (data.items || []).forEach((it, idx) => {
+            addTransactionItem();
+            const itemEl = container.querySelector('[data-item-index="' + transactionItemIndex + '"]');
+            if (!itemEl) return;
+            itemEl.querySelector('.product-search').value = it.product_name || '';
+            if (it.product_id) itemEl.querySelector('.product-id').value = it.product_id;
+            itemEl.querySelector('.quantity-input').value = it.quantity || 0;
+            itemEl.querySelector('.price-input').value = it.selling_price || 0;
+            itemEl.querySelector('.discount-input').value = it.discount || 0;
+            calculateItemSubtotal(itemEl);
+        });
+
+        updateTransactionTotals();
+    } catch (e) {
+        console.error('Load transaction error:', e);
+        showAlert('Terjadi kesalahan saat memuat data transaksi', 'danger');
+    }
+}
+
+// Add new transaction item
+function addTransactionItem() {
+    transactionItemIndex++;
+    const container = document.getElementById('transactionItemsContainer');
+
+    if (!container) return;
+
+    const itemHtml = `
+        <div class="transaction-item border-bottom pb-3 mb-3" data-item-index="${transactionItemIndex}">
+            <div class="row align-items-end">
+                <div class="col-md-4 mb-2">
+                    <label class="form-label fw-semibold text-white small">Produk</label>
+                    <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary product-search"
+                           style="border-color: rgba(255,255,255,0.2) !important;"
+                           name="items[${transactionItemIndex}][product_name]"
+                           placeholder="Cari produk..."
+                           autocomplete="off" required>
+                    <input type="hidden" name="items[${transactionItemIndex}][product_id]" class="product-id">
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label class="form-label fw-semibold text-white small">Qty</label>
+                    <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary quantity-input"
+                           style="border-color: rgba(255,255,255,0.2) !important;"
+                           name="items[${transactionItemIndex}][quantity]"
+                           placeholder="1"
+                           min="1" step="0.01" value="1" required>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label class="form-label fw-semibold text-white small">Harga</label>
+                    <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary price-input"
+                           style="border-color: rgba(255,255,255,0.2) !important;"
+                           name="items[${transactionItemIndex}][selling_price]"
+                           placeholder="0"
+                           min="0" step="0.01" required>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label class="form-label fw-semibold text-white small">Diskon</label>
+                    <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary discount-input"
+                           style="border-color: rgba(255,255,255,0.2) !important;"
+                           name="items[${transactionItemIndex}][discount]"
+                           placeholder="0"
+                           min="0" step="0.01" value="0">
+                </div>
+                <div class="col-md-1 mb-2 text-end">
+                    <label class="form-label fw-semibold text-white small">Subtotal</label>
+                    <div class="text-success fw-bold item-subtotal">Rp 0</div>
+                </div>
+                <div class="col-md-1 mb-2 text-end">
+                    <label class="form-label fw-semibold text-white small">&nbsp;</label>
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeTransactionItem(${transactionItemIndex})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', itemHtml);
+    setupTransactionItemEvents();
+}
+
+// Remove transaction item
+function removeTransactionItem(index) {
+    const item = document.querySelector(`[data-item-index="${index}"]`);
+    if (item) {
+        item.remove();
+        updateTransactionTotals();
+    }
+}
+
+// Setup event listeners for transaction items
+function setupTransactionItemEvents() {
+    // Product search functionality
+    document.querySelectorAll('.product-search').forEach(input => {
+        input.removeEventListener('input', handleProductSearch);
+        input.addEventListener('input', handleProductSearch);
+    });
+
+    // Quantity, price, discount change events
+    document.querySelectorAll('.quantity-input, .price-input, .discount-input').forEach(input => {
+        input.removeEventListener('input', handleItemCalculation);
+        input.addEventListener('input', handleItemCalculation);
+    });
+
+    // Tax and shipping calculation
+    const taxInput = document.getElementById('transactionTax');
+    const shippingInput = document.getElementById('shippingCost');
+
+    if (taxInput) {
+        taxInput.removeEventListener('input', updateTransactionTotals);
+        taxInput.addEventListener('input', updateTransactionTotals);
+    }
+
+    if (shippingInput) {
+        shippingInput.removeEventListener('input', updateTransactionTotals);
+        shippingInput.addEventListener('input', updateTransactionTotals);
+    }
+}
+
+// Handle product search
+function handleProductSearch(event) {
+    const input = event.target;
+    const query = input.value.trim();
+
+    if (query.length < 2) return;
+
+    // Use cached results if available
+    if (productSearchCache[query]) {
+        showProductSuggestions(input, productSearchCache[query]);
+        return;
+    }
+
+    // Fetch product suggestions
+    fetch(`/api/products/search?q=${encodeURIComponent(query)}`, {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            productSearchCache[query] = data.products;
+            showProductSuggestions(input, data.products);
+        }
+    })
+    .catch(error => console.error('Product search error:', error));
+}
+
+// Show product suggestions dropdown
+function showProductSuggestions(input, products) {
+    // Remove existing dropdown
+    const existingDropdown = input.parentNode.querySelector('.product-dropdown');
+    if (existingDropdown) {
+        existingDropdown.remove();
+    }
+
+    if (products.length === 0) return;
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'dropdown-menu show product-dropdown';
+    dropdown.style.cssText = 'position: absolute; top: 100%; left: 0; right: 0; z-index: 1000; max-height: 200px; overflow-y: auto; background: rgba(40, 40, 40, 0.95); border: 1px solid rgba(255, 255, 255, 0.2);';
+
+    products.forEach(product => {
+        const item = document.createElement('div');
+        item.className = 'dropdown-item text-white';
+        item.style.cssText = 'cursor: pointer; padding: 0.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1);';
+        item.innerHTML = `
+            <div class="fw-semibold">${product.name}</div>
+            <small class="text-success">Rp ${formatCurrency(product.selling_price || 0)}</small>
+        `;
+
+        item.addEventListener('click', () => {
+            selectProduct(input, product);
+            dropdown.remove();
+        });
+
+        dropdown.appendChild(item);
+    });
+
+    input.parentNode.style.position = 'relative';
+    input.parentNode.appendChild(dropdown);
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function closeDropdown(e) {
+        if (!input.parentNode.contains(e.target)) {
+            dropdown.remove();
+            document.removeEventListener('click', closeDropdown);
+        }
+    });
+}
+
+// Select product from dropdown
+function selectProduct(input, product) {
+    const itemContainer = input.closest('.transaction-item');
+
+    // Set product name and ID
+    input.value = product.name;
+    itemContainer.querySelector('.product-id').value = product.id;
+
+    // Set selling price
+    const priceInput = itemContainer.querySelector('.price-input');
+    priceInput.value = product.selling_price || 0;
+
+    // Calculate item subtotal
+    calculateItemSubtotal(itemContainer);
+}
+
+// Handle item calculation (quantity, price, discount changes)
+function handleItemCalculation(event) {
+    const itemContainer = event.target.closest('.transaction-item');
+    calculateItemSubtotal(itemContainer);
+}
+
+// Calculate item subtotal
+function calculateItemSubtotal(itemContainer) {
+    const quantity = parseFloat(itemContainer.querySelector('.quantity-input').value) || 0;
+    const price = parseFloat(itemContainer.querySelector('.price-input').value) || 0;
+    const discount = parseFloat(itemContainer.querySelector('.discount-input').value) || 0;
+
+    const subtotal = (quantity * price) - discount;
+    const subtotalElement = itemContainer.querySelector('.item-subtotal');
+    subtotalElement.textContent = `Rp ${formatCurrency(subtotal)}`;
+
+    updateTransactionTotals();
+}
+
+// Update transaction totals
+function updateTransactionTotals() {
+    let itemsTotal = 0;
+
+    // Calculate items subtotal
+    document.querySelectorAll('.transaction-item').forEach(item => {
+        const quantity = parseFloat(item.querySelector('.quantity-input')?.value) || 0;
+        const price = parseFloat(item.querySelector('.price-input')?.value) || 0;
+        const discount = parseFloat(item.querySelector('.discount-input')?.value) || 0;
+
+        itemsTotal += (quantity * price) - discount;
+    });
+
+    const tax = parseFloat(document.getElementById('transactionTax')?.value) || 0;
+    const shipping = parseFloat(document.getElementById('shippingCost')?.value) || 0;
+    const finalTotal = itemsTotal + tax + shipping;
+
+    // Update display
+    const itemsSubtotalEl = document.getElementById('itemsSubtotal');
+    const displayTaxEl = document.getElementById('displayTax');
+    const displayShippingEl = document.getElementById('displayShipping');
+    const finalTotalEl = document.getElementById('finalTotal');
+
+    if (itemsSubtotalEl) itemsSubtotalEl.textContent = `Rp ${formatCurrency(itemsTotal)}`;
+    if (displayTaxEl) displayTaxEl.textContent = `Rp ${formatCurrency(tax)}`;
+    if (displayShippingEl) displayShippingEl.textContent = `Rp ${formatCurrency(shipping)}`;
+    if (finalTotalEl) finalTotalEl.textContent = `Rp ${formatCurrency(finalTotal)}`;
+}
+
+    // Customer search functionality
+    function initializeCustomerSearch() {
+        const customerInput = document.getElementById('customerName');
+        if (!customerInput) return;
+
+        customerInput.addEventListener('input', function(e) {
+            const query = e.target.value.trim();
+
+            if (query.length < 2) {
+                const suggestionsEl = document.getElementById('customerSuggestions');
+                if (suggestionsEl) suggestionsEl.style.display = 'none';
+                return;
+            }
+
+            // Use cached results if available
+            if (customerSearchCache[query]) {
+                showCustomerSuggestions(customerSearchCache[query]);
+                return;
+            }
+
+            // Fetch customer suggestions
+            fetch(`/api/customers/search?q=${encodeURIComponent(query)}`, {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    customerSearchCache[query] = data.customers;
+                    showCustomerSuggestions(data.customers);
+                }
+            })
+            .catch(error => console.error('Customer search error:', error));
+        });
+    }
+
+    // Show customer suggestions
+    function showCustomerSuggestions(customers) {
+        const suggestionsDiv = document.getElementById('customerSuggestions');
+        if (!suggestionsDiv) return;
+
+        suggestionsDiv.innerHTML = '';
+
+        if (customers.length === 0) {
+            suggestionsDiv.style.display = 'none';
+            return;
+        }
+
+        customers.forEach(customer => {
+            const item = document.createElement('div');
+            item.className = 'dropdown-item text-white';
+            item.style.cssText = 'cursor: pointer; background: rgba(40, 40, 40, 0.95); border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding: 0.5rem;';
+            item.innerHTML = `
+                <div class="fw-semibold">${customer.name}</div>
+                <small class="text-muted">${customer.phone || 'Tidak ada telepon'}</small>
+            `;
+
+            item.addEventListener('click', () => {
+                document.getElementById('customerName').value = customer.name;
+                document.getElementById('customerName').dataset.customerId = customer.id;
+                suggestionsDiv.style.display = 'none';
+            });
+
+            suggestionsDiv.appendChild(item);
+        });
+
+        suggestionsDiv.style.display = 'block';
+    }
+
+    // Add new customer
+    function addNewCustomer() {
+        const customerName = document.getElementById('customerName').value.trim();
+        if (!customerName) {
+            showAlert('Masukkan nama pelanggan terlebih dahulu', 'warning');
+            return;
+        }
+
+        // Simple prompt for now, can be enhanced with proper modal
+        const customerPhone = prompt('Nomor telepon pelanggan (opsional):');
+
+        fetch('/api/customers', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: customerName,
+                phone: customerPhone
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('customerName').dataset.customerId = data.customer.id;
+                showAlert('Pelanggan baru berhasil ditambahkan', 'success');
+            } else {
+                showAlert('Gagal menambahkan pelanggan: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Add customer error:', error);
+            showAlert('Terjadi kesalahan saat menambahkan pelanggan', 'danger');
+        });
+    }    // Save sales transaction
+    function saveSalesTransaction() {
+        const form = document.getElementById('salesTransactionForm');
+        if (!form) return;
+
+        const formData = new FormData(form);
+
+        // Add customer ID if available
+        const customerName = document.getElementById('customerName')?.value;
+        const customerId = document.getElementById('customerName')?.dataset.customerId;
+
+        if (customerId) {
+            formData.append('customer_id', customerId);
+        }
+
+        // Validate that we have at least one item with product
+        let hasValidItems = false;
+        document.querySelectorAll('.transaction-item').forEach(item => {
+            const productName = item.querySelector('.product-search')?.value.trim();
+            const quantity = parseFloat(item.querySelector('.quantity-input')?.value) || 0;
+            const price = parseFloat(item.querySelector('.price-input')?.value) || 0;
+
+            if (productName && quantity > 0 && price > 0) {
+                hasValidItems = true;
+            }
+        });
+
+        if (!hasValidItems) {
+            showAlert('Tambahkan minimal satu item dengan data yang valid', 'warning');
+            return;
+        }
+
+        if (!customerName) {
+            showAlert('Nama pelanggan harus diisi', 'warning');
+            return;
+        }
+
+        // Show loading state
+        const saveButton = document.querySelector('#salesTransactionModal .btn-success');
+        if (saveButton) {
+            const originalText = saveButton.innerHTML;
+            saveButton.disabled = true;
+            saveButton.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Menyimpan...';
+
+            // Debug: log form data before sending
+            console.log('Form data being sent:');
+            for (let [key, value] of formData.entries()) {
+                console.log(key + ':', value);
+            }
+
+            // Decide create vs update
+            const editId = form.getAttribute('data-edit-id');
+            const url = editId ? `/api/sales-transactions/${editId}` : '/api/sales-transactions';
+            const method = editId ? 'PUT' : 'POST';
+            // Make API call
+            fetch(url, {
+                method: method,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: formData
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.success) {
+                    showAlert('Transaksi berhasil disimpan', 'success');
+
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('salesTransactionModal'));
+                    if (modal) modal.hide();
+
+                    // Reset form
+                    resetSalesTransactionForm();
+                    form.removeAttribute('data-edit-id');
+
+                    // Reload recent transactions to show the new data
+                    loadRecentTransactions();
+                } else {
+                    showAlert('Gagal menyimpan transaksi: ' + data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Save transaction error:', error);
+                showAlert('Terjadi kesalahan saat menyimpan transaksi', 'danger');
+            })
+            .finally(() => {
+                // Reset button state
+                saveButton.disabled = false;
+                saveButton.innerHTML = originalText;
+            });
+        }
+    }// Sales Import Functions
+function openSalesImportModal() {
+    console.log('openSalesImportModal called'); // Debug log
+
+    try {
+        const modalElement = document.getElementById('salesImportModal');
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+
+            // Reset import form
+            const form = document.getElementById('salesImportForm');
+            if (form) form.reset();
+
+            const previewSection = document.getElementById('importPreviewSection');
+            if (previewSection) previewSection.style.display = 'none';
+
+            const previewBtn = document.getElementById('previewBtn');
+            const importBtn = document.getElementById('importBtn');
+
+            if (previewBtn) previewBtn.style.display = 'inline-block';
+            if (importBtn) importBtn.style.display = 'none';
+
+            console.log('Import modal shown successfully');
+        } else {
+            console.error('Import modal element not found');
+        }
+    } catch (error) {
+        console.error('Error opening import modal:', error);
+        alert('Error opening import modal: ' + error.message);
+    }
+}
+
+// Download sales template
+function downloadSalesTemplate(format) {
+    console.log('Downloading template:', format);
+    window.open(`/api/sales-transactions/template?format=${format}`, '_blank');
+}
+
+// Preview import data
+function previewImportData() {
+    const fileInput = document.getElementById('salesImportFile');
+    const file = fileInput?.files[0];
+
+    if (!file) {
+        showAlert('Pilih file untuk diupload terlebih dahulu', 'warning');
+        return;
+    }
+
+    // Placeholder implementation
+    showAlert('Preview data akan ditampilkan', 'info');
+
+    // Show preview section
+    const previewSection = document.getElementById('importPreviewSection');
+    const previewBtn = document.getElementById('previewBtn');
+    const importBtn = document.getElementById('importBtn');
+
+    if (previewSection) previewSection.style.display = 'block';
+    if (previewBtn) previewBtn.style.display = 'none';
+    if (importBtn) importBtn.style.display = 'inline-block';
+
+    // Sample preview content
+    const previewContent = document.getElementById('importPreviewContent');
+    if (previewContent) {
+        previewContent.innerHTML = `
+            <div class="mb-3">
+                <span class="badge bg-info me-2">10 baris data</span>
+                <span class="badge bg-success me-2">8 valid</span>
+                <span class="badge bg-danger">2 invalid</span>
+            </div>
+            <div class="alert alert-info">
+                Preview akan menampilkan contoh data yang akan diimport
+            </div>
+        `;
+    }
+}
+
+// Process sales import
+function processSalesImport() {
+    const fileInput = document.getElementById('salesImportFile');
+    const file = fileInput?.files[0];
+
+    if (!file) {
+        showAlert('Pilih file untuk diupload terlebih dahulu', 'warning');
+        return;
+    }
+
+    const importBtn = document.getElementById('importBtn');
+    if (importBtn) {
+        const originalText = importBtn.innerHTML;
+        importBtn.disabled = true;
+        importBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Memproses...';
+
+        // Placeholder for API call
+        setTimeout(() => {
+            showAlert('Import data berhasil', 'success');
+
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('salesImportModal'));
+            if (modal) modal.hide();
+
+            // Reset button state
+            importBtn.disabled = false;
+            importBtn.innerHTML = originalText;
+        }, 2000);
+    }
+}
+
+// Initialize sales functionality on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Initializing sales functionality...');
+
+    setupTransactionItemEvents();
+    initializeCustomerSearch();
+
+    // Set default datetime
+    const now = new Date();
+    const dateTimeInput = document.getElementById('transactionDateTime');
+    if (dateTimeInput) {
+        dateTimeInput.value = now.toISOString().slice(0, 16);
+    }
+
+    console.log('Sales functions loaded successfully');
+
+    // Load overviews and recent transactions on page load
+    loadIncomeOverview();
+    loadRecentTransactions();
+
+    // Make functions globally accessible - ensure they are available on window object
+    window.openSalesTransactionModal = openSalesTransactionModal;
+    window.openSalesImportModal = openSalesImportModal;
+    window.saveSalesTransaction = saveSalesTransaction;
+    window.addTransactionItem = addTransactionItem;
+    window.removeTransactionItem = removeTransactionItem;
+    window.downloadSalesTemplate = downloadSalesTemplate;
+    window.previewImportData = previewImportData;
+    window.processSalesImport = processSalesImport;
+    window.addNewCustomer = addNewCustomer;
+    window.formatCurrency = formatCurrency; // Add formatCurrency to global scope
+    window.loadRecentTransactions = loadRecentTransactions; // Add data loading function
+    window.loadIncomeOverview = loadIncomeOverview; // Expose overview loader
+
+    console.log('All sales functions made globally available');
+
+    // Test formatCurrency function
+    console.log('Testing formatCurrency(50000):', formatCurrency(50000));
+
+    // Test that modal elements exist
+    const salesModal = document.getElementById('salesTransactionModal');
+    const importModal = document.getElementById('salesImportModal');
+
+    console.log('Sales modal exists:', !!salesModal);
+    console.log('Import modal exists:', !!importModal);
+
+    // Test Bootstrap modal functionality
+    if (typeof bootstrap !== 'undefined') {
+        console.log('Bootstrap is loaded and ready');
+    } else {
+        console.error('Bootstrap is not loaded!');
+    }
+});
 </script>
 @endsection

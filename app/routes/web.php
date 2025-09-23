@@ -140,6 +140,26 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
             Route::get('/get/{cardId}', [App\Http\Controllers\Dashboard\ProductController::class, 'getByCardId'])->name('api.products.get');
             Route::post('/save', [App\Http\Controllers\Dashboard\ProductController::class, 'saveFromModal'])->name('api.products.save');
             Route::post('/save-bom', [App\Http\Controllers\Dashboard\ProductController::class, 'saveBom'])->name('api.products.save-bom');
+            Route::get('/search', [App\Http\Controllers\Dashboard\ProductController::class, 'search'])->name('api.products.search');
+        });
+
+        // API routes for Sales Transaction Management
+        Route::prefix('api/sales-transactions')->group(function () {
+            Route::get('/', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'index'])->name('api.sales-transactions.index');
+            Route::get('/{id}', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'show'])->name('api.sales-transactions.show');
+            Route::post('/', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'store'])->name('api.sales-transactions.store');
+            Route::put('/{id}', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'update'])->name('api.sales-transactions.update');
+            Route::patch('/{id}/status', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'updateStatus'])->name('api.sales-transactions.update-status');
+            Route::delete('/{id}', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'destroy'])->name('api.sales-transactions.destroy');
+            Route::get('/template', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'downloadTemplate'])->name('api.sales-transactions.template');
+            Route::post('/preview', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'previewImport'])->name('api.sales-transactions.preview');
+            Route::post('/import', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'processImport'])->name('api.sales-transactions.import');
+        });
+
+        // API routes for Customer Management
+        Route::prefix('api/customers')->group(function () {
+            Route::get('/search', [App\Http\Controllers\Dashboard\CustomerController::class, 'search'])->name('api.customers.search');
+            Route::post('/', [App\Http\Controllers\Dashboard\CustomerController::class, 'store'])->name('api.customers.store');
         });
 
         // Manual sales input

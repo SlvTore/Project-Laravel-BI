@@ -322,4 +322,43 @@ class ProductController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Search products for transaction autocomplete
+     */
+    public function search(Request $request)
+    {
+        try {
+            $business = $request->user()->primaryBusiness()->firstOrFail();
+            $query = $request->get('q', '');
+
+            if (strlen($query) < 2) {
+                return response()->json([
+                    'success' => true,
+                    'products' => []
+                ]);
+            }
+
+            $products = Product::where('business_id', $business->id)
+                ->where(function($q) use ($query) {
+                    $q->where('name', 'like', "%{$query}%")
+                      ->orWhere('category', 'like', "%{$query}%");
+                })
+                ->select('id', 'name', 'category', 'selling_price', 'unit')
+                ->orderBy('name')
+                ->limit(10)
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'products' => $products
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error searching products: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
