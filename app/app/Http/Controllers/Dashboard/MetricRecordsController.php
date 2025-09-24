@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Models\BusinessMetric;
 use App\Models\MetricRecord;
+use App\Models\Views\SalesDailyView;
 use App\Models\SalesData;
 use App\Models\ProductSales;
 use App\Models\Customer;
@@ -16,9 +17,16 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Services\OlapMetricAggregator;
 
 class MetricRecordsController extends Controller
 {
+    private OlapMetricAggregator $aggregator;
+
+    public function __construct(OlapMetricAggregator $aggregator)
+    {
+        $this->aggregator = $aggregator;
+    }
     /**
      * Check if the current user has access to the given business metric
      */
@@ -77,11 +85,45 @@ class MetricRecordsController extends Controller
         // Get specific data based on metric type
         $specificData = $this->getSpecificMetricData($businessMetric);
 
+        $warehouseData = $this->getWarehouseData($businessMetric);
+
+        // Derive current & previous from OLAP where possible
+        try {
+            $map = [
+                'Total Penjualan' => ['view' => 'vw_sales_daily', 'col' => 'total_revenue'],
+                'Biaya Pokok Penjualan (COGS)' => ['view' => 'vw_cogs_daily', 'col' => 'total_cogs'],
+                'Margin Keuntungan (Profit Margin)' => ['view' => 'vw_margin_daily', 'col' => 'total_margin'],
+                'Jumlah Pelanggan Baru' => ['view' => 'vw_new_customers_daily', 'col' => 'new_customers'],
+                'Jumlah Pelanggan Setia' => ['view' => 'vw_returning_customers_daily', 'col' => 'returning_customers'],
+            ];
+            if (isset($map[$metricName])) {
+                $v = $map[$metricName]['view']; $c = $map[$metricName]['col'];
+                $rows = DB::table($v)
+                    ->where('business_id', $businessMetric->business_id)
+                    ->orderByDesc('sales_date')
+                    ->limit(2)
+                    ->get();
+                if ($rows->count() > 0) {
+                    $current = (float)($rows[0]->{$c} ?? 0);
+                    $previous = (float)($rows[1]->{$c} ?? 0);
+                    $businessMetric->current_value = $current;
+                    $businessMetric->previous_value = $previous;
+                    // compute change percentage & formatted_change transiently
+                    $changePct = $previous > 0 ? (($current - $previous) / $previous) * 100 : 0;
+                    $businessMetric->change_percentage = $changePct;
+                    $businessMetric->formatted_change = number_format($changePct, 1) . '%';
+                }
+            }
+        } catch (\Throwable $e) {
+            // swallow; fallback values remain
+        }
+
         return view('dashboard-metrics.edit', compact(
             'businessMetric',
             'chartData',
             'statistics',
-            'specificData'
+            'specificData',
+            'warehouseData'
         ));
     }
 
@@ -191,7 +233,7 @@ class MetricRecordsController extends Controller
 
         // Start database transaction for data safety
         DB::beginTransaction();
-        
+
         try {
             // Basic validation for common fields
             $validated = $request->validate([
@@ -214,14 +256,14 @@ class MetricRecordsController extends Controller
             if (in_array($businessMetric->metric_name, ['Jumlah Pelanggan Baru', 'Jumlah Pelanggan Setia'])) {
                 $newCustomerCount = $request->input('new_customer_count', 0);
                 $totalCustomerCount = $request->input('total_customer_count', 0);
-                
+
                 $validationErrors = DataIntegrityService::validateCustomerData(
                     $businessMetric->business_id,
                     $validated['record_date'],
                     $newCustomerCount,
                     $totalCustomerCount
                 );
-                
+
                 if (!empty($validationErrors)) {
                     return response()->json([
                         'success' => false,
@@ -235,14 +277,14 @@ class MetricRecordsController extends Controller
             if (in_array($businessMetric->metric_name, ['Total Penjualan', 'Biaya Pokok Penjualan (COGS)'])) {
                 $totalRevenue = $request->input('total_revenue', 0);
                 $totalCogs = $request->input('total_cogs', null);
-                
+
                 $validationErrors = DataIntegrityService::validateSalesData(
                     $businessMetric->business_id,
                     $validated['record_date'],
                     $totalRevenue,
                     $totalCogs
                 );
-                
+
                 if (!empty($validationErrors)) {
                     return response()->json([
                         'success' => false,
@@ -319,7 +361,7 @@ class MetricRecordsController extends Controller
         } catch (\Exception $e) {
             // Rollback transaction on error
             DB::rollback();
-            
+
             Log::error('Metric store error: ' . $e->getMessage(), [
                 'business_metric_id' => $businessMetric->id,
                 'user_id' => Auth::id(),
@@ -735,6 +777,37 @@ class MetricRecordsController extends Controller
 
     private function getChartData(BusinessMetric $businessMetric, $days = 30)
     {
+        $metric = $businessMetric->metric_name;
+        $businessId = $businessMetric->business_id;
+
+        try {
+            switch ($metric) {
+                case 'Total Penjualan': {
+                    $data = $this->aggregator->dailyRevenue($businessId, (int)$days);
+                    return [ 'dates' => collect($data['dates']), 'values' => collect($data['values']), 'labels' => collect($data['labels']) ];
+                }
+                case 'Biaya Pokok Penjualan (COGS)': {
+                    $data = $this->aggregator->dailyCogs($businessId, (int)$days);
+                    return [ 'dates' => collect($data['dates']), 'values' => collect($data['values']), 'labels' => collect($data['labels']) ];
+                }
+                case 'Margin Keuntungan (Profit Margin)': {
+                    $data = $this->aggregator->dailyMargin($businessId, (int)$days);
+                    return [ 'dates' => collect($data['dates']), 'values' => collect($data['values']), 'labels' => collect($data['labels']) ];
+                }
+                case 'Jumlah Pelanggan Baru': {
+                    $data = $this->aggregator->dailyNewCustomers($businessId, (int)$days);
+                    return [ 'dates' => collect($data['dates']), 'values' => collect($data['values']), 'labels' => collect($data['labels']) ];
+                }
+                case 'Jumlah Pelanggan Setia': {
+                    $data = $this->aggregator->dailyReturningCustomers($businessId, (int)$days);
+                    return [ 'dates' => collect($data['dates']), 'values' => collect($data['values']), 'labels' => collect($data['labels']) ];
+                }
+            }
+        } catch (\Throwable $e) {
+            // OLAP views may not be present yet; fall back below
+        }
+
+        // Fallback to manual metric records (or unsupported metric like Top Products)
         $records = MetricRecord::where('business_metric_id', $businessMetric->id)
             ->whereDate('record_date', '>=', Carbon::now()->subDays($days))
             ->orderBy('record_date')
@@ -749,8 +822,72 @@ class MetricRecordsController extends Controller
 
     private function getStatistics(BusinessMetric $businessMetric)
     {
-        $records = MetricRecord::where('business_metric_id', $businessMetric->id)->get();
+        $metric = $businessMetric->metric_name;
+        $bid = $businessMetric->business_id;
+        $now = Carbon::now();
+        $thisMonthStart = $now->copy()->startOfMonth()->toDateString();
+        $lastMonthStart = $now->copy()->subMonth()->startOfMonth()->toDateString();
+        $lastMonthEnd = $now->copy()->subMonth()->endOfMonth()->toDateString();
+        $thirtyDaysAgo = $now->copy()->subDays(30)->toDateString();
 
+        try {
+            switch ($metric) {
+                case 'Total Penjualan': {
+                    $view = 'vw_sales_daily'; $col = 'total_revenue'; break;
+                }
+                case 'Biaya Pokok Penjualan (COGS)': {
+                    $view = 'vw_cogs_daily'; $col = 'total_cogs'; break;
+                }
+                case 'Margin Keuntungan (Profit Margin)': {
+                    $view = 'vw_margin_daily'; $col = 'total_margin'; break;
+                }
+                case 'Jumlah Pelanggan Baru': {
+                    $view = 'vw_new_customers_daily'; $col = 'new_customers'; break;
+                }
+                case 'Jumlah Pelanggan Setia': {
+                    $view = 'vw_returning_customers_daily'; $col = 'returning_customers'; break;
+                }
+                default: $view = null; $col = null; break;
+            }
+
+            if ($view) {
+                $thisMonth = DB::table($view)
+                    ->where('business_id', $bid)
+                    ->where('sales_date', '>=', $thisMonthStart)
+                    ->selectRaw('SUM(' . $col . ') as total_val, AVG(' . $col . ') as avg_daily, MAX(' . $col . ') as max_daily, MIN(' . $col . ') as min_daily, MAX(sales_date) as last_update')
+                    ->first();
+                $lastMonth = DB::table($view)
+                    ->where('business_id', $bid)
+                    ->whereBetween('sales_date', [$lastMonthStart, $lastMonthEnd])
+                    ->selectRaw('SUM(' . $col . ') as total_val, AVG(' . $col . ') as avg_daily')
+                    ->first();
+                $overall = DB::table($view)
+                    ->where('business_id', $bid)
+                    ->where('sales_date', '>=', $thirtyDaysAgo)
+                    ->selectRaw('COUNT(*) as total_records, AVG(' . $col . ') as avg_value, MAX(' . $col . ') as max_value, MIN(' . $col . ') as min_value')
+                    ->first();
+
+                $thisTotal = (float)($thisMonth->total_val ?? 0);
+                $lastTotal = (float)($lastMonth->total_val ?? 0);
+                $growthRate = ($lastTotal > 0) ? (($thisTotal - $lastTotal) / $lastTotal) * 100 : 0;
+
+                return [
+                    'total_records' => (int)($overall->total_records ?? 0),
+                    'avg_value' => (float)($overall->avg_value ?? 0),
+                    'max_value' => (float)($overall->max_value ?? 0),
+                    'min_value' => (float)($overall->min_value ?? 0),
+                    'last_update' => $thisMonth->last_update ?? null,
+                    'growth_rate' => $growthRate,
+                    'this_month' => $thisTotal,
+                    'last_month' => $lastTotal,
+                ];
+            }
+        } catch (\Throwable $e) {
+            // Fall through to record-based fallback below
+        }
+
+        // Fallback to manual records when OLAP not available or unsupported metric
+        $records = MetricRecord::where('business_metric_id', $businessMetric->id)->get();
         if ($records->isEmpty()) {
             return [
                 'total_records' => 0,
@@ -763,23 +900,10 @@ class MetricRecordsController extends Controller
                 'last_month' => 0,
             ];
         }
-
-        $thisMonth = $records->filter(function($record) {
-            return $record->record_date->isCurrentMonth();
-        });
-
-        $lastMonth = $records->filter(function($record) {
-            return $record->record_date->isLastMonth();
-        });
-
-        $thisMonthAvg = $thisMonth->avg('value') ?? 0;
-        $lastMonthAvg = $lastMonth->avg('value') ?? 0;
-
-        $growthRate = 0;
-        if ($lastMonthAvg > 0) {
-            $growthRate = (($thisMonthAvg - $lastMonthAvg) / $lastMonthAvg) * 100;
-        }
-
+        $thisMonthSet = $records->filter(fn($r) => $r->record_date->isCurrentMonth());
+        $lastMonthSet = $records->filter(fn($r) => $r->record_date->isLastMonth());
+        $thisAvg = $thisMonthSet->avg('value') ?? 0; $lastAvg = $lastMonthSet->avg('value') ?? 0;
+        $growthRate = $lastAvg > 0 ? (($thisAvg - $lastAvg) / $lastAvg) * 100 : 0;
         return [
             'total_records' => $records->count(),
             'avg_value' => $records->avg('value'),
@@ -787,8 +911,8 @@ class MetricRecordsController extends Controller
             'min_value' => $records->min('value'),
             'last_update' => $records->max('created_at'),
             'growth_rate' => $growthRate,
-            'this_month' => $thisMonthAvg,
-            'last_month' => $lastMonthAvg,
+            'this_month' => $thisAvg,
+            'last_month' => $lastAvg,
         ];
     }
 
@@ -864,6 +988,156 @@ class MetricRecordsController extends Controller
             default:
                 return [];
         }
+    }
+
+    private function getWarehouseData(BusinessMetric $businessMetric): array
+    {
+        $metric = $businessMetric->metric_name;
+        $businessId = $businessMetric->business_id;
+        $from = Carbon::now()->subDays(30)->toDateString();
+        $monthStart = Carbon::now()->startOfMonth()->toDateString();
+
+        try {
+            switch ($metric) {
+                case 'Total Penjualan': {
+                    $daily = DB::table('vw_sales_daily')
+                        ->where('business_id', $businessId)
+                        ->where('sales_date', '>=', $from)
+                        ->orderBy('sales_date')
+                        ->get();
+                    $topProducts = DB::table('vw_sales_product_daily')
+                        ->where('business_id', $businessId)
+                        ->where('sales_date', '>=', $from)
+                        ->select('product_name', DB::raw('SUM(total_revenue) as total_revenue'), DB::raw('SUM(total_quantity) as total_qty'))
+                        ->groupBy('product_name')
+                        ->orderByDesc(DB::raw('SUM(total_revenue)'))
+                        ->limit(10)
+                        ->get();
+                    $monthly = DB::table('vw_sales_daily')
+                        ->where('business_id', $businessId)
+                        ->where('sales_date', '>=', $monthStart)
+                        ->selectRaw('SUM(total_revenue) as total_revenue, SUM(transaction_count) as transaction_count, SUM(total_quantity) as total_quantity')
+                        ->first();
+                    return [
+                        'available' => true,
+                        'type' => 'sales',
+                        'daily' => $daily,
+                        'top' => $topProducts,
+                        'monthly' => [
+                            'total_revenue' => (float)($monthly->total_revenue ?? 0),
+                            'transaction_count' => (int)($monthly->transaction_count ?? 0),
+                            'total_quantity' => (float)($monthly->total_quantity ?? 0),
+                        ],
+                    ];
+                }
+                case 'Biaya Pokok Penjualan (COGS)': {
+                    $daily = DB::table('vw_cogs_daily')
+                        ->where('business_id', $businessId)
+                        ->where('sales_date', '>=', $from)
+                        ->orderBy('sales_date')
+                        ->get();
+                    $monthly = DB::table('vw_cogs_daily')
+                        ->where('business_id', $businessId)
+                        ->where('sales_date', '>=', $monthStart)
+                        ->selectRaw('SUM(total_cogs) as total_cogs')
+                        ->first();
+                    return [
+                        'available' => true,
+                        'type' => 'cogs',
+                        'daily' => $daily,
+                        'monthly' => [
+                            'total_cogs' => (float)($monthly->total_cogs ?? 0),
+                        ],
+                    ];
+                }
+                case 'Margin Keuntungan (Profit Margin)': {
+                    $daily = DB::table('vw_margin_daily')
+                        ->where('business_id', $businessId)
+                        ->where('sales_date', '>=', $from)
+                        ->orderBy('sales_date')
+                        ->get();
+                    $monthly = DB::table('vw_margin_daily')
+                        ->where('business_id', $businessId)
+                        ->where('sales_date', '>=', $monthStart)
+                        ->selectRaw('SUM(total_margin) as total_margin')
+                        ->first();
+                    return [
+                        'available' => true,
+                        'type' => 'margin',
+                        'daily' => $daily,
+                        'monthly' => [
+                            'total_margin' => (float)($monthly->total_margin ?? 0),
+                        ],
+                    ];
+                }
+                case 'Jumlah Pelanggan Baru': {
+                    $daily = DB::table('vw_new_customers_daily')
+                        ->where('business_id', $businessId)
+                        ->where('sales_date', '>=', $from)
+                        ->orderBy('sales_date')
+                        ->get();
+                    $monthly = DB::table('vw_new_customers_daily')
+                        ->where('business_id', $businessId)
+                        ->where('sales_date', '>=', $monthStart)
+                        ->selectRaw('SUM(new_customers) as new_customers')
+                        ->first();
+                    return [
+                        'available' => true,
+                        'type' => 'new_customers',
+                        'daily' => $daily,
+                        'monthly' => [
+                            'new_customers' => (int)($monthly->new_customers ?? 0),
+                        ],
+                    ];
+                }
+                case 'Jumlah Pelanggan Setia': {
+                    $daily = DB::table('vw_returning_customers_daily')
+                        ->where('business_id', $businessId)
+                        ->where('sales_date', '>=', $from)
+                        ->orderBy('sales_date')
+                        ->get();
+                    $monthly = DB::table('vw_returning_customers_daily')
+                        ->where('business_id', $businessId)
+                        ->where('sales_date', '>=', $monthStart)
+                        ->selectRaw('SUM(returning_customers) as returning_customers')
+                        ->first();
+                    return [
+                        'available' => true,
+                        'type' => 'returning_customers',
+                        'daily' => $daily,
+                        'monthly' => [
+                            'returning_customers' => (int)($monthly->returning_customers ?? 0),
+                        ],
+                    ];
+                }
+                case 'Penjualan Produk Terlaris': {
+                    // Provide aggregate of top products over 30 days and daily breakdown (already captured in sales_product view)
+                    $daily = DB::table('vw_sales_product_daily')
+                        ->where('business_id', $businessId)
+                        ->where('sales_date', '>=', $from)
+                        ->orderBy('sales_date')
+                        ->get();
+                    $topProducts = DB::table('vw_sales_product_daily')
+                        ->where('business_id', $businessId)
+                        ->where('sales_date', '>=', $from)
+                        ->select('product_name', DB::raw('SUM(total_revenue) as total_revenue'), DB::raw('SUM(total_quantity) as total_qty'))
+                        ->groupBy('product_name')
+                        ->orderByDesc(DB::raw('SUM(total_revenue)'))
+                        ->limit(15)
+                        ->get();
+                    return [
+                        'available' => true,
+                        'type' => 'top_products',
+                        'daily' => $daily,
+                        'top' => $topProducts,
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            return ['available' => false];
+        }
+
+        return ['available' => false];
     }
 
     private function handleSpecificMetricStore(Request $request, BusinessMetric $businessMetric)

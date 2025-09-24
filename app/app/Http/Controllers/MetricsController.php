@@ -10,9 +10,18 @@ use App\Models\ActivityLog;
 use App\Models\MetricType;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use App\Services\OlapMetricAggregator;
 
 class MetricsController extends Controller
 {
+    private OlapMetricAggregator $aggregator;
+
+    public function __construct(OlapMetricAggregator $aggregator)
+    {
+        $this->aggregator = $aggregator;
+    }
     /**
      * Ensure default metrics exist for the given business. Fallback-seed MetricType if empty.
      */
@@ -121,8 +130,35 @@ class MetricsController extends Controller
 
         // Get metrics for this business
         $businessMetrics = BusinessMetric::where('business_id', $business->id)
-                                      ->orderBy('created_at', 'desc')
-                                      ->get();
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Enrich metrics with OLAP monthly stats (in-memory only)
+    $businessMetrics = $businessMetrics->map(function (BusinessMetric $metric) use ($business) {
+            $config = $this->mapMetricToOlap($metric->metric_name);
+            if ($config) {
+                try {
+                    if ($config['type'] === 'top_products') {
+                        [$current, $previous] = $this->getTopProductMonthlyTotals($business->id);
+                    } elseif ($config['type'] === 'margin') {
+                        [$current, $previous] = $this->getMonthlyAggregate($config['view'], $config['column'], $business->id, 'avg');
+                    } else {
+                        [$current, $previous] = $this->getMonthlyAggregate($config['view'], $config['column'], $business->id, 'sum');
+                    }
+
+                    // Override values (not persisted)
+                    $metric->current_value = $current ?? 0;
+                    $metric->previous_value = $previous ?? 0;
+                } catch (\Throwable $e) {
+                    // Fallback silently; keep legacy values if view unavailable
+                }
+            }
+
+            // Ensure formatted helpers available
+            $metric->formatted_value = $metric->formatted_value; // accessor
+            $metric->formatted_change = $metric->formatted_change; // accessor
+            return $metric;
+        });
 
         // Filter metrics based on user role for staff
         if ($user->isStaff()) {
@@ -138,6 +174,66 @@ class MetricsController extends Controller
         }
 
         return view('dashboard-metrics.index', compact('businessMetrics', 'business'));
+    }
+
+    private function mapMetricToOlap(string $name): ?array
+    {
+        return match($name) {
+            'Total Penjualan' => ['view' => 'vw_sales_daily', 'column' => 'total_revenue', 'type' => 'sum'],
+            'Biaya Pokok Penjualan (COGS)' => ['view' => 'vw_cogs_daily', 'column' => 'total_cogs', 'type' => 'sum'],
+            'Margin Keuntungan (Profit Margin)' => ['view' => 'vw_margin_daily', 'column' => 'total_margin', 'type' => 'margin'],
+            'Penjualan Produk Terlaris' => ['view' => 'vw_sales_product_daily', 'column' => 'total_quantity', 'type' => 'top_products'],
+            'Jumlah Pelanggan Baru' => ['view' => 'vw_new_customers_daily', 'column' => 'new_customers', 'type' => 'sum'],
+            'Jumlah Pelanggan Setia' => ['view' => 'vw_returning_customers_daily', 'column' => 'returning_customers', 'type' => 'sum'],
+            default => null,
+        };
+    }
+
+    private function getMonthlyAggregate(string $view, string $column, int $businessId, string $agg = 'sum'): array
+    {
+        $now = Carbon::now();
+        $startCurrent = $now->copy()->startOfMonth();
+        $startPrevious = $now->copy()->subMonth()->startOfMonth();
+        $endPrevious = $now->copy()->subMonth()->endOfMonth();
+
+        $queryCurrent = DB::table($view)
+            ->where('business_id', $businessId)
+            ->whereBetween('sales_date', [$startCurrent->toDateString(), $now->toDateString()]);
+        $queryPrevious = DB::table($view)
+            ->where('business_id', $businessId)
+            ->whereBetween('sales_date', [$startPrevious->toDateString(), $endPrevious->toDateString()]);
+
+        $current = $agg === 'avg' ? $queryCurrent->avg($column) : $queryCurrent->sum($column);
+        $previous = $agg === 'avg' ? $queryPrevious->avg($column) : $queryPrevious->sum($column);
+        return [ (float)$current, (float)$previous ];
+    }
+
+    private function getTopProductMonthlyTotals(int $businessId): array
+    {
+        $now = Carbon::now();
+        $startCurrent = $now->copy()->startOfMonth();
+        $startPrevious = $now->copy()->subMonth()->startOfMonth();
+        $endPrevious = $now->copy()->subMonth()->endOfMonth();
+
+        $current = DB::table('vw_sales_product_daily')
+            ->select('product_id', DB::raw('SUM(total_quantity) as qty'))
+            ->where('business_id', $businessId)
+            ->whereBetween('sales_date', [$startCurrent->toDateString(), $now->toDateString()])
+            ->groupBy('product_id')
+            ->orderByDesc('qty')
+            ->limit(1)
+            ->value('qty');
+
+        $previous = DB::table('vw_sales_product_daily')
+            ->select('product_id', DB::raw('SUM(total_quantity) as qty'))
+            ->where('business_id', $businessId)
+            ->whereBetween('sales_date', [$startPrevious->toDateString(), $endPrevious->toDateString()])
+            ->groupBy('product_id')
+            ->orderByDesc('qty')
+            ->limit(1)
+            ->value('qty');
+
+        return [ (float)($current ?? 0), (float)($previous ?? 0) ];
     }
 
     public function edit($id)

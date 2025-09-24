@@ -179,8 +179,16 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
         // Data Feeds History datatable (server-side)
         Route::get('/dashboard/data-feeds/history', [App\Http\Controllers\Dashboard\DataFeedController::class, 'history'])->name('dashboard.data-feeds.history');
 
+    // Data Feeds -> OLAP Transform endpoints
+    Route::post('/dashboard/data-feeds/{dataFeedId}/transform', [App\Http\Controllers\Dashboard\DataFeedController::class, 'transform'])->name('dashboard.data-feeds.transform');
+    Route::get('/dashboard/data-feeds/{dataFeedId}/transform-status', [App\Http\Controllers\Dashboard\DataFeedController::class, 'transformStatus'])->name('dashboard.data-feeds.transform-status');
+    Route::post('/dashboard/data-feeds/backfill-facts', [App\Http\Controllers\Dashboard\DataFeedController::class, 'backfillFacts'])->name('dashboard.data-feeds.backfill-facts');
+
         // Data Feeds Template Downloads
         Route::get('/dashboard/data-feeds/template/{type}', [App\Http\Controllers\Dashboard\DataFeedController::class, 'downloadTemplate'])->name('dashboard.data-feeds.template.download');
+
+    // OLAP Metrics data endpoints
+    Route::get('/dashboard/olap/daily-sales', [App\Http\Controllers\Dashboard\OlapMetricsController::class, 'dailySales'])->name('dashboard.olap.daily-sales');
 
         // Production Costs Management
         Route::post('/dashboard/products/{product}/production-costs', [App\Http\Controllers\Dashboard\DataFeedController::class, 'storeProductionCost'])->name('dashboard.products.production-costs.store');

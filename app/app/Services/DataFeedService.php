@@ -69,6 +69,10 @@ class DataFeedService
                 'log_message' => $recordCount > 0 ? "Successfully processed $recordCount items" : 'No valid items found'
             ]);
 
+            if ($recordCount > 0) {
+                \App\Jobs\ProcessDataFeedJob::dispatch($dataFeed->id);
+            }
+
             DB::commit();
 
             return [
@@ -133,6 +137,10 @@ class DataFeedService
                 'status' => $recordCount > 0 ? 'completed' : 'failed',
                 'log_message' => $recordCount > 0 ? "Successfully processed $recordCount records" : 'No valid records found'
             ]);
+
+            if ($recordCount > 0) {
+                \App\Jobs\ProcessDataFeedJob::dispatch($dataFeed->id);
+            }
 
             DB::commit();
 

@@ -89,11 +89,322 @@
         </div>
     </div>
 
-    <!-- Records section disabled (CRUD/DataTables) -->
-    <div class="content-card p-4 mt-3">
-        <h5 class="mb-2 text-white">Data Records</h5>
-        <p class="text-white-50 mb-0">Fitur tambah baris baru dan tabel interaktif (CRUD/DataTables) dinonaktifkan sementara.</p>
+        <!-- Inline, self-contained ApexCharts initializer (no jQuery required) -->
+        <script>
+        (function() {
+            if (window.__chartsInitialized) return; // prevent double init
+            window.__chartsInitialized = true;
+
+            // Data from backend (fallback-safe)
+            const CHART_DATA = {
+                values: @json($chartData['values'] ?? []),
+                dates: @json($chartData['dates'] ?? []),
+                labels: @json($chartData['labels'] ?? [])
+            };
+            const WAREHOUSE = @json($warehouseData ?? []);
+            const METRIC_NAME = @json($businessMetric->metric_name);
+
+            function fmt(val) {
+                try {
+                    if (typeof formatValue === 'function') return formatValue(val);
+                    return new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(val || 0);
+                } catch (_) { return String(val ?? ''); }
+            }
+
+            function loadApex(cb) {
+                if (window.ApexCharts) return cb();
+                const s = document.createElement('script');
+                s.src = 'https://cdn.jsdelivr.net/npm/apexcharts';
+                s.onload = cb;
+                s.onerror = function() { console.error('Failed to load ApexCharts'); };
+                document.head.appendChild(s);
+            }
+
+            let trendChart, summaryChart;
+            function renderCharts() {
+                const trendEl = document.querySelector('#trendChart');
+                const summaryEl = document.querySelector('#summaryChart');
+                if (!trendEl || !summaryEl) return;
+
+                const trendOptions = {
+                    series: [{ name: METRIC_NAME, data: CHART_DATA.values || [] }],
+                    chart: { type: 'line', height: 300, animations: { enabled: true, speed: 600 } },
+                    stroke: { curve: 'smooth', width: 3 },
+                    colors: ['#667eea'],
+                    xaxis: { categories: CHART_DATA.labels || [], title: { text: 'Tanggal' } },
+                    yaxis: { labels: { formatter: fmt }, title: { text: 'Value' } },
+                    tooltip: { y: { formatter: fmt } },
+                    grid: { borderColor: 'rgba(255,255,255,0.1)' }
+                };
+                trendChart = new ApexCharts(trendEl, trendOptions);
+                trendChart.render();
+
+                // Summary based on warehouse monthly if available; fallback to statistics
+                let series, labels, colors;
+                if (WAREHOUSE && WAREHOUSE.available && WAREHOUSE.monthly) {
+                    const rev = Number(WAREHOUSE.monthly.total_revenue || 0);
+                    const tx = Number(WAREHOUSE.monthly.transaction_count || 0);
+                    const avg = tx > 0 ? rev / tx : 0;
+                    series = [rev, avg, tx * 1000];
+                    labels = ['Total Revenue Bulan Ini', 'Rata-rata/Transaksi', 'Jumlah Transaksi (x1000)'];
+                    colors = ['#28a745', '#17a2b8', '#ffc107'];
+                } else {
+                    series = [
+                        {{ $statistics['this_month'] ?? 0 }},
+                        {{ $statistics['last_month'] ?? 0 }},
+                        Math.max(0, ({{ $statistics['avg_value'] ?? 0 }}) - ({{ $statistics['this_month'] ?? 0 }}))
+                    ];
+                    labels = ['Bulan Ini', 'Bulan Lalu', 'Lainnya'];
+                    colors = ['#28a745', '#ffc107', '#6c757d'];
+                }
+                const summaryOptions = {
+                    series, labels, colors,
+                    chart: { type: 'donut', height: 300 },
+                    legend: { position: 'bottom' },
+                    tooltip: { y: { formatter: fmt } },
+                    plotOptions: { pie: { donut: { size: '70%' } } }
+                };
+                summaryChart = new ApexCharts(summaryEl, summaryOptions);
+                summaryChart.render();
+            }
+
+            function attachPeriodButtons() {
+                const btns = document.querySelectorAll('.chart-period');
+                btns.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        btns.forEach(b => { b.classList.remove('active','btn-primary'); b.classList.add('btn-outline-light'); });
+                        btn.classList.remove('btn-outline-light');
+                        btn.classList.add('active','btn-primary');
+                        const days = btn.getAttribute('data-period') || 30;
+                        updateChartFetch(days);
+                    });
+                });
+            }
+
+            function updateChartFetch(days) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('period', String(days));
+                fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(r => r.ok ? r.json() : Promise.reject(r))
+                    .then(data => {
+                        if (!data || !data.chartData || !trendChart) return;
+                        trendChart.updateSeries([{ name: METRIC_NAME, data: data.chartData.values || [] }]);
+                        trendChart.updateOptions({ xaxis: { categories: data.chartData.labels || [] } });
+                    })
+                    .catch(e => console.error('Chart update failed', e));
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                loadApex(function() {
+                    try { renderCharts(); attachPeriodButtons(); } catch (e) { console.error(e); }
+                });
+            });
+        })();
+        </script>
+
+    <!-- Warehouse Data Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="content-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0 text-white">
+                        <i class="fas fa-database me-2"></i>Warehouse Data
+                    </h5>
+                    <small class="text-white-50">Sumber: OLAP (dim_*/fact_sales)</small>
+                </div>
+
+                @if(!empty($warehouseData) && ($warehouseData['available'] ?? false))
+                    <div class="warehouse-data-content" id="warehouseDataContent">
+                        @php $type = $warehouseData['type'] ?? 'sales'; @endphp
+                        <div class="row g-4">
+                            <div class="border border-white rounded p-3 col-lg-8">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="text-white mb-0">
+                                        @switch($type)
+                                            @case('sales') Data Harian Penjualan (30 hari) @break
+                                            @case('cogs') Data Harian COGS (30 hari) @break
+                                            @case('margin') Data Harian Margin (30 hari) @break
+                                            @case('new_customers') Pelanggan Baru Harian (30 hari) @break
+                                            @case('returning_customers') Pelanggan Setia Harian (30 hari) @break
+                                            @case('top_products') Penjualan Produk Harian (30 hari) @break
+                                            @default Data Harian (30 hari)
+                                        @endswitch
+                                    </h6>
+                                    <button class="btn btn-sm btn-outline-light" onclick="refreshWarehouseData()" id="refreshWarehouseBtn">
+                                        <i class="fas fa-sync-alt me-1"></i> Refresh
+                                    </button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-light table-striped table-hover mb-0" id="warehouseDailyTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Tanggal</th>
+                                                @if($type==='sales')
+                                                    <th class="text-end">Revenue</th>
+                                                    <th class="text-end">Transaksi</th>
+                                                    <th class="text-end">Qty</th>
+                                                @elseif($type==='cogs')
+                                                    <th class="text-end">Total COGS</th>
+                                                @elseif($type==='margin')
+                                                    <th class="text-end">Total Margin</th>
+                                                @elseif($type==='new_customers')
+                                                    <th class="text-end">Pelanggan Baru</th>
+                                                @elseif($type==='returning_customers')
+                                                    <th class="text-end">Pelanggan Setia</th>
+                                                @elseif($type==='top_products')
+                                                    <th>Produk</th>
+                                                    <th class="text-end">Revenue</th>
+                                                    <th class="text-end">Qty</th>
+                                                @endif
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @php $dailyRows = $warehouseData['daily'] ?? []; @endphp
+                                            @forelse($dailyRows as $row)
+                                                <tr class="warehouse-row" data-date="{{ $row->sales_date }}">
+                                                    <td class="fw-medium">{{ \Carbon\Carbon::parse($row->sales_date)->format('d M Y') }}</td>
+                                                    @if($type==='sales')
+                                                        <td class="text-end fw-bold text-success">Rp {{ number_format((float)($row->total_revenue ?? 0),0) }}</td>
+                                                        <td class="text-end">{{ (int)($row->transaction_count ?? 0) }}</td>
+                                                        <td class="text-end">{{ (int)($row->total_quantity ?? 0) }}</td>
+                                                    @elseif($type==='cogs')
+                                                        <td class="text-end fw-bold text-danger">Rp {{ number_format((float)($row->total_cogs ?? 0),0) }}</td>
+                                                    @elseif($type==='margin')
+                                                        <td class="text-end fw-bold text-success">Rp {{ number_format((float)($row->total_margin ?? 0),0) }}</td>
+                                                    @elseif($type==='new_customers')
+                                                        <td class="text-end fw-bold">{{ (int)($row->new_customers ?? 0) }}</td>
+                                                    @elseif($type==='returning_customers')
+                                                        <td class="text-end fw-bold">{{ (int)($row->returning_customers ?? 0) }}</td>
+                                                    @elseif($type==='top_products')
+                                                        <td class="fw-medium">{{ $row->product_name }}</td>
+                                                        <td class="text-end text-success fw-bold">Rp {{ number_format((float)($row->total_revenue ?? 0),0) }}</td>
+                                                        <td class="text-end">{{ (int)($row->total_quantity ?? 0) }}</td>
+                                                    @endif
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="8" class="text-center text-white-50">Tidak ada data harian.</td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                @if(in_array($type,['sales','top_products']))
+                                    <div class="border border-white rounded p-2 mb-4">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="text-white mb-0">
+                                                @if($type==='sales') Top Produk (30 hari) @else Top Produk (Agg 30 hari) @endif
+                                            </h6>
+                                            <small class="text-white-50"><i class="fas fa-trophy me-1"></i>Revenue</small>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-light table-sm table-hover mb-0" id="warehouseProductsTable">
+                                                <thead>
+                                                    <tr>
+                                                        <th>#</th>
+                                                        <th>Produk</th>
+                                                        <th class="text-end">Revenue</th>
+                                                        <th class="text-end">Qty</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @php $top = $warehouseData['top'] ?? []; @endphp
+                                                    @forelse($top as $index => $p)
+                                                        <tr>
+                                                            <td>
+                                                                @if($index==0)<i class="fas fa-crown text-warning"></i>
+                                                                @elseif($index==1)<i class="fas fa-medal text-secondary"></i>
+                                                                @elseif($index==2)<i class="fas fa-award text-warning"></i>
+                                                                @else {{ $index+1 }} @endif
+                                                            </td>
+                                                            <td class="fw-medium">{{ $p->product_name }}</td>
+                                                            <td class="text-end text-success fw-bold">Rp {{ number_format((float)($p->total_revenue ?? 0),0) }}</td>
+                                                            <td class="text-end">{{ (int)($p->total_qty ?? $p->total_quantity ?? 0) }}</td>
+                                                        </tr>
+                                                    @empty
+                                                        <tr><td colspan="4" class="text-center text-white-50">Belum ada data produk.</td></tr>
+                                                    @endforelse
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                <div class="stats-card warehouse-summary">
+                                    <div class="card-title">
+                                        <i class="fas fa-calendar-check me-2"></i>Ringkasan Bulan Ini
+                                    </div>
+                                    @if($type==='sales')
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="text-white-50">Total Revenue</span>
+                                            <span class="stats-value text-success">Rp {{ number_format((float)($warehouseData['monthly']['total_revenue'] ?? 0),0) }}</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="text-white-50">Transaksi</span>
+                                            <span class="stats-value text-info">{{ (int)($warehouseData['monthly']['transaction_count'] ?? 0) }}</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="text-white-50">Total Qty</span>
+                                            <span class="stats-value text-warning">{{ (int)($warehouseData['monthly']['total_quantity'] ?? 0) }}</span>
+                                        </div>
+                                    @elseif($type==='cogs')
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="text-white-50">Total COGS</span>
+                                            <span class="stats-value text-danger">Rp {{ number_format((float)($warehouseData['monthly']['total_cogs'] ?? 0),0) }}</span>
+                                        </div>
+                                    @elseif($type==='margin')
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="text-white-50">Total Margin</span>
+                                            <span class="stats-value text-success">Rp {{ number_format((float)($warehouseData['monthly']['total_margin'] ?? 0),0) }}</span>
+                                        </div>
+                                    @elseif($type==='new_customers')
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="text-white-50">Pelanggan Baru</span>
+                                            <span class="stats-value text-primary">{{ (int)($warehouseData['monthly']['new_customers'] ?? 0) }}</span>
+                                        </div>
+                                    @elseif($type==='returning_customers')
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="text-white-50">Pelanggan Setia</span>
+                                            <span class="stats-value text-success">{{ (int)($warehouseData['monthly']['returning_customers'] ?? 0) }}</span>
+                                        </div>
+                                    @elseif($type==='top_products')
+                                        <div class="text-white-50 small">Menampilkan agregasi penjualan produk selama 30 hari terakhir.</div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Loading overlay for warehouse data -->
+                    <div class="warehouse-loading d-none" id="warehouseLoading">
+                        <div class="text-center text-white">
+                            <div class="spinner-border text-light mb-3" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p>Memperbarui data warehouse...</p>
+                        </div>
+                    </div>
+                @else
+                    <div class="alert alert-warning mb-0" role="alert">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle me-3 fa-2x"></i>
+                            <div>
+                                <strong>Data Warehouse belum tersedia untuk metrik ini.</strong>
+                                <p class="mb-2">Pastikan migrasi telah dijalankan, proses transform sudah selesai, dan lakukan backfill bila diperlukan.</p>
+                                <button class="btn btn-warning btn-sm" onclick="triggerBackfill()" id="backfillBtn">
+                                    <i class="fas fa-database me-1"></i> Jalankan Backfill
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            </div>
+        </div>
     </div>
+
+    <!-- Data Records section removed as per request -->
 
     <!-- Sidebar Information -->
     <div class="row mt-4">
@@ -122,11 +433,12 @@
                             <span class="">Previous Value:</span>
                             <span class="fw-bold text-white">{{ number_format($businessMetric->previous_value ?? 0, 0) }}</span>
                         </div>
+                        @php $growth = $statistics['growth_rate'] ?? ($businessMetric->change_percentage ?? 0); @endphp
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="">Change:</span>
-                            <span class="fw-bold {{ ($businessMetric->change_percentage ?? 0) >= 0 ? 'text-success' : 'text-danger' }}">
-                                <i class="bi bi-arrow-{{ ($businessMetric->change_percentage ?? 0) >= 0 ? 'up' : 'down' }}-right me-1"></i>
-                                {{ $businessMetric->formatted_change ?? '0%' }}
+                            <span class="fw-bold {{ ($growth ?? 0) >= 0 ? 'text-success' : 'text-danger' }}">
+                                <i class="bi bi-arrow-{{ ($growth ?? 0) >= 0 ? 'up' : 'down' }}-right me-1"></i>
+                                {{ number_format(($growth ?? 0),1) }}%
                             </span>
                         </div>
                     </div>
@@ -288,7 +600,14 @@
     .stats-card .stats-value.updated {
         transform: scale(1.1);
         color: #28a745;
-        text-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+        text-shadow: 0 0 15px rgba(40, 167, 69, 0.6);
+        animation: statsUpdate 1.5s ease-in-out;
+    }
+
+    @keyframes statsUpdate {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); color: #28a745; text-shadow: 0 0 20px rgba(40, 167, 69, 0.8); }
+        100% { transform: scale(1); }
     }
 
     .stats-card .stats-change {
@@ -903,6 +1222,50 @@
     .chat-messages::-webkit-scrollbar-thumb:hover {
         background: rgba(255, 255, 255, 0.5);
     }
+
+    /* Warehouse Data Styling */
+    .warehouse-data-content {
+        animation: fadeInUp 0.6s ease-out;
+    }
+
+    .warehouse-row:hover {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        transform: translateX(5px);
+        transition: all 0.3s ease;
+    }
+
+    .warehouse-product-row:hover {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        transform: scale(1.02);
+        transition: all 0.3s ease;
+    }
+
+    .warehouse-summary {
+        border: 1px solid rgba(40, 167, 69, 0.3);
+        background: linear-gradient(135deg, rgba(40, 167, 69, 0.1), rgba(23, 162, 184, 0.1));
+    }
+
+    .warehouse-loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+        background: rgba(0, 0, 0, 0.8);
+        border-radius: 10px;
+        padding: 30px;
+        min-width: 200px;
+    }
+
+    #warehouseDailyTable tbody tr td:nth-child(2),
+    #warehouseProductsTable tbody tr td:nth-child(3) {
+        font-weight: 600;
+        background: linear-gradient(45deg, transparent, rgba(40, 167, 69, 0.1));
+    }
+
+    .fa-crown { color: #ffd700 !important; }
+    .fa-medal { color: #c0c0c0 !important; }
+    .fa-award { color: #cd7f32 !important; }
 </style>
 @endpush
 
@@ -953,6 +1316,10 @@ function initializeCharts() {
         labels: @json($chartData['labels'] ?? [])
     };
 
+    // Get warehouse data for enhanced charts (if available)
+    const warehouseData = @json($warehouseData ?? []);
+    const hasWarehouseData = warehouseData && warehouseData.available;
+
     // Trend Chart
     const trendOptions = {
         series: [{
@@ -973,6 +1340,11 @@ function initializeCharts() {
                     pan: false,
                     reset: true
                 }
+            },
+            animations: {
+                enabled: true,
+                easing: 'easeinout',
+                speed: 800
             }
         },
         stroke: {
@@ -983,20 +1355,27 @@ function initializeCharts() {
         xaxis: {
             categories: chartData.labels,
             title: {
-                text: 'Date'
+                text: 'Tanggal',
+                style: { color: '#fff' }
+            },
+            labels: {
+                style: { colors: '#fff' }
             }
         },
         yaxis: {
             title: {
-                text: '{{ $businessMetric->unit ?? "Value" }}'
+                text: '{{ $businessMetric->unit ?? "Value" }}',
+                style: { color: '#fff' }
             },
             labels: {
+                style: { colors: '#fff' },
                 formatter: function(value) {
                     return formatValue(value);
                 }
             }
         },
         tooltip: {
+            theme: 'dark',
             y: {
                 formatter: function(value) {
                     return formatValue(value);
@@ -1004,47 +1383,114 @@ function initializeCharts() {
             }
         },
         grid: {
-            borderColor: '#f1f3f4'
+            borderColor: 'rgba(255,255,255,0.1)',
+            strokeDashArray: 3
         }
     };
 
     trendChart = new ApexCharts(document.querySelector("#trendChart"), trendOptions);
     trendChart.render();
 
-    // Summary Chart (Donut)
-    const summaryOptions = {
-        series: [
+    // Summary Chart (Enhanced with warehouse data)
+    let summaryData, summaryLabels, summaryColors;
+
+    if (hasWarehouseData && warehouseData.monthly) {
+        // Use warehouse monthly data
+        const monthlyRevenue = warehouseData.monthly.total_revenue || 0;
+        const transactionCount = warehouseData.monthly.transaction_count || 0;
+        const avgPerTransaction = transactionCount > 0 ? monthlyRevenue / transactionCount : 0;
+
+        summaryData = [monthlyRevenue, avgPerTransaction, transactionCount * 1000]; // Scale up transaction count for visibility
+        summaryLabels = ['Total Revenue Bulan Ini', 'Rata-rata per Transaksi', 'Jumlah Transaksi (x1000)'];
+        summaryColors = ['#28a745', '#17a2b8', '#ffc107'];
+    } else {
+        // Fallback to traditional data
+        summaryData = [
             {{ $statistics['this_month'] ?? 50 }},
             {{ $statistics['last_month'] ?? 30 }},
             {{ ($statistics['avg_value'] ?? 100) - ($statistics['this_month'] ?? 50) }}
-        ],
+        ];
+        summaryLabels = ['Bulan Ini', 'Bulan Lalu', 'Lainnya'];
+        summaryColors = ['#28a745', '#ffc107', '#6c757d'];
+    }
+
+    const summaryOptions = {
+        series: summaryData,
         chart: {
             type: 'donut',
-            height: 300
+            height: 300,
+            animations: {
+                enabled: true,
+                easing: 'easeinout',
+                speed: 800
+            }
         },
-        labels: ['This Month', 'Last Month', 'Other'],
-        colors: ['#28a745', '#ffc107', '#6c757d'],
+        labels: summaryLabels,
+        colors: summaryColors,
         legend: {
-            position: 'bottom'
+            position: 'bottom',
+            labels: {
+                colors: '#fff'
+            }
         },
         plotOptions: {
             pie: {
                 donut: {
-                    size: '70%'
+                    size: '70%',
+                    labels: {
+                        show: true,
+                        total: {
+                            show: true,
+                            showAlways: true,
+                            label: 'Total',
+                            fontSize: '16px',
+                            fontWeight: 600,
+                            color: '#fff',
+                            formatter: function (w) {
+                                return formatValue(w.globals.seriesTotals.reduce((a, b) => a + b, 0));
+                            }
+                        },
+                        value: {
+                            show: true,
+                            fontSize: '14px',
+                            fontWeight: 400,
+                            color: '#fff',
+                            formatter: function (val) {
+                                return formatValue(val);
+                            }
+                        }
+                    }
                 }
             }
         },
         tooltip: {
+            theme: 'dark',
             y: {
                 formatter: function(value) {
                     return formatValue(value);
                 }
             }
-        }
+        },
+        responsive: [{
+            breakpoint: 480,
+            options: {
+                chart: {
+                    width: 200
+                },
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }]
     };
 
     summaryChart = new ApexCharts(document.querySelector("#summaryChart"), summaryOptions);
     summaryChart.render();
+
+    // Update statistics cards with warehouse data
+    if (hasWarehouseData) {
+        updateStatisticsCardsWithWarehouse(warehouseData);
+    }
 }
 
 // Records DataTable removed per request
@@ -1079,12 +1525,127 @@ function updateChart(days) {
                         categories: response.chartData.labels
                     }
                 });
+
+                // Animate statistics cards update
+                animateStatisticsUpdate();
             }
         },
         error: function() {
             toastr.error('Failed to update chart');
         }
     });
+}
+
+function updateStatisticsCardsWithWarehouse(warehouseData) {
+    if (!warehouseData || !warehouseData.available) return;
+
+    // Update Total Records with transaction count
+    if (warehouseData.monthly && warehouseData.monthly.transaction_count) {
+        const totalRecords = document.getElementById('totalRecords');
+        if (totalRecords) {
+            animateValueUpdate(totalRecords, warehouseData.monthly.transaction_count);
+        }
+    }
+
+    // Update Average Value with average per transaction
+    if (warehouseData.monthly) {
+        const avgValue = document.getElementById('avgValue');
+        if (avgValue && warehouseData.monthly.transaction_count > 0) {
+            const avgPerTransaction = warehouseData.monthly.total_revenue / warehouseData.monthly.transaction_count;
+            animateValueUpdate(avgValue, Math.round(avgPerTransaction), true);
+        }
+    }
+
+    // Update Growth Rate (already calculated from backend)
+    // Last Update from warehouse data
+    if (warehouseData.daily_sales && warehouseData.daily_sales.length > 0) {
+        const lastUpdate = document.getElementById('lastUpdate');
+        if (lastUpdate) {
+            const latestDate = warehouseData.daily_sales[warehouseData.daily_sales.length - 1].sales_date;
+            const formattedDate = moment(latestDate).format('DD MMM YYYY');
+            lastUpdate.textContent = formattedDate;
+        }
+    }
+}
+
+function animateValueUpdate(element, newValue, isCurrency = false) {
+    const currentValue = parseInt(element.textContent.replace(/[^\d]/g, '')) || 0;
+    const increment = (newValue - currentValue) / 20;
+    let current = currentValue;
+
+    element.classList.add('updated');
+
+    const timer = setInterval(() => {
+        current += increment;
+        if ((increment > 0 && current >= newValue) || (increment < 0 && current <= newValue)) {
+            current = newValue;
+            clearInterval(timer);
+            setTimeout(() => element.classList.remove('updated'), 1000);
+        }
+
+        if (isCurrency) {
+            element.textContent = formatCurrency(Math.round(current));
+        } else {
+            element.textContent = Math.round(current).toLocaleString();
+        }
+    }, 50);
+}
+
+function animateStatisticsUpdate() {
+    // Add pulse animation to all stats cards
+    $('.stats-card .stats-value').addClass('updated');
+    setTimeout(() => {
+        $('.stats-card .stats-value').removeClass('updated');
+    }, 1500);
+}
+
+function refreshWarehouseData() {
+    const refreshBtn = document.getElementById('refreshWarehouseBtn');
+    const warehouseContent = document.getElementById('warehouseDataContent');
+    const loading = document.getElementById('warehouseLoading');
+
+    // Show loading
+    refreshBtn.disabled = true;
+    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Loading...';
+
+    if (warehouseContent && loading) {
+        warehouseContent.style.opacity = '0.5';
+        loading.classList.remove('d-none');
+    }
+
+    // Refresh page to get updated warehouse data
+    setTimeout(() => {
+        window.location.reload();
+    }, 1000);
+}
+
+function triggerBackfill() {
+    const backfillBtn = document.getElementById('backfillBtn');
+    if (!backfillBtn) return;
+
+    if (confirm('Jalankan backfill untuk mengisi data warehouse dari transaksi yang ada?')) {
+        backfillBtn.disabled = true;
+        backfillBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Processing...';
+
+        $.ajax({
+            url: '{{ route("dashboard.data-feeds.backfill-facts") }}',
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                toastr.success('Backfill berhasil! Data warehouse telah diperbarui.');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            },
+            error: function(xhr, status, error) {
+                toastr.error('Gagal menjalankan backfill: ' + error);
+                backfillBtn.disabled = false;
+                backfillBtn.innerHTML = '<i class="fas fa-database me-1"></i> Jalankan Backfill';
+            }
+        });
+    }
 }
 
 // Inline editing functions

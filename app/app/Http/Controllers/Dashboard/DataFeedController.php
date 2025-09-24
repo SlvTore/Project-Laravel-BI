@@ -6,16 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductionCost;
 use App\Services\DataFeedService;
+use App\Services\OlapWarehouseService;
+use App\Jobs\ProcessDataFeedJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class DataFeedController extends Controller
 {
     protected DataFeedService $service;
+    protected OlapWarehouseService $warehouse;
 
-    public function __construct(DataFeedService $service)
+    public function __construct(DataFeedService $service, OlapWarehouseService $warehouse)
     {
         $this->service = $service;
+        $this->warehouse = $warehouse;
     }
 
     public function index(Request $request)
@@ -299,5 +303,58 @@ class DataFeedController extends Controller
                 'message' => 'Terjadi kesalahan saat menghapus biaya produksi'
             ], 500);
         }
+    }
+
+    // Trigger OLAP transform for a given data feed
+    public function transform(Request $request, int $dataFeedId)
+    {
+        try {
+            $async = filter_var($request->input('async', 'true'), FILTER_VALIDATE_BOOLEAN);
+            if ($async) {
+                ProcessDataFeedJob::dispatch($dataFeedId);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Transform job dispatched',
+                ]);
+            }
+
+            $feed = \App\Models\DataFeed::findOrFail($dataFeedId);
+            $feed->update(['status' => 'transforming', 'log_message' => 'Starting OLAP transform']);
+            $count = $this->warehouse->loadFactsFromStaging($feed);
+            $feed->update(['status' => 'transformed', 'log_message' => "Transformed {$count} rows into fact_sales"]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Transform completed',
+                'rows' => $count,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // Check transform status for a given data feed
+    public function transformStatus(int $dataFeedId)
+    {
+        $feed = \App\Models\DataFeed::find($dataFeedId);
+        if (!$feed) return response()->json(['success' => false, 'message' => 'Feed not found'], 404);
+        return response()->json([
+            'success' => true,
+            'status' => $feed->status,
+            'log' => $feed->log_message,
+        ]);
+    }
+
+    // Backfill OLAP fact_sales from existing transactions
+    public function backfillFacts(Request $request)
+    {
+        $business = $request->user()->primaryBusiness()->firstOrFail();
+        $rows = $this->warehouse->loadFactsFromTransactions($business->id);
+        return response()->json([
+            'success' => true,
+            'message' => "Backfilled {$rows} fact rows from existing transactions",
+        ]);
     }
 }

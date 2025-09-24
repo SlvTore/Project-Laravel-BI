@@ -314,3 +314,63 @@ Untuk bantuan dan pertanyaan:
 ---
 
 *Aplikasi ini dirancang untuk memberikan business intelligence yang comprehensive dengan AI assistance untuk decision making yang lebih baik. Data flow yang terintegrasi memungkinkan analisis mendalam dan insights actionable untuk pertumbuhan bisnis.*
+
+---
+
+## 🧱 OLAP Warehouse & Metric Views (Baru)
+
+Sistem kini menggunakan lapisan OLAP untuk menyajikan data konsolidasi lintas metric. Ini mempercepat query analitik dan menyederhanakan visualisasi.
+
+### Star Schema Inti
+- dim_date (grain: 1 row per tanggal)
+- dim_product (natural key: product_nk)
+- dim_customer (natural key: customer_nk)
+- dim_channel (opsional / future)
+- fact_sales (grain: satu baris per item transaksi)
+
+### Materialized Views (MySQL Views)
+| View | Tujuan | Kolom Utama |
+|------|--------|-------------|
+| `vw_sales_daily` | Agregasi penjualan harian | sales_date, total_revenue, total_quantity, transaction_count |
+| `vw_sales_product_daily` | Penjualan per produk per hari | sales_date, product_name, total_revenue, total_quantity |
+| `vw_cogs_daily` | Estimasi COGS harian | sales_date, total_cogs |
+| `vw_margin_daily` | Margin kotor harian | sales_date, total_margin |
+| `vw_new_customers_daily` | Jumlah pelanggan baru per hari | sales_date, new_customers |
+| `vw_returning_customers_daily` | Pelanggan returning/loyal per hari | sales_date, returning_customers |
+
+> Catatan: Jika `fact_sales` belum menyimpan `cogs_amount`, view COGS & Margin menggunakan fallback estimasi (misal harga pokok dari dim_product). Tingkatkan ETL nanti untuk akurasi lebih tinggi.
+
+### Service Aggregator
+`App\Services\OlapMetricAggregator` menyediakan metode siap pakai:
+- `dailyRevenue(businessId, days)`
+- `topProducts(businessId, days, limit)`
+- `dailyCogs(businessId, days)`
+- `dailyMargin(businessId, days)`
+- `dailyNewCustomers(businessId, days)`
+- `dailyReturningCustomers(businessId, days)`
+
+Controller (`MetricRecordsController`) akan otomatis memilih sumber OLAP sesuai nama metric. Fallback ke `metric_records` bila view belum tersedia.
+
+### Backfill & Transform
+1. Input / import transaksi mentah
+2. Jalankan transform async (queue) mengisi dim_*/fact_sales
+3. Jalankan backfill manual (pertama kali / recovery):
+```bash
+php artisan olap:backfill --business-id=1
+# Estimasi COGS jika kolom cogs_amount masih NULL di fact_sales
+php artisan olap:estimate-cogs --business-id=1
+```
+4. Views otomatis mencerminkan data terbaru setiap commit ke fact.
+
+### Memverifikasi Data
+```sql
+SELECT * FROM vw_sales_daily WHERE business_id=1 ORDER BY sales_date DESC LIMIT 5;
+SELECT * FROM vw_sales_product_daily WHERE business_id=1 AND sales_date >= CURDATE() - INTERVAL 30 DAY;
+```
+
+### Ekstensi / Roadmap
+- Tambah view churn & retention cohort
+- Simpan `cogs_amount` real di `fact_sales` (ETL enrichment)
+- Tambah incremental snapshot untuk inventory / AR aging
+
+---
