@@ -538,6 +538,18 @@ class DataFeedController extends Controller
         try {
             $async = filter_var($request->input('async', 'true'), FILTER_VALIDATE_BOOLEAN);
             if ($async) {
+                $feed = \App\Models\DataFeed::find($dataFeedId);
+                if ($feed) {
+                    $feed->update([
+                        'status' => 'queued',
+                        'log_message' => 'Transform job dispatched',
+                        'summary' => $this->mergeSummary($feed->summary, [
+                            'stage' => 'queued',
+                            'queued_at' => now()->toISOString(),
+                            'error' => null,
+                        ]),
+                    ]);
+                }
                 ProcessDataFeedJob::dispatch($dataFeedId);
                 return response()->json([
                     'success' => true,
@@ -547,6 +559,13 @@ class DataFeedController extends Controller
 
             $feed = \App\Models\DataFeed::findOrFail($dataFeedId);
             $feed->update(['status' => 'transforming', 'log_message' => 'Starting OLAP transform']);
+            $feed->update([
+                'summary' => $this->mergeSummary($feed->summary, [
+                    'stage' => 'transforming',
+                    'transform_started_at' => now()->toISOString(),
+                    'error' => null,
+                ]),
+            ]);
             $summary = $this->warehouse->loadFactsFromStaging($feed);
             $rows = $summary['records'] ?? 0;
             $feed->update([
@@ -558,6 +577,19 @@ class DataFeedController extends Controller
                     number_format($summary['cogs_amount'] ?? 0, 0, ',', '.'),
                     number_format($summary['gross_margin_amount'] ?? 0, 0, ',', '.')
                 )
+            ]);
+            $feed->update([
+                'summary' => $this->mergeSummary($feed->fresh()->summary, [
+                    'stage' => 'transformed',
+                    'transform_finished_at' => now()->toISOString(),
+                    'metrics' => [
+                        'records' => (int) ($summary['records'] ?? 0),
+                        'gross_revenue' => $summary['gross_revenue'] ?? null,
+                        'cogs_amount' => $summary['cogs_amount'] ?? null,
+                        'gross_margin_amount' => $summary['gross_margin_amount'] ?? null,
+                        'gross_margin_percent' => $summary['gross_margin_percent'] ?? null,
+                    ],
+                ]),
             ]);
             return response()->json([
                 'success' => true,
@@ -582,6 +614,7 @@ class DataFeedController extends Controller
             'success' => true,
             'status' => $feed->status,
             'log' => $feed->log_message,
+            'summary' => $feed->summary,
         ]);
     }
 
@@ -758,14 +791,14 @@ class DataFeedController extends Controller
             ->limit($limit > 0 && $limit <= 200 ? $limit : 25)
             ->get([
                 'id',
-                // original_name not in table; alias using raw expression if driver supports OR fallback later
-                DB::raw("source as original_name"),
+                'original_name',
                 'data_type',
                 'source',
                 'record_count',
                 'status',
                 'created_at',
-                'log_message'
+                'log_message',
+                'summary',
             ]);
 
         return response()->json([
@@ -805,6 +838,7 @@ class DataFeedController extends Controller
 
         DB::beginTransaction();
         try {
+            DB::table('fact_sales')->where('data_feed_id', $feed->id)->delete();
             // Hapus staging rows yang terkait
             StagingSalesItem::where('data_feed_id', $feed->id)->delete();
             StagingCost::where('data_feed_id', $feed->id)->delete();
@@ -824,5 +858,22 @@ class DataFeedController extends Controller
                 'message' => 'Terjadi kesalahan saat menghapus data feed.'
             ], 500);
         }
+    }
+
+    protected function mergeSummary(?array $current, array $changes): array
+    {
+        $base = [
+            'stage' => null,
+            'queued_at' => null,
+            'transform_started_at' => null,
+            'transform_finished_at' => null,
+            'metrics' => null,
+            'issues' => [],
+            'error' => null,
+        ];
+
+        $summary = $current ? array_replace_recursive($base, $current) : $base;
+
+        return array_replace_recursive($summary, $changes);
     }
 }

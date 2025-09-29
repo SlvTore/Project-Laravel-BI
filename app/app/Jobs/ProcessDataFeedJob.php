@@ -51,6 +51,11 @@ class ProcessDataFeedJob implements ShouldQueue
                 'status' => 'transforming',
                 'log_message' => 'Memulai proses ETL ke warehouse',
             ]);
+            $this->mergeSummary($feed, [
+                'stage' => 'transforming',
+                'transform_started_at' => now()->toISOString(),
+                'error' => null,
+            ]);
 
             DB::beginTransaction();
             $result = $warehouse->loadFactsFromStaging($feed);
@@ -61,6 +66,11 @@ class ProcessDataFeedJob implements ShouldQueue
                 'status' => 'transformed',
                 'record_count' => $summary['records'] ?? $feed->record_count,
                 'log_message' => $this->buildLogMessage($summary),
+            ]);
+            $this->mergeSummary($feed, [
+                'stage' => 'transformed',
+                'transform_finished_at' => now()->toISOString(),
+                'metrics' => $summary,
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -73,6 +83,15 @@ class ProcessDataFeedJob implements ShouldQueue
                 'status' => 'failed',
                 'log_message' => $e->getMessage(),
             ]);
+            if (isset($feed)) {
+                $this->mergeSummary($feed->fresh(), [
+                    'stage' => 'failed',
+                    'error' => [
+                        'code' => 'etl_failed',
+                        'message' => $e->getMessage(),
+                    ],
+                ]);
+            }
         } finally {
             optional($lock)->release();
         }
@@ -87,9 +106,10 @@ class ProcessDataFeedJob implements ShouldQueue
         if (is_array($result)) {
             return [
                 'records' => (int) ($result['records'] ?? $result['inserted'] ?? 0),
-                'revenue' => isset($result['gross_revenue']) ? (float) $result['gross_revenue'] : null,
-                'cogs' => isset($result['cogs_amount']) ? (float) $result['cogs_amount'] : null,
-                'margin' => isset($result['gross_margin_amount']) ? (float) $result['gross_margin_amount'] : null,
+                'gross_revenue' => isset($result['gross_revenue']) ? (float) $result['gross_revenue'] : null,
+                'cogs_amount' => isset($result['cogs_amount']) ? (float) $result['cogs_amount'] : null,
+                'gross_margin_amount' => isset($result['gross_margin_amount']) ? (float) $result['gross_margin_amount'] : null,
+                'gross_margin_percent' => isset($result['gross_margin_percent']) ? (float) $result['gross_margin_percent'] : null,
             ];
         }
 
@@ -103,18 +123,26 @@ class ProcessDataFeedJob implements ShouldQueue
         $parts = [];
         $parts[] = ($summary['records'] ?? 0).' baris diproses ke fact_sales';
 
-        if (isset($summary['revenue'])) {
-            $parts[] = 'Omzet Rp'.number_format((float) $summary['revenue'], 0, ',', '.');
+        if (isset($summary['gross_revenue'])) {
+            $parts[] = 'Omzet Rp'.number_format((float) $summary['gross_revenue'], 0, ',', '.');
         }
 
-        if (isset($summary['cogs'])) {
-            $parts[] = 'HPP Rp'.number_format((float) $summary['cogs'], 0, ',', '.');
+        if (isset($summary['cogs_amount'])) {
+            $parts[] = 'HPP Rp'.number_format((float) $summary['cogs_amount'], 0, ',', '.');
         }
 
-        if (isset($summary['margin'])) {
-            $parts[] = 'Margin Rp'.number_format((float) $summary['margin'], 0, ',', '.');
+        if (isset($summary['gross_margin_amount'])) {
+            $parts[] = 'Margin Rp'.number_format((float) $summary['gross_margin_amount'], 0, ',', '.');
         }
 
         return implode(' | ', $parts);
+    }
+
+    protected function mergeSummary(DataFeed $feed, array $changes): void
+    {
+        $summary = $feed->summary ?? [];
+        $merged = array_replace_recursive($summary, $changes);
+        $feed->summary = $merged;
+        $feed->save();
     }
 }

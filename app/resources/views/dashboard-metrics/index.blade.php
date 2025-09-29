@@ -56,11 +56,16 @@
                 <div class="col-md-3">
                     <div class="content-card border-start border-warning border-4">
                         <div class="card-body p-3">
-                            <h6 class=" text-white text-uppercase fw-bold mb-2" style="font-size: 0.75rem;">Stable</h6>
-                            <h3 class="fw-bold text-white text-warning mb-0">{{ $businessMetrics->where('change_percentage', '=', 0)->count() }}</h3>
+                            <h6 class="text-white text-uppercase fw-bold mb-2" style="font-size: 0.75rem;">Total Revenue</h6>
+                            <h3 class="fw-bold text-white mb-0">
+                                @php
+                                    $revenueMetric = $businessMetrics->firstWhere('metric_name', 'Total Penjualan');
+                                    echo $revenueMetric ? $revenueMetric->formatted_value : 'Rp 0';
+                                @endphp
+                            </h3>
                             <small class="text-white">
-                                <i class="bi bi-dash me-1"></i>
-                                No change
+                                <i class="bi bi-currency-dollar me-1"></i>
+                                Current period sales
                             </small>
                         </div>
                     </div>
@@ -79,103 +84,7 @@
                 </div>
             </div>
 
-            <!-- Revenue & Margin Snapshot -->
-            <div class="row g-4 mb-4" id="kpiSnapshot">
-                <div class="col-md-3">
-                    <div class="content-card border-start border-success border-4">
-                        <div class="card-body">
-                            <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 0.75rem;">Gross Revenue</h6>
-                            <h3 class="fw-bold text-white mb-0" id="kpiGrossRevenue">Rp0</h3>
-                            <small class="text-white-50">Total omzet periode</small>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="content-card border-start border-warning border-4">
-                        <div class="card-body">
-                            <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 0.75rem;">COGS</h6>
-                            <h3 class="fw-bold text-white mb-0" id="kpiCogs">Rp0</h3>
-                            <small class="text-white-50">Biaya pokok penjualan</small>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="content-card border-start border-info border-4">
-                        <div class="card-body">
-                            <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 0.75rem;">Gross Margin</h6>
-                            <h3 class="fw-bold text-white mb-0" id="kpiMargin">Rp0</h3>
-                            <small class="text-white-50">Selisih omzet - HPP</small>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="content-card border-start border-primary border-4">
-                        <div class="card-body">
-                            <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 0.75rem;">Margin %</h6>
-                            <h3 class="fw-bold text-white mb-0" id="kpiMarginPercent">0%</h3>
-                            <small class="text-white-50">Persentase margin kotor</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-3">
-                <div class="d-flex gap-2">
-                    <select class="form-select" id="metricRangeSelect" style="min-width: 180px;">
-                        <option value="last_30_days">30 Hari Terakhir</option>
-                        <option value="last_7_days">7 Hari Terakhir</option>
-                        <option value="this_quarter">Kuartal Ini</option>
-                        <option value="custom">Custom Range</option>
-                    </select>
-                    <select class="form-select" id="metricGroupSelect" style="min-width: 140px;">
-                        <option value="day">Per Hari</option>
-                        <option value="week">Per Minggu</option>
-                        <option value="month">Per Bulan</option>
-                    </select>
-                </div>
-                <div class="d-flex gap-2" id="customRangeInputs" style="display: none;">
-                    <input type="date" class="form-control" id="customStartDate">
-                    <input type="date" class="form-control" id="customEndDate">
-                    <button class="btn btn-outline-light" id="applyCustomRange">Terapkan</button>
-                </div>
-            </div>
-
-            <div class="row g-4 mb-4">
-                <div class="col-lg-8">
-                    <div class="content-card h-100">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="card-title fw-bold mb-0">Revenue & Margin Trend</h5>
-                                <span class="badge bg-primary-soft text-white" id="trendRangeLabel">30 Hari Terakhir</span>
-                            </div>
-                            <div id="metricsTrendChart" style="height: 320px;"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-4">
-                    <div class="content-card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title fw-bold mb-3">Top Products</h5>
-                            <div class="table-responsive">
-                                <table class="table table-sm table-dark align-middle" id="topProductsTable">
-                                    <thead>
-                                        <tr>
-                                            <th>Produk</th>
-                                            <th class="text-end">Omzet</th>
-                                            <th class="text-end">Margin</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="topProductsBody">
-                                        <tr>
-                                            <td colspan="3" class="text-center text-muted">Memuat data...</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <!-- Metrics Table -->
             <div class="row">
@@ -241,13 +150,26 @@
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td class="fw-semibold">{{ $businessMetric->formatted_value }}</td>
+                                            <td class="fw-semibold">
+                                                <span class="metric-value" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                      title="Nilai: {{ $businessMetric->formatted_value }}">
+                                                    {{ $businessMetric->formatted_value }}
+                                                </span>
+                                                @if($businessMetric->current_value > 0)
+                                                    <br><small class="text-muted">{{ $businessMetric->unit }}</small>
+                                                @endif
+                                            </td>
                                             <td>
                                                 @if($businessMetric->change_percentage != 0)
-                                                    <span class="badge bg-{{ $businessMetric->change_percentage > 0 ? 'success' : 'danger' }}">
+                                                    <span class="badge bg-{{ $businessMetric->change_percentage > 0 ? 'success' : 'danger' }}"
+                                                          data-bs-toggle="tooltip" data-bs-placement="top"
+                                                          title="Previous value: {{ number_format($businessMetric->previous_value, 0, ',', '.') }}">
                                                         <i class="bi bi-arrow-{{ $businessMetric->change_percentage > 0 ? 'up' : 'down' }}-right me-1"></i>
                                                         {{ $businessMetric->formatted_change }}
                                                     </span>
+                                                    @if(abs($businessMetric->change_percentage) > 50)
+                                                        <br><small class="text-warning"><i class="bi bi-exclamation-triangle"></i> Significant change</small>
+                                                    @endif
                                                 @else
                                                     <span class="badge bg-secondary">No change</span>
                                                 @endif
@@ -279,6 +201,13 @@
     @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Initialize tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            // Make table rows clickable
             document.querySelectorAll('#metricsTable tbody tr.clickable-row').forEach(function (row) {
                 row.addEventListener('click', function () {
                     const href = this.getAttribute('data-href');

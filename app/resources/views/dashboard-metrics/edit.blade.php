@@ -169,29 +169,13 @@
             }
 
             function attachPeriodButtons() {
-                const btns = document.querySelectorAll('.chart-period');
-                btns.forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        btns.forEach(b => { b.classList.remove('active','btn-primary'); b.classList.add('btn-outline-light'); });
-                        btn.classList.remove('btn-outline-light');
-                        btn.classList.add('active','btn-primary');
-                        const days = btn.getAttribute('data-period') || 30;
-                        updateChartFetch(days);
-                    });
-                });
+                // Period button functionality is handled by the main script section
+                console.log('Period buttons managed by main script - no duplicate handlers attached');
             }
 
             function updateChartFetch(days) {
-                const url = new URL(window.location.href);
-                url.searchParams.set('period', String(days));
-                fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-                    .then(r => r.ok ? r.json() : Promise.reject(r))
-                    .then(data => {
-                        if (!data || !data.chartData || !trendChart) return;
-                        trendChart.updateSeries([{ name: METRIC_NAME, data: data.chartData.values || [] }]);
-                        trendChart.updateOptions({ xaxis: { categories: data.chartData.labels || [] } });
-                    })
-                    .catch(e => console.error('Chart update failed', e));
+                // Chart update functionality is handled by the main script section
+                console.log('Chart update managed by main script');
             }
 
             document.addEventListener('DOMContentLoaded', function() {
@@ -264,7 +248,7 @@
                                                 <tr class="warehouse-row" data-date="{{ $row->sales_date }}">
                                                     <td class="fw-medium">{{ \Carbon\Carbon::parse($row->sales_date)->format('d M Y') }}</td>
                                                     @if($type==='sales')
-                                                        <td class="text-end fw-bold text-success">Rp {{ number_format((float)($row->total_revenue ?? 0),0) }}</td>
+                                                        <td class="text-end fw-bold text-success">Rp {{ number_format((float)($row->total_gross_revenue ?? 0),0) }}</td>
                                                         <td class="text-end">{{ (int)($row->transaction_count ?? 0) }}</td>
                                                         <td class="text-end">{{ (int)($row->total_quantity ?? 0) }}</td>
                                                     @elseif($type==='cogs')
@@ -364,11 +348,93 @@
                                             <span class="text-white-50">Pelanggan Baru</span>
                                             <span class="stats-value text-primary">{{ (int)($warehouseData['monthly']['new_customers'] ?? 0) }}</span>
                                         </div>
+                                        @if(isset($warehouseData['customers']) && count($warehouseData['customers']) > 0)
+                                            <div class="mt-3">
+                                                <h6 class="text-white-50 mb-2">
+                                                    <i class="fas fa-users me-1"></i>
+                                                    Detail Pelanggan Baru (10 Terbaru)
+                                                </h6>
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm table-dark mb-0" id="newCustomersTable">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Nama</th>
+                                                                <th>Email</th>
+                                                                <th>Tgl. Bergabung</th>
+                                                                <th class="text-end">Total Belanja</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach($warehouseData['customers'] as $customer)
+                                                                <tr>
+                                                                    <td class="fw-semibold">{{ $customer->customer_name }}</td>
+                                                                    <td class="text-muted small">{{ $customer->email ?? '-' }}</td>
+                                                                    <td class="small">{{ \Carbon\Carbon::parse($customer->first_purchase_date)->format('d M Y') }}</td>
+                                                                    <td class="text-end fw-semibold text-success">
+                                                                        Rp {{ number_format($customer->total_spent, 0) }}
+                                                                    </td>
+                                                                </tr>
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        @endif
+                                        @if(count($warehouseData['daily'] ?? []) === 0)
+                                            <div class="alert alert-info mt-3 mb-0">
+                                                <small><i class="fas fa-info-circle me-1"></i>
+                                                Data pelanggan baru tersedia dari periode sebelumnya. Periode aktual mungkin berbeda dari range 30 hari terakhir.
+                                                </small>
+                                            </div>
+                                        @endif
                                     @elseif($type==='returning_customers')
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <span class="text-white-50">Pelanggan Setia</span>
                                             <span class="stats-value text-success">{{ (int)($warehouseData['monthly']['returning_customers'] ?? 0) }}</span>
                                         </div>
+                                        @if(isset($warehouseData['customers']) && count($warehouseData['customers']) > 0)
+                                            <div class="mt-3">
+                                                <h6 class="text-white-50 mb-2">
+                                                    <i class="fas fa-crown me-1"></i>
+                                                    Detail Pelanggan Setia (10 Teraktif)
+                                                </h6>
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm table-dark mb-0" id="returningCustomersTable">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Nama</th>
+                                                                <th>Email</th>
+                                                                <th>Transaksi Terakhir</th>
+                                                                <th class="text-end">Total Transaksi</th>
+                                                                <th class="text-end">Total Belanja</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach($warehouseData['customers'] as $customer)
+                                                                <tr>
+                                                                    <td class="fw-semibold">{{ $customer->customer_name }}</td>
+                                                                    <td class="text-muted small">{{ $customer->email ?? '-' }}</td>
+                                                                    <td class="small">{{ \Carbon\Carbon::parse($customer->last_purchase_date)->format('d M Y') }}</td>
+                                                                    <td class="text-end">
+                                                                        <span class="badge bg-primary">{{ $customer->total_purchases ?? 0 }}x</span>
+                                                                    </td>
+                                                                    <td class="text-end fw-semibold text-success">
+                                                                        Rp {{ number_format($customer->total_spent, 0) }}
+                                                                    </td>
+                                                                </tr>
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        @endif
+                                        @if(count($warehouseData['daily'] ?? []) === 0)
+                                            <div class="alert alert-info mt-3 mb-0">
+                                                <small><i class="fas fa-info-circle me-1"></i>
+                                                Data pelanggan setia tersedia dari periode sebelumnya. Periode aktual mungkin berbeda dari range 30 hari terakhir.
+                                                </small>
+                                            </div>
+                                        @endif
                                     @elseif($type==='top_products')
                                         <div class="text-white-50 small">Menampilkan agregasi penjualan produk selama 30 hari terakhir.</div>
                                     @endif
@@ -1261,6 +1327,38 @@
     #warehouseProductsTable tbody tr td:nth-child(3) {
         font-weight: 600;
         background: linear-gradient(45deg, transparent, rgba(40, 167, 69, 0.1));
+    }
+
+    /* Warehouse table hover styling consistency */
+    #warehouseDailyTable tbody tr:hover,
+    #warehouseProductsTable tbody tr:hover,
+    #newCustomersTable tbody tr:hover,
+    #returningCustomersTable tbody tr:hover {
+        background-color: rgba(40, 167, 69, 0.08) !important;
+        cursor: pointer;
+    }
+
+    #warehouseDailyTable tbody tr:hover td,
+    #warehouseProductsTable tbody tr:hover td,
+    #newCustomersTable tbody tr:hover td,
+    #returningCustomersTable tbody tr:hover td {
+        background-color: inherit !important;
+    }
+
+    /* Maintain special column styling on hover */
+    #warehouseDailyTable tbody tr:hover td:nth-child(2),
+    #warehouseProductsTable tbody tr:hover td:nth-child(3) {
+        background: linear-gradient(45deg, rgba(40, 167, 69, 0.08), rgba(40, 167, 69, 0.15)) !important;
+        font-weight: 600;
+    }
+
+    /* Customer table specific styling */
+    #newCustomersTable, #returningCustomersTable {
+        font-size: 0.875rem;
+    }
+
+    #newCustomersTable tbody tr, #returningCustomersTable tbody tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .fa-crown { color: #ffd700 !important; }

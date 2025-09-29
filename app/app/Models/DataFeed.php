@@ -18,12 +18,14 @@ class DataFeed extends Model
         'record_count',
         'status',
         'log_message',
+        'summary',
     ];
 
     protected function casts(): array
     {
         return [
             'record_count' => 'integer',
+            'summary' => 'array',
         ];
     }
 

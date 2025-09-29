@@ -156,11 +156,11 @@ class OlapMetricAggregator
             ->where('business_id', $businessId)
             ->where('sales_date', '>=', $from)
             ->orderBy('sales_date')
-            ->get(['sales_date','total_revenue']);
+            ->get(['sales_date','total_gross_revenue']);
 
         return [
             'labels' => $rows->pluck('sales_date')->map(fn($d) => Carbon::parse($d)->format('d M')),
-            'values' => $rows->pluck('total_revenue')->map(fn($v) => (float)$v),
+            'values' => $rows->pluck('total_gross_revenue')->map(fn($v) => (float)$v),
             'dates' => $rows->pluck('sales_date')->map(fn($d) => Carbon::parse($d)->format('Y-m-d')),
         ];
     }
@@ -197,15 +197,31 @@ class OlapMetricAggregator
     public function dailyMargin(int $businessId, int $days = 30): array
     {
         $from = Carbon::now()->subDays($days)->toDateString();
-        $rows = DB::table('vw_margin_daily')
-            ->where('business_id', $businessId)
-            ->where('sales_date', '>=', $from)
-            ->orderBy('sales_date')
-            ->get(['sales_date','total_margin']);
+
+        // Join margin and sales data to calculate percentage: ((Revenue - COGS) / Revenue) × 100%
+        $rows = DB::table('vw_margin_daily as m')
+            ->join('vw_sales_daily as s', function($join) {
+                $join->on('m.business_id', '=', 's.business_id')
+                     ->on('m.sales_date', '=', 's.sales_date');
+            })
+            ->where('m.business_id', $businessId)
+            ->where('m.sales_date', '>=', $from)
+            ->orderBy('m.sales_date')
+            ->selectRaw('
+                m.sales_date,
+                m.total_margin,
+                s.total_gross_revenue,
+                CASE
+                    WHEN s.total_gross_revenue > 0
+                    THEN (m.total_margin / s.total_gross_revenue) * 100
+                    ELSE 0
+                END as margin_percentage
+            ')
+            ->get();
 
         return [
             'labels' => $rows->pluck('sales_date')->map(fn($d) => Carbon::parse($d)->format('d M')),
-            'values' => $rows->pluck('total_margin')->map(fn($v) => (float)$v),
+            'values' => $rows->pluck('margin_percentage')->map(fn($v) => round((float)$v, 2)),
             'dates' => $rows->pluck('sales_date')->map(fn($d) => Carbon::parse($d)->format('Y-m-d')),
         ];
     }

@@ -1,5 +1,0 @@
-transaction_date,customer_name,customer_email,customer_phone,product_name,product_category,quantity,unit,selling_price,discount,tax_amount,shipping_cost,payment_method,notes,product_cost_price,material_name,material_quantity,material_unit,material_cost_per_unit
-2024-01-15,John Doe,john@example.com,081234567890,Nasi Goreng Spesial,Makanan,2,Porsi,25000,0,2500,5000,Cash,Pesanan untuk acara kantor,18000,Beras,0.5,Kg,12000
-2024-01-15,John Doe,john@example.com,081234567890,Nasi Goreng Spesial,Makanan,2,Porsi,25000,0,2500,5000,Cash,Pesanan untuk acara kantor,18000,Ayam,0.3,Kg,35000
-2024-01-16,Jane Smith,jane@example.com,087654321098,Kopi Arabica Premium,Minuman,1,Cup,15000,1000,0,0,Transfer,Kopi pagi,8000,Kopi Arabica,20,Gram,500
-2024-01-17,Ahmad Rahman,ahmad@example.com,089876543210,Kaos Polos Cotton,Fashion,3,Pcs,85000,10000,0,15000,Cash,Ukuran M L XL,45000,Kain Cotton,0.5,Meter,60000

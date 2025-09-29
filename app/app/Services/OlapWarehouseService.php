@@ -126,6 +126,7 @@ class OlapWarehouseService
                     'product_id' => $productDimId,
                     'customer_id' => $customerDimId,
                     'channel_id' => null,
+                    'data_feed_id' => null,
                     'sales_transaction_id' => $tx->id,
                     'sales_transaction_item_id' => $item->id,
                     'quantity' => $metrics['quantity'],
@@ -166,16 +167,18 @@ class OlapWarehouseService
             ];
         }
 
-    $productCostMap = $this->buildProductCostMap(
-        $items->pluck('product_id')->filter()->unique()->values()->all()
-    );
+        DB::table('fact_sales')->where('data_feed_id', $feed->id)->delete();
 
-    $summary = [
-        'records' => 0,
-        'gross_revenue' => 0.0,
-        'cogs_amount' => 0.0,
-        'gross_margin_amount' => 0.0,
-    ];
+        $productCostMap = $this->buildProductCostMap(
+            $items->pluck('product_id')->filter()->unique()->values()->all()
+        );
+
+        $summary = [
+            'records' => 0,
+            'gross_revenue' => 0.0,
+            'cogs_amount' => 0.0,
+            'gross_margin_amount' => 0.0,
+        ];
 
         foreach ($items as $s) {
             $dateId = $this->ensureDateDim(\Carbon\Carbon::parse($s->transaction_date)->toDateString());
@@ -202,6 +205,7 @@ class OlapWarehouseService
                 'product_id' => $productDimId,
                 'customer_id' => $customerDimId,
                 'channel_id' => null,
+                'data_feed_id' => $feed->id,
                 'sales_transaction_id' => null,
                 'sales_transaction_item_id' => null,
                 'quantity' => $metrics['quantity'],

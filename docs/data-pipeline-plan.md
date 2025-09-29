@@ -26,6 +26,66 @@
 
 ## Detailed Contracts
 
+### Post-ETL Status & Summary Contract
+
+| Status         | When it is set                                                | Notes / required side effects |
+|----------------|---------------------------------------------------------------|-------------------------------|
+| `processing`   | Preview commit accepted, staging rows being inserted          | `data_feeds.record_count` remains provisional (0) until staging write finishes. |
+| `queued`       | Staging write succeeded and the ETL job has been dispatched   | Persist `data_feeds.summary` snapshot with `{stage: "queued"}` and enqueue timestamp. |
+| `transforming` | Queue worker picked up the job; warehouse loader is running   | Update `data_feeds.summary.stage = "transforming"` and store a monotonic `updated_at`. |
+| `transformed`  | Warehouse load finished successfully                          | Finalize metrics (records, gross revenue, COGS, margin, margin %) and purge staging rows. |
+| `failed`       | Any exception during commit or ETL                            | Capture structured error context, leave staging rows for inspection when failure happens pre-load. |
+
+#### Structured summary payload
+
+Instead of relying on the freeform `log_message`, persist a JSON column `data_feeds.summary` with the contract below. The history API should expose it verbatim so the UI can render chips, totals, and contextual errors without string parsing.
+
+```jsonc
+{
+  "stage": "queued" | "transforming" | "transformed" | "failed",
+  "queued_at": "2025-09-29T08:32:10Z",
+  "transform_started_at": "2025-09-29T08:33:02Z",
+  "transform_finished_at": "2025-09-29T08:33:12Z",
+  "metrics": {
+    "records": 128,
+    "gross_revenue": 42891250.0,
+    "cogs_amount": 21500000.0,
+    "gross_margin_amount": 21391250.0,
+    "gross_margin_percent": 49.9
+  },
+  "issues": [
+    {
+      "type": "warning",
+      "code": "missing_product_cost",
+      "message": "5 products had no cost price; COGS assumed 0."
+    }
+  ],
+  "error": null
+}
+```
+
+* Store timestamps in UTC ISO-8601; omit fields that are not yet known.
+* When `error` is non-null, include `{ "code": string, "message": string, "trace_id": string }`.
+* UI badges derive color from `stage`. Metrics dashboard CTA uses the `metrics` totals when available.
+
+#### Fact table lineage & idempotency
+
+To support retries without duplication, add a nullable `data_feed_id` FK to `fact_sales`, indexed with `business_id`, and cascade deletes on feed removal. Before inserting new facts, remove existing rows for that feed so reruns stay idempotent.
+
+#### Status polling API
+
+`GET /dashboard/data-feeds/{feed}/transform-status`
+
+```json
+{
+  "success": true,
+  "status": "transforming",
+  "summary": { /* same shape as data_feeds.summary */ }
+}
+```
+
+Frontend polling cadence: every 5 seconds while `status` ∈ {`queued`, `transforming`}, stop once terminal (`transformed`|`failed`). On success, trigger KPI refresh on the metrics dashboard.
+
 ### 1. Preview Endpoint (`POST /dashboard/data-feeds/preview`)
 - **Payload (multipart/form-data)**
   - `file`: CSV upload (required)

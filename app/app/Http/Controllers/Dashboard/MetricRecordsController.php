@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Services\OlapMetricAggregator;
+use App\Services\MetricFormattingService;
 
 class MetricRecordsController extends Controller
 {
@@ -87,36 +88,8 @@ class MetricRecordsController extends Controller
 
         $warehouseData = $this->getWarehouseData($businessMetric);
 
-        // Derive current & previous from OLAP where possible
-        try {
-            $map = [
-                'Total Penjualan' => ['view' => 'vw_sales_daily', 'col' => 'total_revenue'],
-                'Biaya Pokok Penjualan (COGS)' => ['view' => 'vw_cogs_daily', 'col' => 'total_cogs'],
-                'Margin Keuntungan (Profit Margin)' => ['view' => 'vw_margin_daily', 'col' => 'total_margin'],
-                'Jumlah Pelanggan Baru' => ['view' => 'vw_new_customers_daily', 'col' => 'new_customers'],
-                'Jumlah Pelanggan Setia' => ['view' => 'vw_returning_customers_daily', 'col' => 'returning_customers'],
-            ];
-            if (isset($map[$metricName])) {
-                $v = $map[$metricName]['view']; $c = $map[$metricName]['col'];
-                $rows = DB::table($v)
-                    ->where('business_id', $businessMetric->business_id)
-                    ->orderByDesc('sales_date')
-                    ->limit(2)
-                    ->get();
-                if ($rows->count() > 0) {
-                    $current = (float)($rows[0]->{$c} ?? 0);
-                    $previous = (float)($rows[1]->{$c} ?? 0);
-                    $businessMetric->current_value = $current;
-                    $businessMetric->previous_value = $previous;
-                    // compute change percentage & formatted_change transiently
-                    $changePct = $previous > 0 ? (($current - $previous) / $previous) * 100 : 0;
-                    $businessMetric->change_percentage = $changePct;
-                    $businessMetric->formatted_change = number_format($changePct, 1) . '%';
-                }
-            }
-        } catch (\Throwable $e) {
-            // swallow; fallback values remain
-        }
+        // Enrich metric with OLAP data using consistent service
+        $businessMetric = MetricFormattingService::enrichMetricWithOlapData($businessMetric);
 
         return view('dashboard-metrics.edit', compact(
             'businessMetric',
@@ -994,8 +967,30 @@ class MetricRecordsController extends Controller
     {
         $metric = $businessMetric->metric_name;
         $businessId = $businessMetric->business_id;
+
+        // Use flexible date range - get latest available data or last 30 days
         $from = Carbon::now()->subDays(30)->toDateString();
         $monthStart = Carbon::now()->startOfMonth()->toDateString();
+
+        // For customer metrics, check if we have recent data, otherwise use all available data
+        $hasRecentData = true;
+        if (in_array($metric, ['Jumlah Pelanggan Baru', 'Jumlah Pelanggan Setia'])) {
+            $viewName = $metric === 'Jumlah Pelanggan Baru' ? 'vw_new_customers_daily' : 'vw_returning_customers_daily';
+            $recentCount = DB::table($viewName)
+                ->where('business_id', $businessId)
+                ->where('sales_date', '>=', $from)
+                ->count();
+
+            if ($recentCount === 0) {
+                // Use all available data if no recent data
+                $latestDate = DB::table($viewName)->where('business_id', $businessId)->max('sales_date');
+                if ($latestDate) {
+                    $from = Carbon::parse($latestDate)->subDays(30)->toDateString();
+                    $monthStart = Carbon::parse($latestDate)->startOfMonth()->toDateString();
+                    $hasRecentData = false;
+                }
+            }
+        }
 
         try {
             switch ($metric) {
@@ -1016,7 +1011,7 @@ class MetricRecordsController extends Controller
                     $monthly = DB::table('vw_sales_daily')
                         ->where('business_id', $businessId)
                         ->where('sales_date', '>=', $monthStart)
-                        ->selectRaw('SUM(total_revenue) as total_revenue, SUM(transaction_count) as transaction_count, SUM(total_quantity) as total_quantity')
+                        ->selectRaw('SUM(total_gross_revenue) as total_revenue, SUM(transaction_count) as transaction_count, SUM(total_quantity) as total_quantity')
                         ->first();
                     return [
                         'available' => true,
@@ -1081,6 +1076,18 @@ class MetricRecordsController extends Controller
                         ->where('sales_date', '>=', $monthStart)
                         ->selectRaw('SUM(new_customers) as new_customers')
                         ->first();
+
+                    // Get recent new customers with details (flexible date range)
+                    $recentNewCustomers = Customer::forBusiness($businessId)
+                        ->where(function($query) use ($monthStart) {
+                            $query->where('customer_type', 'new')
+                                  ->orWhere('first_purchase_date', '>=', $monthStart)
+                                  ->orWhereNull('customer_type'); // Include customers without explicit type
+                        })
+                        ->orderBy('first_purchase_date', 'desc')
+                        ->limit(10)
+                        ->get(['customer_name', 'email', 'first_purchase_date', 'total_spent']);
+
                     return [
                         'available' => true,
                         'type' => 'new_customers',
@@ -1088,6 +1095,7 @@ class MetricRecordsController extends Controller
                         'monthly' => [
                             'new_customers' => (int)($monthly->new_customers ?? 0),
                         ],
+                        'customers' => $recentNewCustomers,
                     ];
                 }
                 case 'Jumlah Pelanggan Setia': {
@@ -1101,6 +1109,18 @@ class MetricRecordsController extends Controller
                         ->where('sales_date', '>=', $monthStart)
                         ->selectRaw('SUM(returning_customers) as returning_customers')
                         ->first();
+
+                    // Get recent returning customers with details (flexible criteria)
+                    $recentReturningCustomers = Customer::forBusiness($businessId)
+                        ->where(function($query) use ($monthStart) {
+                            $query->where('customer_type', 'returning')
+                                  ->orWhere('total_purchases', '>', 1) // Customers with multiple purchases
+                                  ->orWhere('last_purchase_date', '>=', $monthStart);
+                        })
+                        ->orderBy('last_purchase_date', 'desc')
+                        ->limit(10)
+                        ->get(['customer_name', 'email', 'last_purchase_date', 'total_spent', 'total_purchases']);
+
                     return [
                         'available' => true,
                         'type' => 'returning_customers',
@@ -1108,6 +1128,7 @@ class MetricRecordsController extends Controller
                         'monthly' => [
                             'returning_customers' => (int)($monthly->returning_customers ?? 0),
                         ],
+                        'customers' => $recentReturningCustomers,
                     ];
                 }
                 case 'Penjualan Produk Terlaris': {

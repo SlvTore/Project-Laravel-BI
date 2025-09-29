@@ -53,7 +53,9 @@ class DataFeedService
                 'source' => 'manual_input',
                 'data_type' => 'sales',
                 'record_count' => count($payload['items']),
-                'status' => 'processing'
+                'status' => 'processing',
+                'log_message' => 'Menyalin data ke staging',
+                'summary' => $this->summaryForStage('processing'),
             ]);
 
             $recordCount = 0;
@@ -88,8 +90,13 @@ class DataFeedService
             // Update DataFeed status
             $dataFeed->update([
                 'record_count' => $recordCount,
-                'status' => $recordCount > 0 ? 'completed' : 'failed',
-                'log_message' => $recordCount > 0 ? "Successfully processed $recordCount items" : 'No valid items found'
+                'status' => $recordCount > 0 ? 'queued' : 'failed',
+                'log_message' => $recordCount > 0 ? "Queued for processing ($recordCount items)" : 'No valid items found',
+                'summary' => $recordCount > 0
+                    ? $this->summaryForStage('queued', [
+                        'queued_at' => now()->toISOString(),
+                    ])
+                    : $this->summaryWithError('Tidak ada item penjualan yang valid.', 'no_valid_rows'),
             ]);
 
             if ($recordCount > 0) {
@@ -112,7 +119,8 @@ class DataFeedService
             if (isset($dataFeed)) {
                 $dataFeed->update([
                     'status' => 'failed',
-                    'log_message' => $e->getMessage()
+                    'log_message' => $e->getMessage(),
+                    'summary' => $this->summaryWithError($e->getMessage(), 'manual_sales_exception'),
                 ]);
             }
 
@@ -559,9 +567,12 @@ class DataFeedService
                 'business_id' => $business->id,
                 'user_id' => Auth::id(),
                 'source' => 'import:' . ($cached['original_name'] ?? 'unknown.csv'),
+                'original_name' => $cached['original_name'] ?? null,
                 'data_type' => $dataType,
                 'record_count' => 0,
                 'status' => 'processing',
+                'log_message' => 'Menyalin data ke staging',
+                'summary' => $this->summaryForStage('processing'),
             ]);
 
             $recordCount = 0;
@@ -646,6 +657,7 @@ class DataFeedService
                 $dataFeed->update([
                     'status' => 'failed',
                     'log_message' => 'Tidak ada baris valid untuk diproses.',
+                    'summary' => $this->summaryWithError('Tidak ada baris valid untuk diproses.', 'no_valid_rows'),
                 ]);
 
                 throw new DataFeedCommitException('Tidak ada baris valid untuk diproses.', 422);
@@ -655,6 +667,11 @@ class DataFeedService
                 'record_count' => $recordCount,
                 'status' => 'queued',
                 'log_message' => "Queued for processing ({$recordCount} baris)",
+                'summary' => $this->summaryForStage('queued', [
+                    'queued_at' => now()->toISOString(),
+                    'issues' => [],
+                    'error' => null,
+                ]),
             ]);
 
             \App\Jobs\ProcessDataFeedJob::dispatch($dataFeed->id);
@@ -679,6 +696,14 @@ class DataFeedService
                 'business_id' => $business->id,
                 'token' => $token,
             ]);
+            if (isset($dataFeed)) {
+                $dataFeed->update([
+                    'status' => 'failed',
+                    'log_message' => $e->getMessage(),
+                    'summary' => $this->summaryWithError($e->getMessage(), 'commit_exception'),
+                ]);
+            }
+
             throw new DataFeedCommitException('Terjadi kesalahan saat memproses commit data feed.', 500);
         }
     }
@@ -704,9 +729,12 @@ class DataFeedService
                 'business_id' => $business->id,
                 'user_id' => $user->id,
                 'source' => 'import:' . $file->getClientOriginalName(),
+                'original_name' => $file->getClientOriginalName(),
                 'data_type' => $options['data_type'] ?? 'sales',
                 'record_count' => 0,
-                'status' => 'processing'
+                'status' => 'processing',
+                'log_message' => 'Menyalin data ke staging',
+                'summary' => $this->summaryForStage('processing'),
             ]);
 
             $extension = strtolower($file->getClientOriginalExtension());
@@ -723,8 +751,13 @@ class DataFeedService
             // Update DataFeed status
             $dataFeed->update([
                 'record_count' => $recordCount,
-                'status' => $recordCount > 0 ? 'completed' : 'failed',
-                'log_message' => $recordCount > 0 ? "Successfully processed $recordCount records" : 'No valid records found'
+                'status' => $recordCount > 0 ? 'queued' : 'failed',
+                'log_message' => $recordCount > 0 ? "Queued for processing ($recordCount records)" : 'No valid records found',
+                'summary' => $recordCount > 0
+                    ? $this->summaryForStage('queued', [
+                        'queued_at' => now()->toISOString(),
+                    ])
+                    : $this->summaryWithError('Tidak ada record valid yang ditemukan.', 'no_valid_rows'),
             ]);
 
             if ($recordCount > 0) {
@@ -747,7 +780,8 @@ class DataFeedService
             if (isset($dataFeed)) {
                 $dataFeed->update([
                     'status' => 'failed',
-                    'log_message' => $e->getMessage()
+                    'log_message' => $e->getMessage(),
+                    'summary' => $this->summaryWithError($e->getMessage(), 'upload_exception'),
                 ]);
             }
 
@@ -1327,7 +1361,9 @@ class DataFeedService
                 'data_type' => 'universal',
                 'original_name' => $cached['original_name'] ?? 'universal_data.csv',
                 'status' => 'processing',
-                'record_count' => 0
+                'record_count' => 0,
+                'log_message' => 'Menyalin data ke staging',
+                'summary' => $this->summaryForStage('processing'),
             ]);
 
             $handle = fopen($absolutePath, 'r');
@@ -1509,10 +1545,15 @@ class DataFeedService
             // Update DataFeed record
             $dataFeed->update([
                 'record_count' => $processedCount,
-                'status' => $processedCount > 0 ? 'completed' : 'failed',
+                'status' => $processedCount > 0 ? 'queued' : 'failed',
                 'log_message' => $processedCount > 0
-                    ? "Successfully processed $processedCount universal data rows"
-                    : 'No valid data rows found'
+                    ? "Queued for processing ($processedCount universal data rows)"
+                    : 'No valid data rows found',
+                'summary' => $processedCount > 0
+                    ? $this->summaryForStage('queued', [
+                        'queued_at' => now()->toISOString(),
+                    ])
+                    : $this->summaryWithError('Tidak ada data universal yang valid.', 'no_valid_rows'),
             ]);
 
             // Queue processing job if successful
@@ -1538,6 +1579,13 @@ class DataFeedService
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Universal CSV commit failed: ' . $e->getMessage());
+            if (isset($dataFeed)) {
+                $dataFeed->update([
+                    'status' => 'failed',
+                    'log_message' => $e->getMessage(),
+                    'summary' => $this->summaryWithError($e->getMessage(), 'universal_commit_exception'),
+                ]);
+            }
             throw new DataFeedCommitException('Failed to process universal CSV data: ' . $e->getMessage(), 500);
         }
     }
@@ -1601,6 +1649,31 @@ class DataFeedService
             'cost_price' => $data['product_cost_price'],
             'unit' => $data['unit'] ?: 'Pcs',
             'description' => 'Auto-created from universal CSV import'
+        ]);
+    }
+
+    protected function summaryForStage(string $stage, array $overrides = []): array
+    {
+        $summary = [
+            'stage' => $stage,
+            'queued_at' => null,
+            'transform_started_at' => null,
+            'transform_finished_at' => null,
+            'metrics' => null,
+            'issues' => [],
+            'error' => null,
+        ];
+
+        return array_replace_recursive($summary, $overrides);
+    }
+
+    protected function summaryWithError(string $message, ?string $code = null): array
+    {
+        return $this->summaryForStage('failed', [
+            'error' => [
+                'code' => $code ?? 'data_feed_error',
+                'message' => $message,
+            ],
         ]);
     }
 }

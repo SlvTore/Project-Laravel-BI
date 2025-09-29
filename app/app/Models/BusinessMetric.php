@@ -75,7 +75,7 @@ class BusinessMetric extends Model
             case 'Rp':
                 return 'Rp ' . number_format($this->current_value, 0, ',', '.');
             case '%':
-                return number_format($this->current_value, 1) . '%';
+                return number_format($this->current_value, 2, ',', '.') . '%';
             default:
                 return number_format($this->current_value, 0, ',', '.');
         }
@@ -85,7 +85,7 @@ class BusinessMetric extends Model
     {
         $change = $this->change_percentage;
         $sign = $change >= 0 ? '+' : '';
-        return $sign . number_format($change, 1) . '%';
+        return $sign . number_format($change, 2, ',', '.') . '%';
     }
 
     public function getChangeStatusAttribute()
@@ -94,5 +94,29 @@ class BusinessMetric extends Model
         if ($change > 0) return 'increase';
         if ($change < 0) return 'decrease';
         return 'stable';
+    }
+
+    /**
+     * Helper method untuk format mata uang Indonesia
+     */
+    public function getFormattedCurrencyAttribute()
+    {
+        return 'Rp ' . number_format($this->current_value, 0, ',', '.');
+    }
+
+    /**
+     * Helper method untuk format angka dengan unit
+     */
+    public function getFormattedNumberAttribute()
+    {
+        return number_format($this->current_value, 0, ',', '.') . ' ' . $this->unit;
+    }
+
+    /**
+     * Helper method untuk format persentase dengan 2 desimal
+     */
+    public function getFormattedPercentageAttribute()
+    {
+        return number_format($this->current_value, 2, ',', '.') . '%';
     }
 }
