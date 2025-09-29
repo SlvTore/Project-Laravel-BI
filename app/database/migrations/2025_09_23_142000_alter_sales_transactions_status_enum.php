@@ -7,12 +7,20 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         // Extend enum to include 'review'
         DB::statement("ALTER TABLE sales_transactions MODIFY COLUMN status ENUM('pending','completed','review','cancelled') NOT NULL DEFAULT 'completed'");
     }
 
     public function down(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         // Revert to original enum
         DB::statement("ALTER TABLE sales_transactions MODIFY COLUMN status ENUM('pending','completed','cancelled') NOT NULL DEFAULT 'completed'");
     }

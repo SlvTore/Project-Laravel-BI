@@ -79,6 +79,104 @@
                 </div>
             </div>
 
+            <!-- Revenue & Margin Snapshot -->
+            <div class="row g-4 mb-4" id="kpiSnapshot">
+                <div class="col-md-3">
+                    <div class="content-card border-start border-success border-4">
+                        <div class="card-body">
+                            <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 0.75rem;">Gross Revenue</h6>
+                            <h3 class="fw-bold text-white mb-0" id="kpiGrossRevenue">Rp0</h3>
+                            <small class="text-white-50">Total omzet periode</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="content-card border-start border-warning border-4">
+                        <div class="card-body">
+                            <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 0.75rem;">COGS</h6>
+                            <h3 class="fw-bold text-white mb-0" id="kpiCogs">Rp0</h3>
+                            <small class="text-white-50">Biaya pokok penjualan</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="content-card border-start border-info border-4">
+                        <div class="card-body">
+                            <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 0.75rem;">Gross Margin</h6>
+                            <h3 class="fw-bold text-white mb-0" id="kpiMargin">Rp0</h3>
+                            <small class="text-white-50">Selisih omzet - HPP</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="content-card border-start border-primary border-4">
+                        <div class="card-body">
+                            <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 0.75rem;">Margin %</h6>
+                            <h3 class="fw-bold text-white mb-0" id="kpiMarginPercent">0%</h3>
+                            <small class="text-white-50">Persentase margin kotor</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-3">
+                <div class="d-flex gap-2">
+                    <select class="form-select" id="metricRangeSelect" style="min-width: 180px;">
+                        <option value="last_30_days">30 Hari Terakhir</option>
+                        <option value="last_7_days">7 Hari Terakhir</option>
+                        <option value="this_quarter">Kuartal Ini</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                    <select class="form-select" id="metricGroupSelect" style="min-width: 140px;">
+                        <option value="day">Per Hari</option>
+                        <option value="week">Per Minggu</option>
+                        <option value="month">Per Bulan</option>
+                    </select>
+                </div>
+                <div class="d-flex gap-2" id="customRangeInputs" style="display: none;">
+                    <input type="date" class="form-control" id="customStartDate">
+                    <input type="date" class="form-control" id="customEndDate">
+                    <button class="btn btn-outline-light" id="applyCustomRange">Terapkan</button>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-lg-8">
+                    <div class="content-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title fw-bold mb-0">Revenue & Margin Trend</h5>
+                                <span class="badge bg-primary-soft text-white" id="trendRangeLabel">30 Hari Terakhir</span>
+                            </div>
+                            <div id="metricsTrendChart" style="height: 320px;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="content-card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title fw-bold mb-3">Top Products</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-dark align-middle" id="topProductsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Produk</th>
+                                            <th class="text-end">Omzet</th>
+                                            <th class="text-end">Margin</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="topProductsBody">
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted">Memuat data...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Metrics Table -->
             <div class="row">
                 <div class="col-12">
@@ -405,6 +503,213 @@
 <script src="{{ asset('js/dashboard/dashboard-metrics/index.js') }}"></script>
 
 <script>
+const metricsEndpoints = {
+    kpi: "{{ route('dashboard.metrics.kpi') }}",
+    topProducts: "{{ route('dashboard.metrics.top-products') }}",
+    trend: "{{ route('dashboard.metrics.trend') }}",
+};
+
+let metricsTrendChart = null;
+const currencyFormatter = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    initTrendChart();
+    initMetricsFilters();
+    loadAllMetricWidgets();
+});
+
+function initMetricsFilters() {
+    const rangeSelect = document.getElementById('metricRangeSelect');
+    const groupSelect = document.getElementById('metricGroupSelect');
+    const customRangeWrapper = document.getElementById('customRangeInputs');
+    const applyButton = document.getElementById('applyCustomRange');
+
+    const toggleCustomRange = () => {
+        if (!customRangeWrapper) return;
+        customRangeWrapper.style.display = rangeSelect && rangeSelect.value === 'custom' ? 'flex' : 'none';
+    };
+
+    rangeSelect?.addEventListener('change', () => {
+        toggleCustomRange();
+        if (rangeSelect.value !== 'custom') {
+            loadAllMetricWidgets();
+        }
+    });
+
+    groupSelect?.addEventListener('change', loadAllMetricWidgets);
+    applyButton?.addEventListener('click', (event) => {
+        event.preventDefault();
+        loadAllMetricWidgets();
+    });
+
+    toggleCustomRange();
+}
+
+function buildMetricParams() {
+    const rangeSelect = document.getElementById('metricRangeSelect');
+    const groupSelect = document.getElementById('metricGroupSelect');
+    const customStart = document.getElementById('customStartDate');
+    const customEnd = document.getElementById('customEndDate');
+
+    const params = new URLSearchParams();
+    const rangeValue = rangeSelect ? rangeSelect.value : 'last_30_days';
+    params.set('range', rangeValue);
+
+    if (groupSelect) {
+        params.set('group_by', groupSelect.value);
+    }
+
+    if (rangeValue === 'custom' && customStart?.value && customEnd?.value) {
+        params.set('start_date', customStart.value);
+        params.set('end_date', customEnd.value);
+    }
+
+    return params;
+}
+
+async function loadAllMetricWidgets() {
+    const params = buildMetricParams();
+    const rangeLabel = document.getElementById('trendRangeLabel');
+    if (rangeLabel) {
+        rangeLabel.textContent = labelForRange(params.get('range'));
+    }
+
+    await Promise.allSettled([
+        fetchKpiSummary(params),
+        fetchTopProducts(params),
+        fetchTrendSeries(params),
+    ]);
+}
+
+function labelForRange(range) {
+    switch (range) {
+        case 'last_7_days':
+            return '7 Hari Terakhir';
+        case 'this_quarter':
+            return 'Kuartal Ini';
+        case 'custom':
+            return 'Periode Kustom';
+        default:
+            return '30 Hari Terakhir';
+    }
+}
+
+async function fetchKpiSummary(params) {
+    try {
+        const response = await fetch(`${metricsEndpoints.kpi}?${params.toString()}`);
+        if (!response.ok) throw new Error('Gagal memuat KPI');
+        const data = await response.json();
+        if (!data.success) return;
+        const summary = data.data || {};
+
+        document.getElementById('kpiGrossRevenue').textContent = currencyFormatter.format(summary.gross_revenue || 0);
+        document.getElementById('kpiCogs').textContent = currencyFormatter.format(summary.cogs_amount || 0);
+        document.getElementById('kpiMargin').textContent = currencyFormatter.format(summary.gross_margin_amount || 0);
+        document.getElementById('kpiMarginPercent').textContent = `${(summary.gross_margin_percent || 0).toFixed(1)}%`;
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+async function fetchTopProducts(params) {
+    try {
+        const response = await fetch(`${metricsEndpoints.topProducts}?${params.toString()}`);
+        if (!response.ok) throw new Error('Gagal memuat top products');
+        const data = await response.json();
+        if (!data.success) return;
+
+        const body = document.getElementById('topProductsBody');
+        if (!body) return;
+
+        const rows = data.data || [];
+        if (!rows.length) {
+            body.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Belum ada data pada periode ini</td></tr>';
+            return;
+        }
+
+        body.innerHTML = rows.map(row => `
+            <tr>
+                <td>${row.product_name}</td>
+                <td class="text-end">${currencyFormatter.format(row.total_revenue || 0)}</td>
+                <td class="text-end">${currencyFormatter.format(row.total_margin || 0)}</td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+async function fetchTrendSeries(params) {
+    try {
+        const response = await fetch(`${metricsEndpoints.trend}?${params.toString()}`);
+        if (!response.ok) throw new Error('Gagal memuat trend metrics');
+        const data = await response.json();
+        if (!data.success) return;
+
+        const labels = data.labels || [];
+        const series = data.series || {};
+
+        if (metricsTrendChart) {
+            metricsTrendChart.updateOptions({
+                xaxis: { categories: labels },
+                series: [
+                    { name: 'Gross Revenue', data: series.gross_revenue || [] },
+                    { name: 'COGS', data: series.cogs_amount || [] },
+                    { name: 'Margin', data: series.gross_margin_amount || [] },
+                ],
+            });
+        }
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+function initTrendChart() {
+    const target = document.querySelector('#metricsTrendChart');
+    if (!target || typeof ApexCharts === 'undefined') {
+        return;
+    }
+
+    const options = {
+        chart: {
+            type: 'area',
+            height: 320,
+            toolbar: { show: false },
+        },
+        colors: ['#4ade80', '#60a5fa', '#fbbf24'],
+        dataLabels: { enabled: false },
+        stroke: { curve: 'smooth', width: 2 },
+        series: [
+            { name: 'Gross Revenue', data: [] },
+            { name: 'COGS', data: [] },
+            { name: 'Margin', data: [] },
+        ],
+        xaxis: {
+            categories: [],
+            labels: {
+                style: { colors: '#fff' },
+            },
+        },
+        yaxis: {
+            labels: {
+                formatter: (value) => `Rp${Number(value).toLocaleString('id-ID')}`,
+                style: { colors: '#fff' },
+            },
+        },
+        tooltip: {
+            y: {
+                formatter: (value) => currencyFormatter.format(value || 0),
+            },
+        },
+        legend: {
+            labels: { colors: '#fff' },
+        },
+    };
+
+    metricsTrendChart = new ApexCharts(target, options);
+    metricsTrendChart.render();
+}
+
 let modalTrendChart, modalSummaryChart;
 
 function showMetricOverview(metricId) {

@@ -7,8 +7,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        DB::statement('DROP VIEW IF EXISTS vw_sales_daily');
+
         DB::statement(<<<SQL
-            CREATE OR REPLACE VIEW vw_sales_daily AS
+            CREATE VIEW vw_sales_daily AS
             SELECT
                 fs.business_id,
                 dd.date AS sales_date,

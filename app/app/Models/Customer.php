@@ -35,6 +35,16 @@ class Customer extends Model
         return $this->belongsTo(Business::class);
     }
 
+    public function salesTransactions()
+    {
+        return $this->hasMany(SalesTransaction::class);
+    }
+
+    public function stagingSalesItems()
+    {
+        return $this->hasMany(StagingSalesItem::class);
+    }
+
     // Scopes
     public function scopeForBusiness($query, $businessId)
     {

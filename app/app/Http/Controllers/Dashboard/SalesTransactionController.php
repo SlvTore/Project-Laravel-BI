@@ -7,6 +7,7 @@ use App\Models\SalesTransaction;
 use App\Models\SalesTransactionItem;
 use App\Models\Customer;
 use App\Models\Product;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -28,10 +29,15 @@ class SalesTransactionController extends Controller
             $startDate = $request->input('start_date');
             $endDate = $request->input('end_date');
             $sortBy = $request->input('sort_by', 'transaction_date');
+            $dataFeedId = $request->input('data_feed_id');
             $sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
             $query = SalesTransaction::with(['customer', 'items'])
                 ->where('business_id', $business->id);
+
+            if (!empty($dataFeedId)) {
+                $query->where('data_feed_id', $dataFeedId);
+            }
 
             if (!empty($search)) {
                 $query->where(function ($q) use ($search) {
@@ -222,6 +228,12 @@ class SalesTransactionController extends Controller
                     'total_amount' => (float)$transaction->total_amount,
                 ],
             ]);
+        } catch (ModelNotFoundException $e) {
+            Log::warning('Sales transaction not found: ' . $id);
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi tidak ditemukan.',
+            ], 404);
         } catch (\Exception $e) {
             Log::error('Error fetching transaction detail: ' . $e->getMessage());
             return response()->json([

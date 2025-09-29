@@ -32,10 +32,13 @@ class BackfillOlapData extends Command
             $service = new OlapWarehouseService();
 
             $this->info("Loading facts from sales transactions...");
-            $count = $service->loadFactsFromTransactions($businessId);
+            $summary = $service->loadFactsFromTransactions($businessId);
 
             $this->info("Backfill completed successfully!");
-            $this->info("Created {$count} fact records");
+            $this->info("Created {$summary['records']} fact records");
+            $this->info("Gross revenue: " . number_format($summary['gross_revenue'], 2));
+            $this->info("COGS: " . number_format($summary['cogs_amount'], 2));
+            $this->info("Margin: " . number_format($summary['gross_margin_amount'], 2));
 
             // Show results
             $this->newLine();

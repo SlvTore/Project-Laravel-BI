@@ -13,6 +13,7 @@ class DataFeed extends Model
         'business_id',
         'user_id',
         'source',
+        'original_name',
         'data_type',
         'record_count',
         'status',

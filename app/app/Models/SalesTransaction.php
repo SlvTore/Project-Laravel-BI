@@ -11,6 +11,7 @@ class SalesTransaction extends Model
 
     protected $fillable = [
         'business_id',
+        'data_feed_id',
         'customer_id',
         'transaction_date',
         'subtotal',
@@ -35,6 +36,11 @@ class SalesTransaction extends Model
     public function business()
     {
         return $this->belongsTo(Business::class);
+    }
+
+    public function dataFeed()
+    {
+        return $this->belongsTo(DataFeed::class);
     }
 
     /**

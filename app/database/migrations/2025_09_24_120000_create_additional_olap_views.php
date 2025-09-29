@@ -7,8 +7,9 @@ return new class extends Migration {
     public function up(): void
     {
         // Sales by product per day
+        DB::statement('DROP VIEW IF EXISTS vw_sales_product_daily');
         DB::unprepared(<<<SQL
-        CREATE OR REPLACE VIEW vw_sales_product_daily AS
+        CREATE VIEW vw_sales_product_daily AS
         SELECT
             f.business_id,
             d.date AS sales_date,
@@ -24,8 +25,9 @@ return new class extends Migration {
         SQL);
 
         // Estimated COGS per day (uses dim_product.product_nk to join products.id)
+        DB::statement('DROP VIEW IF EXISTS vw_cogs_daily');
         DB::unprepared(<<<SQL
-        CREATE OR REPLACE VIEW vw_cogs_daily AS
+        CREATE VIEW vw_cogs_daily AS
         SELECT
             f.business_id,
             d.date AS sales_date,
@@ -38,8 +40,9 @@ return new class extends Migration {
         SQL);
 
         // Margin per day = revenue - estimated cogs
+        DB::statement('DROP VIEW IF EXISTS vw_margin_daily');
         DB::unprepared(<<<SQL
-        CREATE OR REPLACE VIEW vw_margin_daily AS
+        CREATE VIEW vw_margin_daily AS
         SELECT
             f.business_id,
             d.date AS sales_date,
@@ -52,8 +55,9 @@ return new class extends Migration {
         SQL);
 
         // New customers per day (first purchase date)
+        DB::statement('DROP VIEW IF EXISTS vw_new_customers_daily');
         DB::unprepared(<<<SQL
-        CREATE OR REPLACE VIEW vw_new_customers_daily AS
+        CREATE VIEW vw_new_customers_daily AS
         WITH firsts AS (
             SELECT f.business_id, f.customer_id, MIN(d.date) AS first_date
             FROM fact_sales f
@@ -67,8 +71,9 @@ return new class extends Migration {
         SQL);
 
         // Returning customers per day (customers with total_tx >= 2 and purchased that day)
+        DB::statement('DROP VIEW IF EXISTS vw_returning_customers_daily');
         DB::unprepared(<<<SQL
-        CREATE OR REPLACE VIEW vw_returning_customers_daily AS
+        CREATE VIEW vw_returning_customers_daily AS
         WITH counts AS (
             SELECT f.business_id, f.customer_id, COUNT(*) AS total_tx
             FROM fact_sales f

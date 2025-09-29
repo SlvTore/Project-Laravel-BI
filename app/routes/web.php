@@ -145,15 +145,25 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
 
         // API routes for Sales Transaction Management
         Route::prefix('api/sales-transactions')->group(function () {
-            Route::get('/', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'index'])->name('api.sales-transactions.index');
-            Route::get('/{id}', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'show'])->name('api.sales-transactions.show');
-            Route::post('/', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'store'])->name('api.sales-transactions.store');
-            Route::put('/{id}', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'update'])->name('api.sales-transactions.update');
-            Route::patch('/{id}/status', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'updateStatus'])->name('api.sales-transactions.update-status');
-            Route::delete('/{id}', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'destroy'])->name('api.sales-transactions.destroy');
             Route::get('/template', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'downloadTemplate'])->name('api.sales-transactions.template');
             Route::post('/preview', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'previewImport'])->name('api.sales-transactions.preview');
             Route::post('/import', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'processImport'])->name('api.sales-transactions.import');
+
+            Route::get('/', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'index'])->name('api.sales-transactions.index');
+            Route::post('/', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'store'])->name('api.sales-transactions.store');
+
+            Route::get('/{id}', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'show'])
+                ->name('api.sales-transactions.show')
+                ->whereNumber('id');
+            Route::put('/{id}', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'update'])
+                ->name('api.sales-transactions.update')
+                ->whereNumber('id');
+            Route::patch('/{id}/status', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'updateStatus'])
+                ->name('api.sales-transactions.update-status')
+                ->whereNumber('id');
+            Route::delete('/{id}', [App\Http\Controllers\Dashboard\SalesTransactionController::class, 'destroy'])
+                ->name('api.sales-transactions.destroy')
+                ->whereNumber('id');
         });
 
         // API routes for Customer Management
@@ -167,6 +177,10 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
 
         // File upload for import
         Route::post('/dashboard/data-feeds/upload', [App\Http\Controllers\Dashboard\DataFeedController::class, 'upload'])->name('dashboard.data-feeds.upload');
+    Route::post('/dashboard/data-feeds/preview', [App\Http\Controllers\Dashboard\DataFeedController::class, 'preview'])->name('dashboard.data-feeds.preview');
+    Route::post('/dashboard/data-feeds/commit', [App\Http\Controllers\Dashboard\DataFeedController::class, 'commit'])->name('dashboard.data-feeds.commit');
+    Route::post('/dashboard/data-feeds/auto-create-products', [App\Http\Controllers\Dashboard\DataFeedController::class, 'autoCreateProducts'])->name('dashboard.data-feeds.auto-create-products');
+    Route::get('/api/data-feeds/universal-template', [App\Http\Controllers\Dashboard\DataFeedController::class, 'downloadUniversalTemplate'])->name('api.data-feeds.universal-template');
 
         // Product Catalog CRUD
         Route::get('/dashboard/products', [App\Http\Controllers\Dashboard\ProductController::class, 'index'])->name('dashboard.products.index');
@@ -183,12 +197,18 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
     Route::post('/dashboard/data-feeds/{dataFeedId}/transform', [App\Http\Controllers\Dashboard\DataFeedController::class, 'transform'])->name('dashboard.data-feeds.transform');
     Route::get('/dashboard/data-feeds/{dataFeedId}/transform-status', [App\Http\Controllers\Dashboard\DataFeedController::class, 'transformStatus'])->name('dashboard.data-feeds.transform-status');
     Route::post('/dashboard/data-feeds/backfill-facts', [App\Http\Controllers\Dashboard\DataFeedController::class, 'backfillFacts'])->name('dashboard.data-feeds.backfill-facts');
+    // Data Feeds uploads list & delete
+    Route::get('/dashboard/data-feeds/uploads', [App\Http\Controllers\Dashboard\DataFeedController::class, 'listUploads'])->name('dashboard.data-feeds.uploads');
+    Route::delete('/dashboard/data-feeds/{id}', [App\Http\Controllers\Dashboard\DataFeedController::class, 'deleteFeed'])->name('dashboard.data-feeds.delete');
 
         // Data Feeds Template Downloads
         Route::get('/dashboard/data-feeds/template/{type}', [App\Http\Controllers\Dashboard\DataFeedController::class, 'downloadTemplate'])->name('dashboard.data-feeds.template.download');
 
     // OLAP Metrics data endpoints
     Route::get('/dashboard/olap/daily-sales', [App\Http\Controllers\Dashboard\OlapMetricsController::class, 'dailySales'])->name('dashboard.olap.daily-sales');
+    Route::get('/dashboard/metrics/kpi', [App\Http\Controllers\Dashboard\OlapMetricsController::class, 'kpi'])->name('dashboard.metrics.kpi');
+    Route::get('/dashboard/metrics/top-products', [App\Http\Controllers\Dashboard\OlapMetricsController::class, 'topProducts'])->name('dashboard.metrics.top-products');
+    Route::get('/dashboard/metrics/trend', [App\Http\Controllers\Dashboard\OlapMetricsController::class, 'trend'])->name('dashboard.metrics.trend');
 
         // Production Costs Management
         Route::post('/dashboard/products/{product}/production-costs', [App\Http\Controllers\Dashboard\DataFeedController::class, 'storeProductionCost'])->name('dashboard.products.production-costs.store');
