@@ -18,7 +18,7 @@ class UserManagementController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        
+
         if (!$user->canManageUsers()) {
             abort(403, 'Unauthorized access.');
         }
@@ -33,14 +33,14 @@ class UserManagementController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        
+
         if (!$user->canManageUsers()) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
         // Get business for the current user
-        $business = $user->isBusinessOwner() 
-            ? $user->ownedBusinesses()->first() 
+        $business = $user->isBusinessOwner()
+            ? $user->ownedBusinesses()->first()
             : $user->businesses()->first();
 
         if (!$business) {
@@ -49,12 +49,12 @@ class UserManagementController extends Controller
 
         // Get all users associated with the business
         $users = collect();
-        
+
         // Add business owner
         if ($business->owner) {
             $users->push($business->owner);
         }
-        
+
         // Add other business users
         $businessUsers = $business->users()->with('userRole')->get();
         $users = $users->merge($businessUsers)->unique('id');
@@ -83,7 +83,7 @@ class UserManagementController extends Controller
     {
         /** @var \App\Models\User $currentUser */
         $currentUser = Auth::user();
-        
+
         if (!$currentUser->canPromoteUsers()) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
@@ -114,7 +114,7 @@ class UserManagementController extends Controller
     {
         /** @var \App\Models\User $currentUser */
         $currentUser = Auth::user();
-        
+
         if (!$currentUser->canDeleteUsers()) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
@@ -124,8 +124,8 @@ class UserManagementController extends Controller
         }
 
         // Get the business
-        $business = $currentUser->isBusinessOwner() 
-            ? $currentUser->ownedBusinesses()->first() 
+        $business = $currentUser->isBusinessOwner()
+            ? $currentUser->ownedBusinesses()->first()
             : $currentUser->businesses()->first();
 
         if ($business && $business->removeUser($user)) {
@@ -151,13 +151,13 @@ class UserManagementController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        
+
         if (!$user->isBusinessOwner()) {
             return response()->json(['error' => 'Only business owners can access business codes'], 403);
         }
 
         $business = $user->ownedBusinesses()->first();
-        
+
         if (!$business) {
             return response()->json(['error' => 'No business found'], 404);
         }
@@ -175,13 +175,13 @@ class UserManagementController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        
+
         if (!$user->isBusinessOwner()) {
             return response()->json(['error' => 'Only business owners can regenerate invitation codes'], 403);
         }
 
         $business = $user->ownedBusinesses()->first();
-        
+
         if (!$business) {
             return response()->json(['error' => 'No business found'], 404);
         }

@@ -33,7 +33,7 @@ Route::get('/invitation/{token}', [InvitationController::class, 'show'])->name('
 Route::middleware(['auth'])->group(function () {
     Route::get('/setup', [SetupWizardController::class, 'index'])->name('setup.wizard');
     Route::post('/setup', [SetupWizardController::class, 'store'])->name('setup.store');
-    
+
     // Invitation acceptance route (after user is authenticated)
     Route::post('/invitation/accept', [InvitationController::class, 'accept'])->name('invitation.accept');
 });
@@ -46,8 +46,8 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
 
     // Metrics - accessible to ALL roles (business-owner, administrator, staff, business-investigator)
     Route::get('/dashboard/metrics', [App\Http\Controllers\MetricsController::class, 'index'])->name('dashboard.metrics');
-    
-    // Metrics editing - accessible to Business Owner, Administrator, Staff 
+
+    // Metrics editing - accessible to Business Owner, Administrator, Staff
     Route::middleware(['role:business-owner,administrator,staff'])->group(function () {
         Route::get('/dashboard/metrics/{id}/edit', [App\Http\Controllers\MetricsController::class, 'edit'])->name('dashboard.metrics.edit');
         Route::put('/dashboard/metrics/{id}', [App\Http\Controllers\MetricsController::class, 'update'])->name('dashboard.metrics.update');

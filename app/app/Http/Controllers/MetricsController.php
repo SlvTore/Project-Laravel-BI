@@ -19,7 +19,7 @@ use App\Services\MetricFormattingService;
 class MetricsController extends Controller
 {
     use LogsActivity;
-    
+
     private OlapMetricAggregator $aggregator;
 
     public function __construct(OlapMetricAggregator $aggregator)

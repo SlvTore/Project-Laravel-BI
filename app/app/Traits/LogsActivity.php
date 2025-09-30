@@ -85,11 +85,11 @@ trait LogsActivity
     protected function logMetricActivity(string $action, $metric, array $options = []): void
     {
         $metricName = is_object($metric) ? $metric->name : $metric;
-        
+
         $titles = [
             'viewed' => 'Metric Accessed',
             'created' => 'Metric Created',
-            'updated' => 'Metric Updated', 
+            'updated' => 'Metric Updated',
             'deleted' => 'Metric Deleted',
             'record_added' => 'Data Added',
             'record_updated' => 'Data Updated',
@@ -106,8 +106,8 @@ trait LogsActivity
             'record_deleted' => "Deleted data from metric: {$metricName}",
         ];
 
-        $type = in_array($action, ['record_added', 'record_updated', 'record_deleted']) 
-            ? 'data_input' 
+        $type = in_array($action, ['record_added', 'record_updated', 'record_deleted'])
+            ? 'data_input'
             : 'metric_' . $action;
 
         $this->logActivity(

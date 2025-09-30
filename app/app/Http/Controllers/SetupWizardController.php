@@ -444,7 +444,7 @@ class SetupWizardController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
         $token = session('invitation_token');
-        
+
         if (!$token) {
             return response()->json([
                 'success' => false,

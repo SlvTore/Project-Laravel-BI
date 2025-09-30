@@ -66,9 +66,9 @@
                             <i class="bi bi-envelope-check me-2"></i>
                             <strong>You're invited!</strong><br>
                             @if($inviterName ?? false)
-                                {{ $inviterName }} invited you to join 
+                                {{ $inviterName }} invited you to join
                             @else
-                                You've been invited to join 
+                                You've been invited to join
                             @endif
                             <strong>{{ $businessName ?? 'a business' }}</strong>
                         </div>

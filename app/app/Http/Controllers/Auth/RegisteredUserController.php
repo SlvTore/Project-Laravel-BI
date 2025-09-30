@@ -23,7 +23,7 @@ class RegisteredUserController extends Controller
         $invitationActive = session('invitation_active', false);
         $businessName = session('business_name');
         $inviterName = session('inviter_name');
-        
+
         return view('auth.register', compact('invitationActive', 'businessName', 'inviterName'));
     }
 

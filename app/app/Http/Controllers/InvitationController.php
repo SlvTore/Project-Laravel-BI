@@ -104,7 +104,7 @@ class InvitationController extends Controller
     public function accept(Request $request)
     {
         $token = session('invitation_token');
-        
+
         if (!$token) {
             return redirect('/dashboard')
                 ->with('error', 'Tidak ada undangan yang aktif.');
@@ -130,7 +130,7 @@ class InvitationController extends Controller
             }
 
             $user = Auth::user();
-            
+
             // Mark invitation as accepted
             $invitation->update([
                 'accepted_at' => now(),

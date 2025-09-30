@@ -8,13 +8,13 @@
     @if($hasInvitation ?? false)
     <div class="alert alert-info text-center mb-4" role="alert">
         <i class="bi bi-envelope-check me-2"></i>
-        <strong>Welcome!</strong> 
+        <strong>Welcome!</strong>
         @if($inviterName ?? false)
-            {{ $inviterName }} invited you to join 
+            {{ $inviterName }} invited you to join
         @else
-            You've been invited to join 
+            You've been invited to join
         @endif
-        <strong>{{ $businessName ?? 'a business' }}</strong>. 
+        <strong>{{ $businessName ?? 'a business' }}</strong>.
         Select your role and we'll complete your registration.
     </div>
     @endif
@@ -1062,7 +1062,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function showAcceptInvitationModal() {
         // For invited users, we auto-accept the invitation
         const businessName = @json($businessName ?? 'this business');
-        
+
         if (confirm(`Welcome! You've been invited to join ${businessName}. Click OK to complete your registration and join the business.`)) {
             saveStepData('accept_invitation', {}, (response) => {
                 if (response.redirect) {
@@ -1082,7 +1082,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Ensure input is enabled
             el.disabled = false;
             el.readOnly = false;
-            
+
             // Basic event listeners without interference
             el.addEventListener('keydown', (e) => {
                 console.log('Keydown on', id, ':', e.key);
