@@ -102,7 +102,15 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
 
     // Dashboard - Settings (accessible to ALL roles)
     Route::get('/dashboard/settings', [App\Http\Controllers\Dashboard\SettingsController::class, 'index'])->name('dashboard.settings');
-    Route::put('/dashboard/settings', [App\Http\Controllers\Dashboard\SettingsController::class, 'update'])->name('dashboard.settings.update');
+
+    Route::prefix('/dashboard/settings')->group(function () {
+        Route::put('/', [App\Http\Controllers\Dashboard\SettingsController::class, 'update'])->name('dashboard.settings.update');
+        Route::post('/branding', [App\Http\Controllers\Dashboard\SettingsController::class, 'updateBranding'])->name('dashboard.settings.branding');
+        Route::post('/preferences', [App\Http\Controllers\Dashboard\SettingsController::class, 'updatePreferences'])->name('dashboard.settings.preferences');
+        Route::post('/invitation/regenerate', [App\Http\Controllers\Dashboard\SettingsController::class, 'regenerateInvitationCode'])->name('dashboard.settings.invitation.regenerate');
+        Route::post('/ownership/transfer', [App\Http\Controllers\Dashboard\SettingsController::class, 'transferOwnership'])->name('dashboard.settings.ownership.transfer');
+        Route::delete('/business', [App\Http\Controllers\Dashboard\SettingsController::class, 'destroyBusiness'])->name('dashboard.settings.business.destroy');
+    });
 
     // Dashboard - Users Management (only Business Owner)
     Route::middleware(['role:business-owner'])->group(function () {

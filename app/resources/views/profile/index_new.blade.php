@@ -278,7 +278,7 @@
                                 <div class="business-item mb-3 p-3 bg-light rounded">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div>
-                                            <h6 class="fw-bold mb-1">{{ $business->name }}</h6>
+                                            <h6 class="fw-bold mb-1">{{ $business->business_name }}</h6>
                                             <p class="text-muted mb-1">{{ $business->industry ?? 'Industry not specified' }}</p>
                                             <small class="text-muted">Created: {{ $business->created_at->format('M j, Y') }}</small>
                                         </div>

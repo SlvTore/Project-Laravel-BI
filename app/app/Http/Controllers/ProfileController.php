@@ -6,6 +6,7 @@ use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use App\Traits\LogsActivity;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redirect;
@@ -15,6 +16,8 @@ use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
+    use LogsActivity;
+
     /**
      * Display the user's profile page with edit functionality.
      */
@@ -66,13 +69,18 @@ class ProfileController extends Controller
         }
 
         // Update other profile fields
-        $user->fill($request->validated());
+        $validated = $request->safe()->except(['avatar', 'remove_avatar']);
+        if (!empty($validated)) {
+            $user->fill($validated);
+        }
 
         if ($user->isDirty('email')) {
             $user->email_verified_at = null;
         }
 
         $user->save();
+
+        $this->logActivity('profile_updated', 'Profile Updated', 'Updated profile information and preferences.');
 
         return Redirect::route('profile.index')->with('status', 'profile-updated');
     }
@@ -91,6 +99,12 @@ class ProfileController extends Controller
         $user = Auth::user();
         $user->password = Hash::make($validated['password']);
         $user->save();
+
+        $this->logActivity('profile_updated', 'Password Updated', 'Refreshed account security credentials.', [
+            'metadata' => [
+                'event' => 'password_update',
+            ],
+        ]);
 
         return Redirect::route('profile.index')->with('status', 'password-updated');
     }

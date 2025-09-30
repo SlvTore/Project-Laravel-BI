@@ -41,45 +41,45 @@
                         <!-- Avatar Display/Upload Section -->
                         <div class="avatar-section mb-4">
                             <div class="avatar-container mx-auto mb-3" style="width: 120px; height: 120px;">
-                                <img id="avatarPreview" src="{{ $user->getAvatarUrl() }}" alt="Avatar" 
-                                     class="img-fluid rounded-circle border-2 border-primary" 
+                                <img id="avatarPreview" src="{{ $user->getAvatarUrl() }}" alt="Avatar"
+                                     class="img-fluid rounded-circle border-2 border-primary"
                                      style="width: 100%; height: 100%; object-fit: cover;">
                             </div>
-                            
+
                             <!-- Avatar Upload Form -->
                             <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="avatar-upload-form">
                                 @csrf
                                 @method('patch')
-                                
+
                                 <div class="mb-3">
                                     <label for="avatar" class="btn btn-outline-primary btn-sm">
                                         <i class="bi bi-camera me-1"></i>
                                         Change Avatar
                                     </label>
-                                    <input type="file" class="d-none @error('avatar') is-invalid @enderror" 
+                                    <input type="file" class="d-none @error('avatar') is-invalid @enderror"
                                            id="avatar" name="avatar" accept="image/*">
                                     @error('avatar')
                                         <div class="text-danger small mt-1">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                
+
                                 @if($user->avatar_path)
                                     <button type="button" class="btn btn-outline-danger btn-sm" id="removeAvatar">
                                         <i class="bi bi-trash me-1"></i>Remove
                                     </button>
                                     <input type="hidden" name="remove_avatar" id="removeAvatarInput" value="0">
                                 @endif
-                                
+
                                 <button type="submit" class="btn btn-success btn-sm d-none" id="saveAvatarBtn">
                                     <i class="bi bi-check me-1"></i>Save Avatar
                                 </button>
                             </form>
-                            
+
                             <h5 class="fw-bold text-primary mt-3">{{ $user->name }}</h5>
                             <p class="text-muted mb-2">{{ $user->email }}</p>
                             <span class="badge bg-primary fs-6">{{ $user->userRole->display_name ?? 'User' }}</span>
                         </div>
-                        
+
                         <!-- User Stats -->
                         <div class="stats-section">
                             <div class="row text-center">
@@ -103,7 +103,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Quick Actions -->
                         <div class="quick-actions mt-4">
                             @if($user->isBusinessOwner())
@@ -118,7 +118,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Main Profile Content -->
             <div class="col-lg-8">
                 <!-- Profile Information Form -->
@@ -134,11 +134,11 @@
                         <form method="POST" action="{{ route('profile.update') }}">
                             @csrf
                             @method('patch')
-                            
+
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="name" class="form-label">Name</label>
-                                    <input id="name" name="name" type="text" class="form-control @error('name') is-invalid @enderror" 
+                                    <input id="name" name="name" type="text" class="form-control @error('name') is-invalid @enderror"
                                            value="{{ old('name', $user->name) }}" required autofocus>
                                     @error('name')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -147,7 +147,7 @@
 
                                 <div class="col-md-6 mb-3">
                                     <label for="email" class="form-label">Email</label>
-                                    <input id="email" name="email" type="email" class="form-control @error('email') is-invalid @enderror" 
+                                    <input id="email" name="email" type="email" class="form-control @error('email') is-invalid @enderror"
                                            value="{{ old('email', $user->email) }}" required>
                                     @error('email')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -173,7 +173,7 @@
 
                                 <div class="col-md-6 mb-3">
                                     <label for="phone" class="form-label">Phone Number</label>
-                                    <input id="phone" name="phone" type="text" class="form-control @error('phone') is-invalid @enderror" 
+                                    <input id="phone" name="phone" type="text" class="form-control @error('phone') is-invalid @enderror"
                                            value="{{ old('phone', $user->phone) }}">
                                     @error('phone')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -224,7 +224,7 @@
                             <div class="row">
                                 <div class="col-md-4 mb-3">
                                     <label for="update_password_current_password" class="form-label">Current Password</label>
-                                    <input id="update_password_current_password" name="current_password" type="password" 
+                                    <input id="update_password_current_password" name="current_password" type="password"
                                            class="form-control @error('current_password', 'updatePassword') is-invalid @enderror">
                                     @error('current_password', 'updatePassword')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -233,7 +233,7 @@
 
                                 <div class="col-md-4 mb-3">
                                     <label for="update_password_password" class="form-label">New Password</label>
-                                    <input id="update_password_password" name="password" type="password" 
+                                    <input id="update_password_password" name="password" type="password"
                                            class="form-control @error('password', 'updatePassword') is-invalid @enderror">
                                     @error('password', 'updatePassword')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -242,7 +242,7 @@
 
                                 <div class="col-md-4 mb-3">
                                     <label for="update_password_password_confirmation" class="form-label">Confirm Password</label>
-                                    <input id="update_password_password_confirmation" name="password_confirmation" type="password" 
+                                    <input id="update_password_password_confirmation" name="password_confirmation" type="password"
                                            class="form-control @error('password_confirmation', 'updatePassword') is-invalid @enderror">
                                     @error('password_confirmation', 'updatePassword')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -278,7 +278,7 @@
                                 <div class="business-item mb-3 p-3 bg-light rounded">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div>
-                                            <h6 class="fw-bold mb-1">{{ $business->name }}</h6>
+                                            <h6 class="fw-bold mb-1">{{ $business->business_name }}</h6>
                                             <p class="text-muted mb-1">{{ $business->industry ?? 'Industry not specified' }}</p>
                                             <small class="text-muted">Created: {{ $business->created_at->format('M j, Y') }}</small>
                                         </div>
@@ -325,11 +325,11 @@
             <form method="POST" action="{{ route('profile.destroy') }}">
                 @csrf
                 @method('delete')
-                
+
                 <div class="modal-body">
                     <p class="text-light">Are you sure you want to delete your account?</p>
                     <p class="text-muted small">Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.</p>
-                    
+
                     <div class="mt-3">
                         <label for="password" class="form-label text-light">Password</label>
                         <input id="password" name="password" type="password" class="form-control @error('password', 'userDeletion') is-invalid @enderror" placeholder="Password">
@@ -338,7 +338,7 @@
                         @enderror
                     </div>
                 </div>
-                
+
                 <div class="modal-footer border-danger">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-danger">Delete Account</button>
@@ -413,7 +413,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const removeAvatarBtn = document.getElementById('removeAvatar');
     const removeAvatarInput = document.getElementById('removeAvatarInput');
     const saveAvatarBtn = document.getElementById('saveAvatarBtn');
-    
+
     if (avatarInput) {
         avatarInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -425,7 +425,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     saveAvatarBtn.classList.add('show');
                 };
                 reader.readAsDataURL(file);
-                
+
                 // Reset remove avatar flag
                 if (removeAvatarInput) {
                     removeAvatarInput.value = '0';
@@ -433,24 +433,24 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
+
     if (removeAvatarBtn) {
         removeAvatarBtn.addEventListener('click', function() {
             // Set remove avatar flag
             removeAvatarInput.value = '1';
-            
+
             // Clear file input
             avatarInput.value = '';
-            
+
             // Reset preview to default avatar using user's initials
             const userName = '{{ $user->name }}';
             const initials = userName.split(' ').map(name => name.charAt(0)).join('');
             avatarPreview.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&size=120&background=007bff&color=ffffff&format=png`;
-            
+
             // Show save button
             saveAvatarBtn.classList.remove('d-none');
             saveAvatarBtn.classList.add('show');
-            
+
             // Hide the remove button after clicking
             removeAvatarBtn.style.display = 'none';
         });
