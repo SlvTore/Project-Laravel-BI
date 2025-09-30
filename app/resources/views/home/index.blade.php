@@ -32,7 +32,7 @@
                         </div>
                     </div>
                     @endif
-                    <a href="{{ route('dashboard.feeds') }}" class="btn btn-outline-secondary"><i class="bi bi-activity me-1"></i>Activity Log</a>
+                    <a href="{{ route('dashboard.activity-log.index') }}" class="btn btn-outline-secondary"><i class="bi bi-activity me-1"></i>Activity Log</a>
                 </div>
             </div>
         </div>
@@ -219,7 +219,7 @@
                 <div class="content-card p-3 h-100">
                     <div class="d-flex align-items-center justify-content-between mb-2">
                         <h5 class="card-title mb-0 text-white"><i class="bi bi-activity me-2"></i>Recent Activities</h5>
-                        <a href="{{ route('dashboard.feeds') }}" class="btn btn-outline-light btn-sm">See all</a>
+                        <a href="{{ route('dashboard.activity-log.index') }}" class="btn btn-outline-light btn-sm">See all</a>
                     </div>
                     <div class="list-group list-group-flush">
                         @forelse($recentActivities as $act)

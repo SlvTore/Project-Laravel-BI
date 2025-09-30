@@ -2890,4 +2890,92 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         console.error('Bootstrap is not loaded!');
     }
+
+    // Setup clean warehouse modal confirmation text validation
+    const cleanWarehouseConfirmText = document.getElementById('cleanWarehouseConfirmText');
+    const confirmCleanWarehouseBtn = document.getElementById('confirmCleanWarehouseBtn');
+
+    if (cleanWarehouseConfirmText && confirmCleanWarehouseBtn) {
+        cleanWarehouseConfirmText.addEventListener('input', function() {
+            const requiredText = 'HAPUS SEMUA DATA';
+            confirmCleanWarehouseBtn.disabled = this.value.trim() !== requiredText;
+        });
+    }
 });
+
+/**
+ * Show clean warehouse confirmation modal
+ */
+function showCleanWarehouseModal() {
+    const modal = new bootstrap.Modal(document.getElementById('cleanWarehouseModal'));
+
+    // Reset form
+    document.getElementById('cleanWarehouseConfirmText').value = '';
+    document.getElementById('confirmCleanWarehouseBtn').disabled = true;
+    document.getElementById('cleanWarehouseStatus').classList.add('d-none');
+
+    modal.show();
+}
+
+/**
+ * Execute warehouse cleanup
+ */
+async function executeCleanWarehouse() {
+    const statusDiv = document.getElementById('cleanWarehouseStatus');
+    const confirmBtn = document.getElementById('confirmCleanWarehouseBtn');
+
+    try {
+        // Show loading state
+        statusDiv.classList.remove('d-none');
+        confirmBtn.disabled = true;
+
+        const response = await fetch('/dashboard/data-feeds/clean-warehouse', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                business_id: 1 // Default business ID, you can get this from user context
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Success
+            statusDiv.innerHTML = `
+                <div class="alert alert-success" role="alert">
+                    <i class="bi bi-check-circle me-2"></i>
+                    ${result.message}
+                </div>
+            `;
+
+            // Auto close modal after 2 seconds and refresh page
+            setTimeout(() => {
+                bootstrap.Modal.getInstance(document.getElementById('cleanWarehouseModal')).hide();
+                location.reload(); // Refresh to show updated data
+            }, 2000);
+
+        } else {
+            // Error
+            statusDiv.innerHTML = `
+                <div class="alert alert-danger" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    ${result.message}
+                </div>
+            `;
+            confirmBtn.disabled = false;
+        }
+
+    } catch (error) {
+        console.error('Clean warehouse error:', error);
+        statusDiv.innerHTML = `
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Terjadi kesalahan saat membersihkan data warehouse.
+            </div>
+        `;
+        confirmBtn.disabled = false;
+    }
+}

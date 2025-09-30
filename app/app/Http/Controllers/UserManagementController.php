@@ -16,6 +16,7 @@ class UserManagementController extends Controller
      */
     public function index()
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         if (!$user->canManageUsers()) {
@@ -30,6 +31,7 @@ class UserManagementController extends Controller
      */
     public function getUsersData(Request $request)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         if (!$user->canManageUsers()) {
@@ -79,6 +81,7 @@ class UserManagementController extends Controller
      */
     public function promote(Request $request, User $user)
     {
+        /** @var \App\Models\User $currentUser */
         $currentUser = Auth::user();
         
         if (!$currentUser->canPromoteUsers()) {
@@ -109,6 +112,7 @@ class UserManagementController extends Controller
      */
     public function remove(Request $request, User $user)
     {
+        /** @var \App\Models\User $currentUser */
         $currentUser = Auth::user();
         
         if (!$currentUser->canDeleteUsers()) {
@@ -145,6 +149,7 @@ class UserManagementController extends Controller
      */
     public function getBusinessCodes()
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         if (!$user->isBusinessOwner()) {
@@ -168,6 +173,7 @@ class UserManagementController extends Controller
      */
     public function regenerateInvitationCode()
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         if (!$user->isBusinessOwner()) {

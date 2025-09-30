@@ -21,8 +21,8 @@
                             <button class="btn btn-excel" id="refreshInviteCode">
                                 <i class="bi bi-arrow-clockwise me-2"></i>Regenerate Invite Code
                             </button>
-                            <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#businessCodesModal">
-                                <i class="bi bi-key me-2"></i>View Invitation Codes
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#businessCodesModal">
+                                <i class="bi bi-link-45deg me-2"></i>Manage Invitations
                             </button>
                         </div>
                         @endif
@@ -124,32 +124,109 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold text-white">ID Dashboard Perusahaan</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control modal-input" id="modalPublicId" readonly>
-                            <button class="btn btn-outline-light" type="button" onclick="copyToClipboard('modalPublicId')">
-                                <i class="bi bi-clipboard"></i>
+                    <ul class="nav nav-pills modal-nav mb-4" id="invitationModalTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="codes-tab" data-bs-toggle="pill" data-bs-target="#codes-pane" type="button" role="tab" aria-controls="codes-pane" aria-selected="true">
+                                <i class="bi bi-key me-2"></i>Business Codes
                             </button>
-                        </div>
-                        <small class="form-text text-white-50">Berikan ID ini kepada Staff dan Business Investigator untuk bergabung</small>
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold text-white">Kode Undangan Staff</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control modal-input" id="modalInviteCode" readonly>
-                            <button class="btn btn-outline-light" type="button" onclick="copyToClipboard('modalInviteCode')">
-                                <i class="bi bi-clipboard"></i>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="links-tab" data-bs-toggle="pill" data-bs-target="#links-pane" type="button" role="tab" aria-controls="links-pane" aria-selected="false">
+                                <i class="bi bi-link-45deg me-2"></i>Invitation Links
                             </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="invitationModalContent">
+                        <div class="tab-pane fade show active" id="codes-pane" role="tabpanel" aria-labelledby="codes-tab">
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold text-white">ID Dashboard Perusahaan</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control modal-input" id="modalPublicId" readonly>
+                                    <button class="btn btn-outline-light" type="button" onclick="copyToClipboard('modalPublicId')">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                                <small class="form-text text-white-50">Berikan ID ini kepada Staff dan Business Investigator untuk bergabung</small>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold text-white">Kode Undangan Staff</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control modal-input" id="modalInviteCode" readonly>
+                                    <button class="btn btn-outline-light" type="button" onclick="copyToClipboard('modalInviteCode')">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                                <small class="form-text text-white-50">Kode rahasia khusus untuk Staff</small>
+                            </div>
                         </div>
-                        <small class="form-text text-white-50">Kode rahasia khusus untuk Staff</small>
+
+                        <div class="tab-pane fade" id="links-pane" role="tabpanel" aria-labelledby="links-tab">
+                            <div class="invitation-form card-glass mb-4">
+                                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-3 gap-2">
+                                    <div>
+                                        <h6 class="text-white mb-1">Generate invitation link</h6>
+                                        <small class="text-white-50">Buat tautan undangan untuk bergabung dengan business. User akan memilih role sendiri saat registrasi.</small>
+                                    </div>
+                                </div>
+                                <form id="invitationLinkForm" class="invitation-link-form">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label text-white-50 text-uppercase small">Maksimal Penggunaan</label>
+                                            <input type="number" class="form-control modal-input" name="max_uses" id="invitationMaxUses" min="1" placeholder="Tak terbatas">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label text-white-50 text-uppercase small">Tanggal Kadaluarsa</label>
+                                            <input type="datetime-local" class="form-control modal-input" name="expires_at" id="invitationExpiresAt">
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label text-white-50 text-uppercase small">Catatan (opsional)</label>
+                                            <input type="text" class="form-control modal-input" name="note" id="invitationNote" placeholder="Berikan konteks undangan">
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-end mt-4">
+                                        <button type="submit" class="btn btn-excel-gradient" id="createInvitationSubmit">
+                                            <i class="bi bi-plus-circle me-2"></i>Buat Link
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div class="invitation-links-section">
+                                <div id="invitationLoadingState" class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status"></div>
+                                    <div class="mt-2 text-white-50">Memuat daftar undangan...</div>
+                                </div>
+                                <div id="invitationEmptyState" class="empty-state text-center text-white-50 py-4" style="display: none;">
+                                    <i class="bi bi-people fs-3 mb-2"></i>
+                                    <p class="mb-0">Belum ada link undangan. Buat satu untuk mulai mengundang anggota tim.</p>
+                                </div>
+                                <div id="invitationLinksTableWrapper" class="table-responsive" style="display: none;">
+                                    <table class="table table-hover table-sm align-middle" id="invitationLinksTable">
+                                        <thead>
+                                            <tr>
+                                                <th class="fw-semibold text-uppercase small">Target & Status</th>
+                                                <th class="fw-semibold text-uppercase small">Penggunaan</th>
+                                                <th class="fw-semibold text-uppercase small">Kadaluarsa</th>
+                                                <th class="fw-semibold text-uppercase small">Dibuat</th>
+                                                <th class="fw-semibold text-uppercase small text-end">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-excel-gradient" id="regenerateInviteCodeModal">
-                        <i class="bi bi-arrow-clockwise me-2"></i>Regenerate Staff Code
-                    </button>
+                <div class="modal-footer flex-wrap gap-3 justify-content-between">
+                    <div class="text-white-50 small" id="invitationSummary"></div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-excel-gradient" id="regenerateInviteCodeModal">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Regenerate Staff Code
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -336,6 +413,56 @@
         color: rgba(255, 255, 255, 0.9);
         padding: 12px 16px;
         transition: all 0.3s ease;
+    }
+
+    .modal-nav .nav-link {
+        color: rgba(255, 255, 255, 0.6);
+        border-radius: 12px;
+        padding: 0.75rem 1.5rem;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid transparent;
+        margin-right: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .modal-nav .nav-link:hover {
+        color: rgba(255, 255, 255, 0.85);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .modal-nav .nav-link.active {
+        color: #fff;
+        background: linear-gradient(135deg, #7cb947 0%, #1e3c80 100%);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .card-glass {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 1.5rem;
+    }
+
+    .invitation-links-section .table {
+        background: transparent;
+    }
+
+    .invitation-links-section th,
+    .invitation-links-section td {
+        border-color: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .invitation-links-section tbody tr:hover {
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    .invitation-links-section .btn-group .btn {
+        border-radius: 8px !important;
+    }
+
+    .empty-state i {
+        opacity: 0.6;
     }
 
     .modal-input:focus {
@@ -649,6 +776,378 @@ $(function() {
                 btn.disabled = false;
             });
         }
+    }
+
+    const invitationModal = document.getElementById('businessCodesModal');
+    const invitationLinksTableBody = document.querySelector('#invitationLinksTable tbody');
+    const invitationLinksTableWrapper = document.getElementById('invitationLinksTableWrapper');
+    const invitationEmptyState = document.getElementById('invitationEmptyState');
+    const invitationEmptyTemplate = invitationEmptyState ? invitationEmptyState.innerHTML : '';
+    const invitationLoadingState = document.getElementById('invitationLoadingState');
+    const invitationSummary = document.getElementById('invitationSummary');
+    const invitationLinkForm = document.getElementById('invitationLinkForm');
+    const createInvitationSubmit = document.getElementById('createInvitationSubmit');
+    let invitationLinksCache = [];
+
+    const invitationEndpoints = {
+        index: '{{ route("users.invitations.index") }}',
+        store: '{{ route("users.invitations.store") }}',
+        revoke: '{{ route("users.invitations.revoke", ["invitation" => "__INVITATION__"]) }}'
+    };
+
+    if (invitationModal) {
+        invitationModal.addEventListener('shown.bs.modal', () => {
+            loadInvitationLinks();
+        });
+
+        invitationModal.addEventListener('hidden.bs.modal', () => {
+            if (invitationLinkForm) {
+                invitationLinkForm.reset();
+            }
+        });
+    }
+
+    if (invitationLinkForm) {
+        invitationLinkForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            createInvitationLink();
+        });
+    }
+
+    if (invitationLinksTableBody) {
+        invitationLinksTableBody.addEventListener('click', function(event) {
+            const copyTrigger = event.target.closest('[data-action="copy-link"]');
+            if (copyTrigger) {
+                copyInvitationLink(copyTrigger.dataset.link);
+                return;
+            }
+
+            const revokeTrigger = event.target.closest('[data-action="revoke-invitation"]');
+            if (revokeTrigger) {
+                revokeInvitation(parseInt(revokeTrigger.dataset.id, 10), revokeTrigger);
+            }
+        });
+    }
+
+    function loadInvitationLinks(showToast = false) {
+        if (!invitationLoadingState || !invitationLinksTableWrapper) {
+            return;
+        }
+
+        invitationLoadingState.style.display = 'block';
+        if (invitationEmptyState) {
+            invitationEmptyState.innerHTML = invitationEmptyTemplate;
+            invitationEmptyState.style.display = 'none';
+        }
+        invitationLinksTableWrapper.style.display = 'none';
+
+        fetch(invitationEndpoints.index)
+            .then(response => response.json())
+            .then(data => {
+                const invitations = Array.isArray(data.data) ? data.data : [];
+                invitationLinksCache = invitations;
+
+                if (invitations.length === 0) {
+                    invitationLoadingState.style.display = 'none';
+                    if (invitationEmptyState) {
+                        invitationEmptyState.innerHTML = invitationEmptyTemplate;
+                        invitationEmptyState.style.display = 'block';
+                    }
+                    updateInvitationSummary([]);
+                    return;
+                }
+
+                invitationLoadingState.style.display = 'none';
+                invitationLinksTableWrapper.style.display = 'block';
+                renderInvitationLinks(invitations);
+                updateInvitationSummary(invitations);
+
+                if (showToast) {
+                    toastr.success('Daftar undangan diperbarui.');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching invitations:', error);
+                invitationLoadingState.style.display = 'none';
+                if (invitationEmptyState) {
+                    invitationEmptyState.style.display = 'block';
+                    invitationEmptyState.innerHTML = '<p class="text-white-50 mb-0">Gagal memuat link undangan.</p>';
+                }
+                toastr.error('Gagal memuat link undangan');
+            });
+    }
+
+    function renderInvitationLinks(invitations) {
+        if (!invitationLinksTableBody) {
+            return;
+        }
+
+        invitationLinksTableBody.innerHTML = invitations.map(invite => {
+            const targetLabel = invite.email || 'Siapa saja dengan link';
+            const maxUses = invite.max_uses === null || invite.max_uses === undefined ? '∞' : invite.max_uses;
+            const statusBadge = invite.status_badge || 'secondary';
+            const statusLabel = invite.status_label || invite.status || 'Unknown';
+            const acceptedLabel = invite.accepted_user ? `<div class="text-white-50 small mt-1">Diterima oleh ${escapeHtml(invite.accepted_user.name)}</div>` : '';
+            const revokeButton = invite.status === 'active'
+                ? `<button class="btn btn-outline-danger" type="button" data-action="revoke-invitation" data-id="${invite.id}"><i class="bi bi-slash-circle"></i></button>`
+                : '';
+
+            return `
+                <tr data-invitation-id="${invite.id}">
+                    <td>
+                        <div class="fw-semibold">${escapeHtml(targetLabel)}</div>
+                        <span class="badge bg-${statusBadge}">${escapeHtml(statusLabel)}</span>
+                        ${acceptedLabel}
+                    </td>
+                    <td>${escapeHtml(formatUses(invite.uses, maxUses))}</td>
+                    <td>${escapeHtml(formatDate(invite.expires_at))}</td>
+                    <td>${escapeHtml(formatDate(invite.created_at))}</td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button class="btn btn-outline-light" type="button" data-action="copy-link" data-link="${escapeAttribute(invite.shareable_url)}">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                            ${revokeButton}
+                        </div>
+                        <div class="text-white-50 small mt-2 text-break">${escapeHtml(invite.shareable_url)}</div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function updateInvitationSummary(invitations) {
+        if (!invitationSummary) {
+            return;
+        }
+
+        if (!invitations.length) {
+            invitationSummary.textContent = 'Belum ada link undangan aktif.';
+            return;
+        }
+
+        const counts = invitations.reduce((acc, invite) => {
+            const status = invite.status || 'unknown';
+            acc[status] = (acc[status] || 0) + 1;
+            return acc;
+        }, {});
+
+        const summaryParts = [];
+        const statusLabels = {
+            active: 'Aktif',
+            accepted: 'Diterima',
+            expired: 'Kadaluarsa',
+            consumed: 'Penuh',
+            revoked: 'Dicabut'
+        };
+
+        Object.keys(statusLabels).forEach(key => {
+            if (counts[key]) {
+                summaryParts.push(`${counts[key]} ${statusLabels[key]}`);
+            }
+        });
+
+        invitationSummary.textContent = summaryParts.join(' • ');
+    }
+
+    function createInvitationLink() {
+        if (!createInvitationSubmit) {
+            return;
+        }
+
+        if (!invitationLinkForm) {
+            return;
+        }
+
+        const formData = new FormData(invitationLinkForm);
+        const email = (formData.get('email') || '').trim();
+        const maxUsesRaw = (formData.get('max_uses') || '').trim();
+        const expiresRaw = (formData.get('expires_at') || '').trim();
+        const note = (formData.get('note') || '').trim();
+
+        const payload = {
+            email: email !== '' ? email : null,
+            max_uses: maxUsesRaw !== '' ? Number(maxUsesRaw) : null,
+            expires_at: expiresRaw !== '' ? new Date(expiresRaw).toISOString() : null,
+            note: note !== '' ? note : null,
+        };
+
+        const originalHtml = createInvitationSubmit.innerHTML;
+        createInvitationSubmit.disabled = true;
+        createInvitationSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Memproses...';
+
+        fetch(invitationEndpoints.store, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(async response => {
+            const data = await response.json();
+            if (!response.ok) {
+                throw data;
+            }
+            return data;
+        })
+        .then(data => {
+            if (data && data.data) {
+                upsertInvitation(data.data);
+                toastr.success('Link undangan berhasil dibuat!');
+                if (invitationLinkForm) {
+                    invitationLinkForm.reset();
+                }
+            } else {
+                loadInvitationLinks();
+            }
+        })
+        .catch(error => {
+            console.error('Error creating invitation:', error);
+            if (error && error.errors) {
+                const messages = Object.values(error.errors).flat();
+                toastr.error(messages.join(', '));
+            } else if (error && error.error) {
+                toastr.error(error.error);
+            } else {
+                toastr.error('Gagal membuat link undangan');
+            }
+        })
+        .finally(() => {
+            createInvitationSubmit.innerHTML = originalHtml;
+            createInvitationSubmit.disabled = false;
+        });
+    }
+
+    function upsertInvitation(invitation) {
+        const index = invitationLinksCache.findIndex(item => item.id === invitation.id);
+        if (index >= 0) {
+            invitationLinksCache[index] = invitation;
+        } else {
+            invitationLinksCache.unshift(invitation);
+        }
+        if (invitationLinksTableWrapper) {
+            invitationLinksTableWrapper.style.display = 'block';
+        }
+        if (invitationEmptyState) {
+            invitationEmptyState.style.display = 'none';
+        }
+        if (invitationLoadingState) {
+            invitationLoadingState.style.display = 'none';
+        }
+        renderInvitationLinks(invitationLinksCache);
+        updateInvitationSummary(invitationLinksCache);
+    }
+
+    function copyInvitationLink(link) {
+        if (!link) {
+            return;
+        }
+        navigator.clipboard.writeText(link)
+            .then(() => toastr.success('Link undangan berhasil disalin!'))
+            .catch(() => toastr.error('Gagal menyalin link undangan'));
+    }
+
+    function revokeInvitation(invitationId, trigger) {
+        if (!invitationId) {
+            return;
+        }
+
+        if (!confirm('Yakin ingin menonaktifkan link undangan ini? Tautan akan langsung diblokir.')) {
+            return;
+        }
+
+        let button = null;
+        if (trigger) {
+            if (typeof trigger.closest === 'function') {
+                button = trigger.closest('button');
+            }
+            if (!button && trigger.tagName === 'BUTTON') {
+                button = trigger;
+            }
+        }
+        let originalHtml = '';
+        if (button) {
+            originalHtml = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = '<i class="bi bi-slash-circle fa-spin"></i>';
+        }
+
+        const revokeUrl = invitationEndpoints.revoke.replace('__INVITATION__', invitationId);
+
+        fetch(revokeUrl, {
+            method: 'PATCH',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        })
+        .then(async response => {
+            const data = await response.json();
+            if (!response.ok) {
+                throw data;
+            }
+            return data;
+        })
+        .then(data => {
+            if (data && data.data) {
+                upsertInvitation(data.data);
+                toastr.success('Link undangan berhasil dicabut');
+            } else {
+                loadInvitationLinks(true);
+            }
+        })
+        .catch(error => {
+            console.error('Error revoking invitation:', error);
+            if (error && error.error) {
+                toastr.error(error.error);
+            } else {
+                toastr.error('Gagal mencabut link undangan');
+            }
+        })
+        .finally(() => {
+            if (button) {
+                button.innerHTML = originalHtml;
+                button.disabled = false;
+            }
+        });
+    }
+
+    function formatUses(uses, maxUses) {
+        const max = maxUses === '∞' ? maxUses : Number(maxUses || 0);
+        const maxLabel = max === '∞' ? max : Number.isFinite(max) && max > 0 ? max : '∞';
+        return `${uses || 0} / ${maxLabel}`;
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) {
+            return '—';
+        }
+        const date = new Date(dateString);
+        if (Number.isNaN(date.getTime())) {
+            return '—';
+        }
+        return date.toLocaleString();
+    }
+
+    function escapeHtml(value) {
+        if (value === null || value === undefined) {
+            return '';
+        }
+        return value
+            .toString()
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function escapeAttribute(value) {
+        return escapeHtml(value)
+            .replace(/`/g, '&#096;');
     }
     @endif
 

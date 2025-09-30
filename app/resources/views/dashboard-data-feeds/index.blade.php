@@ -15,6 +15,10 @@
                         <i class="bi bi-upload me-2"></i>
                         Import CSV
                     </button>
+                    <button onclick="showCleanWarehouseModal()" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-trash3 me-2"></i>
+                        Clean Warehouse
+                    </button>
                 </div>
             </div>
         </div>
@@ -735,6 +739,56 @@
                 <button type="submit" class="btn btn-success" form="salesTransactionForm">
                     <i class="bi bi-save me-2"></i>
                     Simpan Transaksi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clean Warehouse Confirmation Modal -->
+<div class="modal fade" id="cleanWarehouseModal" tabindex="-1" aria-labelledby="cleanWarehouseModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fw-bold text-warning" id="cleanWarehouseModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Konfirmasi Pembersihan Warehouse
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger" role="alert">
+                    <h6 class="alert-heading"><i class="bi bi-shield-exclamation me-2"></i>Peringatan!</h6>
+                    <p class="mb-2">Tindakan ini akan <strong>menghapus seluruh data warehouse</strong> termasuk:</p>
+                    <ul class="mb-2">
+                        <li>Semua data fact_sales</li>
+                        <li>Data staging (sales items & costs)</li>
+                        <li>Data dimensi (customers & products)</li>
+                        <li>Riwayat metrik dan analisis</li>
+                    </ul>
+                    <p class="mb-0"><strong>Data yang dihapus tidak dapat dikembalikan!</strong></p>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Untuk melanjutkan, ketik: <strong class="text-warning">HAPUS SEMUA DATA</strong></label>
+                        <input type="text" id="cleanWarehouseConfirmText" class="form-control bg-dark text-white border-secondary"
+                               placeholder="Ketik konfirmasi disini...">
+                    </div>
+                </div>
+
+                <div id="cleanWarehouseStatus" class="mt-3 d-none">
+                    <div class="d-flex align-items-center">
+                        <div class="spinner-border spinner-border-sm text-warning me-3" role="status"></div>
+                        <span>Membersihkan data warehouse...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-danger" id="confirmCleanWarehouseBtn" onclick="executeCleanWarehouse()" disabled>
+                    <i class="bi bi-trash3 me-2"></i>
+                    Ya, Hapus Semua Data
                 </button>
             </div>
         </div>

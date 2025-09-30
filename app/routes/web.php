@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\SetupWizardController;
+use App\Http\Controllers\InvitationController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
@@ -24,24 +25,30 @@ Route::get('/news', function () {
     return view('landing.news');
 })->name('news');
 
+// Invitation routes - public access
+Route::get('/invite/{token}', [InvitationController::class, 'handleInvite'])->name('invitation.handle');
+Route::get('/invitation/{token}', [InvitationController::class, 'show'])->name('invitation.show');
 
 // Setup wizard routes - hanya untuk authenticated users
 Route::middleware(['auth'])->group(function () {
     Route::get('/setup', [SetupWizardController::class, 'index'])->name('setup.wizard');
     Route::post('/setup', [SetupWizardController::class, 'store'])->name('setup.store');
+    
+    // Invitation acceptance route (after user is authenticated)
+    Route::post('/invitation/accept', [InvitationController::class, 'accept'])->name('invitation.accept');
 });
 
 // Dashboard routes - require authentication and setup completion
 Route::middleware(['auth', 'setup.completed'])->group(function () {
-    // Main Dashboard
+    // Main Dashboard - accessible to ALL authenticated users
     Route::get('/dashboard', [App\Http\Controllers\Dashboard\MainDashboardController::class, 'index'])->name('dashboard');
-
-    // Dashboard - Main/Overview
     Route::get('/dashboard/main', [App\Http\Controllers\Dashboard\MainDashboardController::class, 'index'])->name('dashboard.main');
 
-    // Dashboard - Metrics (accessible to Business Owner, Administrator, Staff)
+    // Metrics - accessible to ALL roles (business-owner, administrator, staff, business-investigator)
+    Route::get('/dashboard/metrics', [App\Http\Controllers\MetricsController::class, 'index'])->name('dashboard.metrics');
+    
+    // Metrics editing - accessible to Business Owner, Administrator, Staff 
     Route::middleware(['role:business-owner,administrator,staff'])->group(function () {
-        Route::get('/dashboard/metrics', [App\Http\Controllers\MetricsController::class, 'index'])->name('dashboard.metrics');
         Route::get('/dashboard/metrics/{id}/edit', [App\Http\Controllers\MetricsController::class, 'edit'])->name('dashboard.metrics.edit');
         Route::put('/dashboard/metrics/{id}', [App\Http\Controllers\MetricsController::class, 'update'])->name('dashboard.metrics.update');
 
@@ -87,14 +94,15 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
         Route::middleware(['role:business-owner'])->group(function () {
             Route::get('/users/business-codes', [App\Http\Controllers\UserManagementController::class, 'getBusinessCodes'])->name('users.business-codes');
             Route::post('/users/regenerate-invite-code', [App\Http\Controllers\UserManagementController::class, 'regenerateInvitationCode'])->name('users.regenerate-invite-code');
+            Route::get('/users/invitations', [App\Http\Controllers\BusinessInvitationController::class, 'index'])->name('users.invitations.index');
+            Route::post('/users/invitations', [App\Http\Controllers\BusinessInvitationController::class, 'store'])->name('users.invitations.store');
+            Route::patch('/users/invitations/{invitation}/revoke', [App\Http\Controllers\BusinessInvitationController::class, 'revoke'])->name('users.invitations.revoke');
         });
     });
 
-        // Dashboard - Settings (accessible to Business Owner and Administrator)
-    Route::middleware(['role:business-owner,administrator'])->group(function () {
-        Route::get('/dashboard/settings', [App\Http\Controllers\Dashboard\SettingsController::class, 'index'])->name('dashboard.settings');
-        Route::put('/dashboard/settings', [App\Http\Controllers\Dashboard\SettingsController::class, 'update'])->name('dashboard.settings.update');
-    });
+    // Dashboard - Settings (accessible to ALL roles)
+    Route::get('/dashboard/settings', [App\Http\Controllers\Dashboard\SettingsController::class, 'index'])->name('dashboard.settings');
+    Route::put('/dashboard/settings', [App\Http\Controllers\Dashboard\SettingsController::class, 'update'])->name('dashboard.settings.update');
 
     // Dashboard - Users Management (only Business Owner)
     Route::middleware(['role:business-owner'])->group(function () {
@@ -111,8 +119,8 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
         Route::get('/dashboard/data-integrity/backup-history', [App\Http\Controllers\Dashboard\DataIntegrityController::class, 'getBackupHistory'])->name('data-integrity.backup-history');
     });
 
-    // Dashboard - Feeds
-    Route::get('/dashboard/feeds', [App\Http\Controllers\Dashboard\LogController::class, 'index'])->name('dashboard.feeds');
+    // Dashboard - Activity Log (legacy feeds path kept for backward compatibility redirect)
+    Route::redirect('/dashboard/feeds', '/dashboard/activity-log')->name('dashboard.feeds');
 
     // Help Center
     Route::get('/help', [App\Http\Controllers\HelpCenterController::class, 'index'])->name('help.center');
@@ -123,10 +131,10 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
     Route::put('/password', [App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('password.update');
     Route::delete('/profile', [App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Dashboard - Feeds (accessible to Business Owner, Administrator, Staff)
+    // Dashboard - Activity Log (accessible to Business Owner, Administrator, Staff)
     Route::middleware(['role:business-owner,administrator,staff'])->group(function () {
-        Route::get('/dashboard/feeds', [App\Http\Controllers\Dashboard\LogController::class, 'index'])->name('dashboard.feeds');
-        Route::get('/dashboard/feeds/activities', [App\Http\Controllers\Dashboard\LogController::class, 'getActivitiesData'])->name('dashboard.feeds.activities');
+        Route::get('/dashboard/activity-log', [App\Http\Controllers\Dashboard\LogController::class, 'index'])->name('dashboard.activity-log.index');
+        Route::get('/dashboard/activity-log/activities', [App\Http\Controllers\Dashboard\LogController::class, 'getActivitiesData'])->name('dashboard.activity-log.activities');
 
         // Data Feeds main page
         Route::get('/dashboard/data-feeds', [App\Http\Controllers\Dashboard\DataFeedController::class, 'index'])->name('dashboard.data-feeds.index');
@@ -200,6 +208,7 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
     // Data Feeds uploads list & delete
     Route::get('/dashboard/data-feeds/uploads', [App\Http\Controllers\Dashboard\DataFeedController::class, 'listUploads'])->name('dashboard.data-feeds.uploads');
     Route::delete('/dashboard/data-feeds/{id}', [App\Http\Controllers\Dashboard\DataFeedController::class, 'deleteFeed'])->name('dashboard.data-feeds.delete');
+    Route::post('/dashboard/data-feeds/clean-warehouse', [App\Http\Controllers\Dashboard\DataFeedController::class, 'cleanAllWarehouseData'])->name('dashboard.data-feeds.clean-warehouse');
 
         // Data Feeds Template Downloads
         Route::get('/dashboard/data-feeds/template/{type}', [App\Http\Controllers\Dashboard\DataFeedController::class, 'downloadTemplate'])->name('dashboard.data-feeds.template.download');

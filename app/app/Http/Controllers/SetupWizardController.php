@@ -150,12 +150,22 @@ class SetupWizardController extends Controller
             return redirect()->route('dashboard');
         }
 
+        // Check if user came from invitation
+        $hasInvitation = session()->has('invitation_token');
+        $businessName = session('business_name');
+        $inviterName = session('inviter_name');
+
         // Only show specific roles for initial selection
         $roles = Role::where('is_active', true)
                     ->whereIn('name', ['business-owner', 'staff', 'business-investigator'])
                     ->get();
 
-        return view('wizard', compact('roles'));
+        // If user has invitation, exclude business-owner role
+        if ($hasInvitation) {
+            $roles = $roles->where('name', '!=', 'business-owner');
+        }
+
+        return view('wizard', compact('roles', 'hasInvitation', 'businessName', 'inviterName'));
     }
 
     public function store(Request $request)
@@ -179,6 +189,8 @@ class SetupWizardController extends Controller
                     return $this->handleGoalsStep($request);
                 case 'invitation':
                     return $this->handleInvitationStep($request);
+                case 'accept_invitation':
+                    return $this->handleAcceptInvitationStep($request);
                 default:
                     return response()->json([
                         'success' => false,
@@ -213,12 +225,25 @@ class SetupWizardController extends Controller
             ], 422);
         }
 
-    /** @var \App\Models\User $user */
-    $user = Auth::user();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         $role = Role::find($request->role_id);
         $user->update(['role_id' => $request->role_id]);
 
-        // For staff and investigators, show invitation modal instead of continuing to business step
+        // Check if user has invitation
+        $hasInvitation = session()->has('invitation_token');
+
+        if ($hasInvitation) {
+            // User with invitation should directly accept and join business
+            return response()->json([
+                'success' => true,
+                'next_step' => 'accept_invitation',
+                'role_name' => $role->name,
+                'message' => 'Role saved successfully'
+            ]);
+        }
+
+        // For staff and investigators without invitation, show invitation modal
         if ($role && in_array($role->name, ['staff', 'business-investigator'])) {
             return response()->json([
                 'success' => true,
@@ -412,5 +437,101 @@ class SetupWizardController extends Controller
             'redirect' => route('dashboard'),
             'message' => 'Successfully joined business'
         ]);
+    }
+
+    private function handleAcceptInvitationStep(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $token = session('invitation_token');
+        
+        if (!$token) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No active invitation found'
+            ], 400);
+        }
+
+        try {
+            // Find and validate invitation
+            $invitation = \App\Models\BusinessInvitation::where('token', $token)
+                ->whereNull('revoked_at')
+                ->whereNull('accepted_at')
+                ->where(function($query) {
+                    $query->whereNull('expires_at')
+                          ->orWhere('expires_at', '>', now());
+                })
+                ->where(function($query) {
+                    $query->whereNull('max_uses')
+                          ->orWhereRaw('uses < max_uses');
+                })
+                ->first();
+
+            if (!$invitation) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invitation is no longer valid'
+                ], 400);
+            }
+
+            // Mark invitation as accepted
+            $invitation->update([
+                'accepted_at' => now(),
+                'accepted_user_id' => $user->id,
+                'uses' => $invitation->uses + 1,
+            ]);
+
+            // Add user to business
+            $business = $invitation->business;
+            $business->users()->attach($user->id);
+
+            // Mark user setup as completed
+            $user->update(['setup_completed' => true]);
+
+            // Log the invitation acceptance activity
+            \App\Models\ActivityLog::create([
+                'business_id' => $business->id,
+                'user_id' => $user->id,
+                'type' => 'user_joined',
+                'title' => 'User Joined via Invitation',
+                'description' => "{$user->name} joined {$business->business_name} by accepting an invitation",
+                'icon' => 'bi-person-check',
+                'color' => 'success',
+                'metadata' => json_encode([
+                    'invitation_id' => $invitation->id,
+                    'inviter_name' => $invitation->inviter->name ?? 'Unknown',
+                    'joined_at' => now(),
+                    'user_role' => $user->userRole->name ?? 'Unknown'
+                ])
+            ]);
+
+            // Clear invitation from session
+            session()->forget(['invitation_token', 'business_id', 'invited_by', 'business_name', 'inviter_name']);
+
+            Log::info('User accepted invitation and completed setup', [
+                'user_id' => $user->id,
+                'invitation_id' => $invitation->id,
+                'business_id' => $business->id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'next_step' => 'complete',
+                'redirect' => route('dashboard'),
+                'message' => 'Welcome to ' . $business->business_name . '!'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error accepting invitation in setup', [
+                'user_id' => $user->id,
+                'token' => $token,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to accept invitation: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

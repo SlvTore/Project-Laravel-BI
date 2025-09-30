@@ -60,6 +60,20 @@
                             <p class="brand-subtitle">Create your account and start tracking</p>
                         </div>
 
+                        <!-- Invitation Notice -->
+                        @if($invitationActive ?? false)
+                        <div class="alert alert-info mb-3" role="alert">
+                            <i class="bi bi-envelope-check me-2"></i>
+                            <strong>You're invited!</strong><br>
+                            @if($inviterName ?? false)
+                                {{ $inviterName }} invited you to join 
+                            @else
+                                You've been invited to join 
+                            @endif
+                            <strong>{{ $businessName ?? 'a business' }}</strong>
+                        </div>
+                        @endif
+
                         <!-- Register Form -->
                         <form method="POST" action="{{ route('register') }}" class="auth-form">
                             @csrf

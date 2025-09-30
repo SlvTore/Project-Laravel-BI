@@ -8,6 +8,7 @@ use App\Models\Business;
 use App\Models\User;
 use App\Models\ActivityLog;
 use App\Models\MetricType;
+use App\Traits\LogsActivity;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,8 @@ use App\Services\MetricFormattingService;
 
 class MetricsController extends Controller
 {
+    use LogsActivity;
+    
     private OlapMetricAggregator $aggregator;
 
     public function __construct(OlapMetricAggregator $aggregator)
@@ -108,6 +111,9 @@ class MetricsController extends Controller
      */
     public function index()
     {
+        // Log dashboard access
+        $this->logDashboardActivity('Metrics Dashboard');
+
         /** @var User $user */
         $user = Auth::user();
 

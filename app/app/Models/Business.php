@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\BusinessInvitation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Business extends Model
 {
@@ -46,6 +48,11 @@ class Business extends Model
                     ->select('users.*')
                     ->withPivot('joined_at')
                     ->withTimestamps();
+    }
+
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(BusinessInvitation::class);
     }
 
     public function metrics()
@@ -98,6 +105,15 @@ class Business extends Model
     public function removeUser(User $user)
     {
         return $this->users()->detach($user->id);
+    }
+
+    public function issueInvitation(array $attributes = []): BusinessInvitation
+    {
+        $payload = array_merge($attributes, [
+            'business_id' => $this->id,
+        ]);
+
+        return $this->invitations()->create($payload);
     }
 
     public function getLatestMetrics()

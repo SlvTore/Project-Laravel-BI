@@ -4,6 +4,21 @@
 
 @section('content')
 <div class="wizard-container">
+    <!-- Invitation Notice -->
+    @if($hasInvitation ?? false)
+    <div class="alert alert-info text-center mb-4" role="alert">
+        <i class="bi bi-envelope-check me-2"></i>
+        <strong>Welcome!</strong> 
+        @if($inviterName ?? false)
+            {{ $inviterName }} invited you to join 
+        @else
+            You've been invited to join 
+        @endif
+        <strong>{{ $businessName ?? 'a business' }}</strong>. 
+        Select your role and we'll complete your registration.
+    </div>
+    @endif
+
     <!-- Progress Bar -->
     <div class="mb-2">
         <div class="d-flex justify-content-center">
@@ -863,7 +878,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 saveStepData('role', { role_id: selectedRole.value }, (response) => {
                     console.log('Role saved, response:', response);
 
-                    if (response.next_step === 'invitation') {
+                    if (response.next_step === 'accept_invitation') {
+                        // User has invitation, accept it directly
+                        showAcceptInvitationModal();
+                    } else if (response.next_step === 'invitation') {
                         // Show invitation modal for staff and business-investigator
                         showInvitationModal(roleName);
                     } else {
@@ -1037,6 +1055,21 @@ document.addEventListener('DOMContentLoaded', function() {
             modal.style.display = 'block';
             modal.classList.add('show');
             document.body.classList.add('modal-open');
+        }
+    }
+
+    // Function to show accept invitation modal for invited users
+    function showAcceptInvitationModal() {
+        // For invited users, we auto-accept the invitation
+        const businessName = @json($businessName ?? 'this business');
+        
+        if (confirm(`Welcome! You've been invited to join ${businessName}. Click OK to complete your registration and join the business.`)) {
+            saveStepData('accept_invitation', {}, (response) => {
+                if (response.redirect) {
+                    alert(response.message || 'Welcome to the team!');
+                    window.location.href = response.redirect;
+                }
+            });
         }
     }
 

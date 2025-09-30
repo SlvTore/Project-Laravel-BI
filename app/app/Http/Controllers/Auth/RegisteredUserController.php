@@ -19,7 +19,12 @@ class RegisteredUserController extends Controller
      */
     public function create(): View
     {
-        return view('auth.register');
+        // Pass invitation context to registration view
+        $invitationActive = session('invitation_active', false);
+        $businessName = session('business_name');
+        $inviterName = session('inviter_name');
+        
+        return view('auth.register', compact('invitationActive', 'businessName', 'inviterName'));
     }
 
     /**
@@ -44,6 +49,12 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
 
         Auth::login($user);
+
+        // Check if user registered through invitation
+        if (session()->has('invitation_token')) {
+            // Redirect to setup with invitation context
+            return redirect(route('setup.wizard'));
+        }
 
         return redirect(route('dashboard', absolute: false));
     }

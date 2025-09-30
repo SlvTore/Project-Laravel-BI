@@ -8,18 +8,21 @@ use App\Models\ProductionCost;
 use App\Models\DataFeed;
 use App\Models\StagingSalesItem;
 use App\Models\StagingCost;
+use App\Traits\LogsActivity;
 use Illuminate\Support\Facades\DB;
 use App\Services\DataFeedService;
 use App\Services\Exceptions\DataFeedCommitException;
 use App\Services\OlapWarehouseService;
 use App\Jobs\ProcessDataFeedJob;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class DataFeedController extends Controller
 {
+    use LogsActivity;
     protected DataFeedService $service;
     protected OlapWarehouseService $warehouse;
 
@@ -31,6 +34,9 @@ class DataFeedController extends Controller
 
     public function index(Request $request)
     {
+        // Log dashboard access
+        $this->logDashboardActivity('Data Feeds');
+
         $business = $request->user()->primaryBusiness()->first();
         if (!$business) {
             return redirect()->route('dashboard')->with('error', 'Business context not found.');
@@ -856,6 +862,71 @@ class DataFeedController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat menghapus data feed.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Clean all warehouse data when all data feeds are removed
+     */
+    public function cleanAllWarehouseData(Request $request)
+    {
+        $businessId = $request->input('business_id', 1); // Default business ID or get from request
+
+        // Check if there are any remaining data feeds
+        $remainingFeeds = DataFeed::where('business_id', $businessId)->count();
+
+        if ($remainingFeeds > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Masih ada data feeds yang tersisa. Hapus semua data feeds terlebih dahulu.'
+            ], 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Clean all fact_sales for this business (including orphaned records)
+            DB::table('fact_sales')->where('business_id', $businessId)->delete();
+
+            // Clean staging tables using data_feed_id relationship
+            // Since all data feeds for this business are gone, we can clean all staging records
+            // that reference non-existent data feeds or were related to this business
+            $dataFeedIds = DataFeed::where('business_id', $businessId)->pluck('id')->toArray();
+
+            // Clean staging tables - if no data feeds exist for this business, clean all orphaned staging data
+            if (empty($dataFeedIds)) {
+                // Clean all staging data where data_feed_id doesn't exist in data_feeds table
+                $orphanedStagingSales = DB::table('staging_sales_items')
+                    ->whereNotIn('data_feed_id', function($query) {
+                        $query->select('id')->from('data_feeds');
+                    })
+                    ->delete();
+
+                $orphanedStagingCosts = DB::table('staging_costs')
+                    ->whereNotIn('data_feed_id', function($query) {
+                        $query->select('id')->from('data_feeds');
+                    })
+                    ->delete();
+            }
+
+            // Clean dimension tables that are business-specific
+            // Note: Be careful with dim_date as it might be shared across businesses
+            DB::table('dim_customer')->where('business_id', $businessId)->delete();
+            DB::table('dim_product')->where('business_id', $businessId)->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Semua data warehouse berhasil dibersihkan.'
+            ]);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Clean warehouse data failed: '.$e->getMessage(), ['business_id' => $businessId]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat membersihkan data warehouse.'
             ], 500);
         }
     }

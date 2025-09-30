@@ -11,7 +11,23 @@
 
         <!-- Navigation Menu -->
         <ul class="sidebar-nav">
-            <!-- Data Feeds (accessible to Business Owner, Administrator, Staff) -->
+            <!-- Home - accessible to ALL roles -->
+            <li class="nav-item">
+                <a href="{{ route('dashboard') }}" class="nav-link {{ Route::currentRouteName() == 'dashboard' ? 'active' : '' }}">
+                    <i class="bi bi-house-fill nav-icon"></i>
+                    <span class="nav-text">Home</span>
+                </a>
+            </li>
+
+            <!-- Metrics - accessible to ALL roles -->
+            <li class="nav-item">
+                <a href="{{ route('dashboard.metrics') }}" class="nav-link {{ request()->routeIs('dashboard.metrics*') ? 'active' : '' }}">
+                    <i class="bi bi-graph-up-arrow nav-icon"></i>
+                    <span class="nav-text">Metrics</span>
+                </a>
+            </li>
+
+            <!-- Data Feeds - ONLY for Business Owner, Administrator, Staff -->
             @if(auth()->user()->isBusinessOwner() || auth()->user()->isAdministrator() || auth()->user()->isStaff())
             <li class="nav-item">
                 <a href="{{ route('dashboard.data-feeds.index') }}" class="nav-link {{ request()->routeIs('dashboard.data-feeds*') ? 'active' : '' }}">
@@ -21,35 +37,17 @@
             </li>
             @endif
 
-            <!-- Home -->
-            <li class="nav-item">
-                <a href="{{ route('dashboard') }}" class="nav-link {{ Route::currentRouteName() == 'dashboard' ? 'active' : '' }}">
-                    <i class="bi bi-house-fill nav-icon"></i>
-                    <span class="nav-text">Home</span>
-                </a>
-            </li>
-
-            <!-- Metrics (accessible to Business Owner, Administrator, Staff) -->
+            <!-- Activity Log - ONLY for Business Owner, Administrator, Staff -->
             @if(auth()->user()->isBusinessOwner() || auth()->user()->isAdministrator() || auth()->user()->isStaff())
             <li class="nav-item">
-                <a href="{{ route('dashboard.metrics') }}" class="nav-link {{ request()->routeIs('dashboard.metrics*') ? 'active' : '' }}">
-                    <i class="bi bi-graph-up-arrow nav-icon"></i>
-                    <span class="nav-text">Metrics</span>
-                </a>
-            </li>
-            @endif
-
-            <!-- Activity Log (accessible to Business Owner, Administrator, Staff) -->
-            @if(auth()->user()->isBusinessOwner() || auth()->user()->isAdministrator() || auth()->user()->isStaff())
-            <li class="nav-item">
-                <a href="{{ route('dashboard.feeds') }}" class="nav-link {{ request()->routeIs('dashboard.feeds*') ? 'active' : '' }}">
+                <a href="{{ route('dashboard.activity-log.index') }}" class="nav-link {{ request()->routeIs('dashboard.activity-log*') ? 'active' : '' }}">
                     <i class="bi bi-activity nav-icon"></i>
                     <span class="nav-text">Activity Log</span>
                 </a>
             </li>
             @endif
 
-            <!-- Users (only accessible to Business Owner and Administrator) -->
+            <!-- Users - ONLY for Business Owner and Administrator -->
             @if(auth()->user()->canManageUsers())
             <li class="nav-item">
                 <a href="{{ route('dashboard.users') }}" class="nav-link {{ request()->routeIs('dashboard.users*') ? 'active' : '' }}">
@@ -59,8 +57,7 @@
             </li>
             @endif
 
-
-            <!-- Settings -->
+            <!-- Settings - accessible to ALL roles -->
             <li class="nav-item">
                 <a href="{{ route('dashboard.settings') }}" class="nav-link {{ request()->routeIs('dashboard.settings*') ? 'active' : '' }}">
                     <i class="bi bi-gear nav-icon"></i>

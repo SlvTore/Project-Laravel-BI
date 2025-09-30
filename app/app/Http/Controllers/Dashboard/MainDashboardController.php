@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\WeatherService;
 use App\Services\NewsService;
 use App\Services\GeminiAIService;
+use App\Traits\LogsActivity;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,8 +20,13 @@ use App\Services\OlapMetricAggregator;
 
 class MainDashboardController extends Controller
 {
+    use LogsActivity;
+
     public function index(OlapMetricAggregator $aggregator)
     {
+        // Log dashboard access
+        $this->logDashboardActivity('Home Dashboard');
+
         $user = Auth::user();
         $greeting = $this->getGreeting();
         $now = now();
