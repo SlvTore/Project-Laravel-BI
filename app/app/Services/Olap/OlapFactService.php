@@ -32,13 +32,13 @@ class OlapFactService
         }
 
         // Set defaults for optional dimension IDs
-        $factData['customer_id'] = $factData['customer_id'] ?? 
+        $factData['customer_id'] = $factData['customer_id'] ??
             $this->dimensionService->getOrCreateCustomerDimension($factData['business_id'], null, 'Unknown', null, null)->id;
-        
-        $factData['channel_id'] = $factData['channel_id'] ?? 
+
+        $factData['channel_id'] = $factData['channel_id'] ??
             $this->dimensionService->getOrCreateChannelDimension($factData['business_id'], 'DIRECT', 'Direct Sales')->id;
-        
-        $factData['promotion_id'] = $factData['promotion_id'] ?? 
+
+        $factData['promotion_id'] = $factData['promotion_id'] ??
             $this->dimensionService->getOrCreatePromotionDimension($factData['business_id'], 'NONE', 'No Promotion')->id;
 
         // Calculate derived fields if not provided
@@ -73,13 +73,13 @@ class OlapFactService
 
         foreach ($factsData as $fact) {
             // Set defaults for optional dimension IDs
-            $fact['customer_id'] = $fact['customer_id'] ?? 
+            $fact['customer_id'] = $fact['customer_id'] ??
                 $this->dimensionService->getOrCreateCustomerDimension($fact['business_id'], null, 'Unknown', null, null)->id;
-            
-            $fact['channel_id'] = $fact['channel_id'] ?? 
+
+            $fact['channel_id'] = $fact['channel_id'] ??
                 $this->dimensionService->getOrCreateChannelDimension($fact['business_id'], 'DIRECT', 'Direct Sales')->id;
-            
-            $fact['promotion_id'] = $fact['promotion_id'] ?? 
+
+            $fact['promotion_id'] = $fact['promotion_id'] ??
                 $this->dimensionService->getOrCreatePromotionDimension($fact['business_id'], 'NONE', 'No Promotion')->id;
 
             // Calculate derived fields
@@ -215,8 +215,8 @@ class OlapFactService
         $query->chunkById(500, function ($facts) use (&$updated) {
             foreach ($facts as $fact) {
                 $marginAmount = $fact->gross_revenue - $fact->cogs_amount;
-                $marginPercent = $fact->gross_revenue > 0 
-                    ? (($fact->gross_revenue - $fact->cogs_amount) / $fact->gross_revenue) * 100 
+                $marginPercent = $fact->gross_revenue > 0
+                    ? (($fact->gross_revenue - $fact->cogs_amount) / $fact->gross_revenue) * 100
                     : 0;
 
                 DB::table('fact_sales')

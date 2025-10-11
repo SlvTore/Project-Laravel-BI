@@ -22,7 +22,7 @@ return new class extends Migration {
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             // Indexes
             $table->index(['business_id', 'promotion_nk']);
             $table->index(['is_active', 'type']);

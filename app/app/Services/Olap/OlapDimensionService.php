@@ -21,9 +21,9 @@ class OlapDimensionService
     public function getOrCreateDateDimension(string $date): int
     {
         $carbonDate = Carbon::parse($date);
-        
+
         $existing = DB::table('dim_date')->where('date', $carbonDate->format('Y-m-d'))->first();
-        
+
         if ($existing) {
             return $existing->id;
         }

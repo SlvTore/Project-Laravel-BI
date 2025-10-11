@@ -12,7 +12,7 @@ return new class extends Migration
         Schema::table('dim_date', function (Blueprint $table) {
             // Only add columns that don't exist yet
             // month, year, quarter, month_name, day_name already exist from create_dim_tables migration
-            
+
             if (!Schema::hasColumn('dim_date', 'day_of_month')) {
                 $table->integer('day_of_month')->nullable()->after('day');
             }

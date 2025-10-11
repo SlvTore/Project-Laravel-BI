@@ -16,7 +16,7 @@ use App\Services\Olap\OlapETLService;
 /**
  * Orchestrates OLAP warehouse operations
  * Delegates to specialized services for better maintainability
- * 
+ *
  * @deprecated Consider using specialized services directly:
  * - OlapDimensionService for dimension management
  * - OlapFactService for fact operations
@@ -171,7 +171,7 @@ class OlapWarehouseService
 
     /**
      * Load facts from staging tables using ETL service
-     * 
+     *
      * @deprecated Use OlapETLService::loadFactsFromStaging() directly
      */
     public function loadFactsFromStaging(DataFeed $feed): array

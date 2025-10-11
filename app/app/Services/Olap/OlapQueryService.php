@@ -344,8 +344,8 @@ class OlapQueryService
             'new_customers' => (int)$newCustomers,
             'returning_customers' => (int)$returningCustomers,
             'total_customers' => (int)($newCustomers + $returningCustomers),
-            'returning_rate' => $newCustomers > 0 
-                ? round(($returningCustomers / ($newCustomers + $returningCustomers)) * 100, 2) 
+            'returning_rate' => $newCustomers > 0
+                ? round(($returningCustomers / ($newCustomers + $returningCustomers)) * 100, 2)
                 : 0,
         ];
     }

@@ -83,7 +83,7 @@ class OlapETLService
             try {
                 // Get or create dimensions
                 $dateId = $this->dimensionService->getOrCreateDateDimension($item->transaction_date)->id;
-                
+
                 $productId = $this->dimensionService->getOrCreateProductDimension(
                     $businessId,
                     $item->product_id,
@@ -115,8 +115,8 @@ class OlapETLService
                 // Calculate COGS and margin
                 $cogsAmount = $item->unit_cost * $item->quantity;
                 $marginAmount = $item->total_amount - $cogsAmount;
-                $marginPercent = $item->total_amount > 0 
-                    ? ($marginAmount / $item->total_amount) * 100 
+                $marginPercent = $item->total_amount > 0
+                    ? ($marginAmount / $item->total_amount) * 100
                     : 0;
 
                 // Prepare fact record

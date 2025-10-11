@@ -24,7 +24,7 @@ class BusinessOwnershipService
 
     /**
      * Transfer business ownership to the next eligible user
-     * 
+     *
      * @param Business $business
      * @param User $currentOwner
      * @param string $reason
@@ -49,7 +49,7 @@ class BusinessOwnershipService
 
             // Get the business-owner role
             $ownerRole = Role::where('name', 'business-owner')->first();
-            
+
             if (!$ownerRole) {
                 DB::rollBack();
                 Log::error('Business owner role not found in database');
@@ -134,7 +134,7 @@ class BusinessOwnershipService
      * Find the most eligible successor based on role hierarchy
      * Priority: Administrator > Staff
      * Excludes: Business Investigator, Current Owner
-     * 
+     *
      * @param Business $business
      * @param User $excludeUser
      * @return User|null
@@ -175,7 +175,7 @@ class BusinessOwnershipService
             // Check if role is in hierarchy
             if (isset(self::ROLE_HIERARCHY[$roleName])) {
                 $priority = self::ROLE_HIERARCHY[$roleName];
-                
+
                 if ($priority > $highestPriority) {
                     $highestPriority = $priority;
                     $bestCandidate = $user;
@@ -188,7 +188,7 @@ class BusinessOwnershipService
 
     /**
      * Check if a business has eligible successors
-     * 
+     *
      * @param Business $business
      * @param User $currentOwner
      * @return bool
@@ -200,7 +200,7 @@ class BusinessOwnershipService
 
     /**
      * Get list of eligible successors with their role priorities
-     * 
+     *
      * @param Business $business
      * @param User $excludeUser
      * @return array
@@ -245,7 +245,7 @@ class BusinessOwnershipService
 
     /**
      * Log ownership transfer to activity log
-     * 
+     *
      * @param Business $business
      * @param int $previousOwnerId
      * @param string $previousOwnerName
@@ -282,21 +282,21 @@ class BusinessOwnershipService
 
     /**
      * Handle automatic transfer on owner account deletion
-     * 
+     *
      * @param User $owner
      * @return array ['businesses_transferred' => int, 'businesses_deleted' => int, 'details' => array]
      */
     public function handleOwnerDeletion(User $owner): array
     {
         $ownedBusinesses = $owner->ownedBusinesses;
-        
+
         $transferred = 0;
         $deleted = 0;
         $details = [];
 
         foreach ($ownedBusinesses as $business) {
             $result = $this->transferOwnership($business, $owner, 'Owner account deletion');
-            
+
             if ($result['success']) {
                 $transferred++;
                 $details[] = [
@@ -315,7 +315,7 @@ class BusinessOwnershipService
                     'status' => 'no_successor',
                     'message' => $result['message'],
                 ];
-                
+
                 Log::warning("Business has no eligible successor on owner deletion", [
                     'business_id' => $business->id,
                     'business_name' => $business->business_name,

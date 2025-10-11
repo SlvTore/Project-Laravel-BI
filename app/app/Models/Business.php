@@ -141,16 +141,16 @@ class Business extends Model
      * Get eligible successor for business ownership transfer
      * Follows hierarchy: Administrator > Staff
      * Excludes: Business Investigator
-     * 
+     *
      * @param User|null $excludeUser
      * @return User|null
      */
     public function getEligibleSuccessor(?User $excludeUser = null): ?User
     {
         $ownershipService = app(\App\Services\BusinessOwnershipService::class);
-        
+
         $currentOwner = $excludeUser ?? $this->owner;
-        
+
         if (!$currentOwner) {
             return null;
         }
@@ -160,7 +160,7 @@ class Business extends Model
 
     /**
      * Check if business has eligible successors for ownership transfer
-     * 
+     *
      * @param User|null $excludeUser
      * @return bool
      */
@@ -171,16 +171,16 @@ class Business extends Model
 
     /**
      * Get all eligible successors with their priorities
-     * 
+     *
      * @param User|null $excludeUser
      * @return array
      */
     public function getEligibleSuccessors(?User $excludeUser = null): array
     {
         $ownershipService = app(\App\Services\BusinessOwnershipService::class);
-        
+
         $currentOwner = $excludeUser ?? $this->owner;
-        
+
         if (!$currentOwner) {
             return [];
         }
@@ -190,7 +190,7 @@ class Business extends Model
 
     /**
      * Transfer business ownership to another user
-     * 
+     *
      * @param User $newOwner
      * @param string $reason
      * @return array
@@ -198,7 +198,7 @@ class Business extends Model
     public function transferOwnershipTo(User $newOwner, string $reason = 'Manual transfer'): array
     {
         $ownershipService = app(\App\Services\BusinessOwnershipService::class);
-        
+
         if (!$this->owner) {
             return [
                 'success' => false,
