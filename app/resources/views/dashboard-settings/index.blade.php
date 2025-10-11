@@ -22,10 +22,10 @@
 @endphp
 
 @section('content')
-<div class="container-fluid px-4 pb-5">
+<div class="container-fluid px-4 pb-5 ms-4">
     <div class="row g-4 align-items-stretch mb-4">
         <div class="col-lg-8">
-            <div class="card border-0 shadow-sm h-100">
+            <div class="dashboard-card h-100">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                         <div>
@@ -53,7 +53,7 @@
             </div>
         </div>
         <div class="col-lg-4">
-            <div class="card border-0 shadow-sm h-100">
+            <div class="dashboard-card h-100">
                 <div class="card-body p-4">
                     <h5 class="fw-bold text-primary mb-3"><i class="bi bi-graph-up-arrow me-2"></i>Team Snapshot</h5>
                     <ul class="list-group list-group-flush small mb-3">
@@ -97,7 +97,7 @@
     <div class="row">
         <div class="col-12">
             <div class="accordion" id="settingsAccordion">
-                <div class="accordion-item border-0 shadow-sm mb-3">
+                <div class="accordion-item dashboard-card mb-3">
                     <h2 class="accordion-header" id="headingPersonalization">
                         <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#personalizationSection" aria-expanded="true" aria-controls="personalizationSection">
                             <i class="bi bi-palette-fill text-primary me-3"></i>
@@ -111,7 +111,7 @@
                         <div class="accordion-body">
                             <div class="row g-4 align-items-stretch">
                                 <div class="col-lg-7">
-                                    <div class="card border-0 h-100 bg-light">
+                                    <div class="dashboard-card h-100">
                                         <div class="card-body">
                                             <div class="d-flex align-items-center justify-content-between mb-3">
                                                 <h5 class="fw-semibold mb-0"><i class="bi bi-building-gear me-2 text-primary"></i>Business identity</h5>
@@ -160,13 +160,13 @@
                                     </div>
                                 </div>
                                 <div class="col-lg-5">
-                                    <div class="card border-0 h-100">
+                                    <div class="dashboard-card h-100">
                                         <div class="card-body">
                                             <h5 class="fw-semibold mb-3 d-flex align-items-center">
                                                 <i class="bi bi-brush-fill text-primary me-2"></i>Branding assets
                                             </h5>
                                             <div class="text-center mb-3">
-                                                <div class="logo-preview border rounded d-flex align-items-center justify-content-center mx-auto mb-3 bg-light">
+                                                <div class="logo-preview border rounded d-flex align-items-center justify-content-center mx-auto mb-3">
                                                     @if($business->logo_path)
                                                         <img id="logoPreviewImage" src="{{ Storage::url($business->logo_path) }}" alt="Business logo" class="img-fluid rounded">
                                                     @else
@@ -201,7 +201,7 @@
                             <hr class="my-4">
                             <div class="row g-4">
                                 <div class="col-lg-6">
-                                    <div class="card border-0 h-100 bg-light">
+                                    <div class="dashboard-card h-100">
                                         <div class="card-body">
                                             <h5 class="fw-semibold mb-3"><i class="bi bi-display-fill me-2 text-primary"></i>Personal workspace preferences</h5>
                                             <p class="text-muted small">Switch themes and accent colours to suit your daily BI rhythm.</p>
@@ -237,7 +237,7 @@
                                     </div>
                                 </div>
                                 <div class="col-lg-6">
-                                    <div class="card border-0 h-100">
+                                    <div class="dashboard-card h-100">
                                         <div class="card-body">
                                             <h5 class="fw-semibold mb-3"><i class="bi bi-bullseye me-2 text-primary"></i>UX guidance for BI adoption</h5>
                                             <ul class="list-unstyled small text-muted mb-0">
@@ -254,7 +254,7 @@
                     </div>
                 </div>
 
-                <div class="accordion-item border-0 shadow-sm mb-3">
+                <div class="accordion-item dashboard-card mb-3">
                     <h2 class="accordion-header" id="headingSecurity">
                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#securitySection" aria-expanded="false" aria-controls="securitySection">
                             <i class="bi bi-shield-lock-fill me-3 text-success"></i>
@@ -268,7 +268,7 @@
                         <div class="accordion-body">
                             <div class="row g-4 align-items-stretch">
                                 <div class="col-lg-6">
-                                    <div class="card border-0 h-100 bg-light">
+                                    <div class="dashboard-card h-100">
                                         <div class="card-body">
                                             <h5 class="fw-semibold mb-3"><i class="bi bi-link-45deg text-success me-2"></i>Team invitation code</h5>
                                             <p class="text-muted small">Share this code with staff members to unlock the BI workspace.</p>
@@ -291,7 +291,7 @@
                                     </div>
                                 </div>
                                 <div class="col-lg-6">
-                                    <div class="card border-0 h-100">
+                                    <div class="dashboard-card h-100">
                                         <div class="card-body">
                                             <h5 class="fw-semibold mb-3"><i class="bi bi-building-check me-2 text-success"></i>Business overview</h5>
                                             <dl class="row small mb-0">
@@ -314,7 +314,7 @@
                             <hr class="my-4">
                             <div class="row g-4">
                                 <div class="col-lg-5">
-                                    <div class="card border-0 h-100 bg-white">
+                                    <div class="dashboard-card h-100">
                                         <div class="card-body">
                                             <h6 class="fw-semibold mb-3"><i class="bi bi-shield-check me-2 text-success"></i>Access guardrails</h6>
                                             <ul class="list-unstyled small text-muted mb-0">
@@ -326,7 +326,7 @@
                                     </div>
                                 </div>
                                 <div class="col-lg-7">
-                                    <div class="card border-0 h-100 bg-light">
+                                    <div class="dashboard-card h-100">
                                         <div class="card-body">
                                             <h6 class="fw-semibold mb-3"><i class="bi bi-layers-fill me-2 text-success"></i>UI/UX adjustments for smoother BI adoption</h6>
                                             <div class="row g-3">
@@ -363,7 +363,7 @@
                     </div>
                 </div>
 
-                <div class="accordion-item border-0 shadow-sm mb-3">
+                <div class="accordion-item dashboard-card mb-3">
                     <h2 class="accordion-header" id="headingDanger">
                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dangerSection" aria-expanded="false" aria-controls="dangerSection">
                             <i class="bi bi-exclamation-triangle-fill me-3 text-danger"></i>
@@ -378,7 +378,7 @@
                             @if($canManageOwnership)
                                 <div class="row g-4">
                                     <div class="col-lg-6">
-                                        <div class="card border border-warning-subtle h-100">
+                                        <div class="dashboard-card border border-warning-subtle h-100">
                                             <div class="card-header bg-warning-subtle">
                                                 <h6 class="mb-0 fw-semibold"><i class="bi bi-arrow-left-right me-2"></i>Transfer ownership</h6>
                                             </div>
@@ -391,7 +391,7 @@
                                         </div>
                                     </div>
                                     <div class="col-lg-6">
-                                        <div class="card border border-danger-subtle h-100">
+                                        <div class="dashboard-card border border-danger-subtle h-100">
                                             <div class="card-header bg-danger-subtle">
                                                 <h6 class="mb-0 fw-semibold text-danger"><i class="bi bi-trash-fill me-2"></i>Delete business</h6>
                                             </div>
@@ -411,7 +411,7 @@
                     </div>
                 </div>
 
-                <div class="accordion-item border-0 shadow-sm">
+                <div class="accordion-item dashboard-card">
                     <h2 class="accordion-header" id="headingAppInfo">
                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#appInfoSection" aria-expanded="false" aria-controls="appInfoSection">
                             <i class="bi bi-info-circle-fill me-3 text-info"></i>
@@ -425,7 +425,7 @@
                         <div class="accordion-body">
                             <div class="row g-4 align-items-stretch">
                                 <div class="col-lg-6">
-                                    <div class="card border-0 h-100 bg-light">
+                                    <div class="dashboard-card h-100">
                                         <div class="card-body">
                                             <h6 class="fw-semibold mb-3"><i class="bi bi-cpu-fill me-2 text-info"></i>System information</h6>
                                             <ul class="list-group list-group-flush small">
@@ -450,7 +450,7 @@
                                     </div>
                                 </div>
                                 <div class="col-lg-6">
-                                    <div class="card border-0 h-100">
+                                    <div class="dashboard-card h-100">
                                         <div class="card-body">
                                             <h6 class="fw-semibold mb-3"><i class="bi bi-life-preserver me-2 text-info"></i>Support & next steps</h6>
                                             <div class="d-grid gap-2 mb-3">
@@ -476,7 +476,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="transferOwnershipModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade modal-liquid-glass" id="transferOwnershipModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -505,7 +505,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="deleteBusinessModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade modal-liquid-glass" id="deleteBusinessModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
@@ -556,6 +556,47 @@
     }
     .dark-theme .card.bg-light {
         background-color: rgba(33, 37, 41, 0.7) !important;
+    }
+
+    /* Settings accordion glass tuning */
+    #settingsAccordion .accordion-item.dashboard-card {
+        background: var(--card-bg);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    #settingsAccordion .accordion-button {
+        background: transparent;
+        color: #fff;
+    }
+    #settingsAccordion .accordion-button:not(.collapsed) {
+        box-shadow: inset 0 -1px 0 rgba(255,255,255,0.1);
+    }
+    #settingsAccordion .accordion-button:focus {
+        border-color: rgba(255,255,255,0.25);
+        box-shadow: 0 0 0 0.2rem rgba(124, 185, 71, 0.25);
+    }
+    #settingsAccordion .accordion-body {
+        background: rgba(255, 255, 255, 0.03);
+    }
+    /* Card headers inside danger zone keep contrast */
+    .dashboard-card .card-header.bg-warning-subtle,
+    .dashboard-card .card-header.bg-danger-subtle {
+        background: rgba(255,255,255,0.06) !important;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        color: #fff;
+    }
+    /* Ensure list-group items appear on glass */
+    .dashboard-card .list-group-item {
+        background: transparent;
+        color: rgba(255,255,255,0.95);
+        border-color: rgba(255,255,255,0.1);
+    }
+    /* Glassy logo preview background */
+    .logo-preview {
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.15);
+        backdrop-filter: blur(10px);
     }
 </style>
 @endsection

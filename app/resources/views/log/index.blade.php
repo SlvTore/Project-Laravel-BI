@@ -3,7 +3,7 @@
 @section('title', 'Activity Log')
 
 @section('content')
-<div class="container-fluid px-4 activity-log-page">
+<div class="container-fluid p-4 ms-4 activity-log-page">
     <div class="row align-items-center g-3 mb-4">
         <div class="col-lg-8">
             <div class="d-flex flex-column flex-md-row align-items-md-center gap-3">

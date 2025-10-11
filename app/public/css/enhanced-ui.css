@@ -401,6 +401,33 @@
     }
 }
 
+/* Transparent Liquid Glass Modal */
+.modal-liquid-glass .modal-content {
+    background: rgba(30, 30, 30, 0.85);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 18px;
+    color: #f8f9fa;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+}
+.modal-liquid-glass .modal-header,
+.modal-liquid-glass .modal-footer {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+.modal-liquid-glass .btn-close {
+    filter: invert(1) grayscale(100%);
+}
+.modal-liquid-glass .form-control,
+.modal-liquid-glass .form-select {
+    background: rgba(0,0,0,0.35);
+    color: #fff;
+    border-color: rgba(255,255,255,0.2);
+}
+.modal-liquid-glass .form-control::placeholder { color: rgba(255,255,255,0.6); }
+.modal-liquid-glass .list-group-item { background: transparent; color: #fff; border-color: rgba(255,255,255,0.15); }
+
 /* Enhanced Scroll Behavior */
 html {
     scroll-behavior: smooth;

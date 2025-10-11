@@ -89,9 +89,9 @@
     </div>
 
     <!-- Sales Import Modal -->
-    <div class="modal fade" id="salesImportModal" tabindex="-1" aria-labelledby="salesImportModalLabel" aria-hidden="true">
+    <div class="modal fade modal-liquid-glass" id="salesImportModal" tabindex="-1" aria-labelledby="salesImportModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content" style="background: rgba(24,24,24,0.95); color: #f8f9fa; border-radius: 18px; border: 1px solid rgba(255,255,255,0.08);">
+            <div class="modal-content">
                 <div class="modal-header border-0 pb-0">
                     <div>
                         <h5 class="modal-title fw-semibold" id="salesImportModalLabel">
@@ -345,10 +345,10 @@
     </div>
 
 <!-- Manage Data Modal -->
-<div class="modal fade" id="manageDataModal" tabindex="-1" aria-labelledby="manageDataModalLabel" aria-hidden="true" data-bs-backdrop="static">
+<div class="modal fade modal-liquid-glass" id="manageDataModal" tabindex="-1" aria-labelledby="manageDataModalLabel" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-xl">
-        <div class="modal-content" style="background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; color: white;">
-            <div class="modal-header border-0" style="border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;">
+        <div class="modal-content">
+            <div class="modal-header border-0">
                 <h5 class="modal-title fw-bold text-white" id="manageDataModalLabel">
                     <i class="bi bi-gear-fill me-2 text-info"></i>
                     Kelola Data Produk
@@ -614,9 +614,9 @@
 </div>
 
 <!-- Sales Transaction Modal -->
-<div class="modal fade" id="salesTransactionModal" tabindex="-1" aria-labelledby="salesTransactionModalLabel" aria-hidden="true" data-bs-backdrop="static">
+<div class="modal fade modal-liquid-glass" id="salesTransactionModal" tabindex="-1" aria-labelledby="salesTransactionModalLabel" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content" style="background: rgba(24,24,24,0.95); color: #f8f9fa; border-radius: 20px; border: 1px solid rgba(255,255,255,0.08);">
+        <div class="modal-content">
             <div class="modal-header border-0 pb-0">
                 <div>
                     <h5 class="modal-title fw-semibold text-white" id="salesTransactionModalLabel">
@@ -751,9 +751,9 @@
 </div>
 
 <!-- Customer Manage Modal -->
-<div class="modal fade" id="customerManageModal" tabindex="-1" aria-labelledby="customerManageModalLabel" aria-hidden="true" data-bs-backdrop="static">
+<div class="modal fade modal-liquid-glass" id="customerManageModal" tabindex="-1" aria-labelledby="customerManageModalLabel" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="background: rgba(24,24,24,0.95); color: #f8f9fa; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08);">
+        <div class="modal-content">
             <div class="modal-header border-0 pb-0">
                 <div>
                     <h5 class="modal-title fw-semibold text-white" id="customerManageModalLabel">
@@ -798,10 +798,10 @@
     </div>
 
 <!-- Clean Warehouse Confirmation Modal -->
-<div class="modal fade" id="cleanWarehouseModal" tabindex="-1" aria-labelledby="cleanWarehouseModalLabel" aria-hidden="true" data-bs-backdrop="static">
+<div class="modal fade modal-liquid-glass" id="cleanWarehouseModal" tabindex="-1" aria-labelledby="cleanWarehouseModalLabel" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-dark text-white">
-            <div class="modal-header border-secondary">
+        <div class="modal-content">
+            <div class="modal-header">
                 <h5 class="modal-title fw-bold text-warning" id="cleanWarehouseModalLabel">
                     <i class="bi bi-exclamation-triangle me-2"></i>
                     Konfirmasi Pembersihan Warehouse
@@ -836,7 +836,7 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer border-secondary">
+            <div class="modal-footer">
                 <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Batal</button>
                 <button type="button" class="btn btn-danger" id="confirmCleanWarehouseBtn" onclick="executeCleanWarehouse()" disabled>
                     <i class="bi bi-trash3 me-2"></i>
