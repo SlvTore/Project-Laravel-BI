@@ -65,7 +65,7 @@ try {
         'getEligibleSuccessors',
         'transferOwnershipTo',
     ];
-    
+
     $missingMethods = [];
     foreach ($methods as $method) {
         if (method_exists($business, $method)) {
@@ -75,7 +75,7 @@ try {
             echo "   ✗ Method '{$method}' MISSING\n";
         }
     }
-    
+
     if (empty($missingMethods)) {
         $checks['methods'] = '✓ All 4 helper methods present';
     } else {
@@ -89,7 +89,7 @@ try {
 echo "\n4. Checking ProfileController integration...\n";
 try {
     $controllerContent = file_get_contents(__DIR__ . '/app/Http/Controllers/ProfileController.php');
-    
+
     if (strpos($controllerContent, 'BusinessOwnershipService') !== false &&
         strpos($controllerContent, 'handleOwnerDeletion') !== false) {
         $checks['controller'] = '✓ ProfileController integrated with ownership transfer';
@@ -138,7 +138,7 @@ echo "\n8. Testing service method signatures...\n";
 try {
     $service = app(\App\Services\BusinessOwnershipService::class);
     $reflection = new \ReflectionClass($service);
-    
+
     $expectedMethods = [
         'transferOwnership',
         'findEligibleSuccessor',
@@ -146,7 +146,7 @@ try {
         'getEligibleSuccessors',
         'handleOwnerDeletion',
     ];
-    
+
     $foundMethods = [];
     foreach ($expectedMethods as $method) {
         if ($reflection->hasMethod($method)) {
@@ -156,7 +156,7 @@ try {
             echo "   ✗ Method '{$method}' MISSING\n";
         }
     }
-    
+
     if (count($foundMethods) === count($expectedMethods)) {
         $checks['service_methods'] = '✓ All 5 service methods present';
     } else {
@@ -172,10 +172,10 @@ try {
     $roles = DB::table('roles')
         ->whereIn('name', ['business-owner', 'administrator', 'staff', 'business-investigator'])
         ->pluck('name');
-    
+
     $expectedRoles = ['business-owner', 'administrator', 'staff', 'business-investigator'];
     $missingRoles = array_diff($expectedRoles, $roles->toArray());
-    
+
     if (empty($missingRoles)) {
         $checks['roles'] = '✓ All 4 roles exist in database';
         echo "   ✓ All required roles found\n";

@@ -33,7 +33,7 @@ if (Schema::hasTable('dim_promotion')) {
         $status = in_array($col, $promotionColumns) ? '✓' : '✗';
         echo "   {$status} {$col}\n";
     }
-    
+
     // Check if promotion_id exists in fact_sales
     $factColumns = Schema::getColumnListing('fact_sales');
     $status = in_array('promotion_id', $factColumns) ? '✓' : '✗';
@@ -45,7 +45,7 @@ if (Schema::hasTable('dim_promotion')) {
 // Check indexes
 echo "\n3. Checking strategic indexes...\n";
 $indexes = [
-    'fact_sales' => ['idx_fact_sales_business_date', 'idx_fact_sales_product', 'idx_fact_sales_customer', 
+    'fact_sales' => ['idx_fact_sales_business_date', 'idx_fact_sales_product', 'idx_fact_sales_customer',
                      'idx_fact_sales_channel', 'idx_fact_sales_product_date', 'idx_fact_sales_feed'],
     'dim_product' => ['idx_dim_product_business_nk'],
     'dim_customer' => ['idx_dim_customer_business_nk'],
@@ -65,7 +65,7 @@ foreach ($indexes as $table => $indexList) {
             AND table_name = ?
             AND index_name = ?
         ", [$databaseName, $table, $indexName]);
-        
+
         $status = ($result[0]->count > 0) ? '✓' : '✗';
         echo "      {$status} {$indexName}\n";
     }

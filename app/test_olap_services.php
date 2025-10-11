@@ -48,11 +48,11 @@ echo "   ✓ Date dimension created/found: ID {$dateDimId} (2025-10-11)\n";
 $business = DB::table('businesses')->first();
 if ($business) {
     echo "   ✓ Testing with business ID: {$business->id}\n";
-    
+
     // Ensure default dimensions
     $dimensions->ensureDefaultDimensions($business->id);
     echo "   ✓ Default dimensions ensured\n";
-    
+
     // Get or create product
     $productDimId = $dimensions->getOrCreateProductDimension(
         $business->id,
@@ -61,7 +61,7 @@ if ($business) {
         'Test Category'
     );
     echo "   ✓ Product dimension: ID {$productDimId} (Test Product)\n";
-    
+
     // Get or create customer (with null handling)
     $customerDimId = $dimensions->getOrCreateCustomerDimension(
         $business->id,
@@ -71,7 +71,7 @@ if ($business) {
         '08123456789'
     );
     echo "   ✓ Customer dimension: ID {$customerDimId} (Test Customer)\n";
-    
+
     // Get or create channel
     $channelDimId = $dimensions->getOrCreateChannelDimension(
         $business->id,
@@ -79,7 +79,7 @@ if ($business) {
         'Online Store'
     );
     echo "   ✓ Channel dimension: ID {$channelDimId} (Online Store)\n";
-    
+
     // Get or create promotion
     $promotionDimId = $dimensions->getOrCreatePromotionDimension(
         $business->id,
@@ -88,11 +88,11 @@ if ($business) {
         10.0
     );
     echo "   ✓ Promotion dimension: ID {$promotionDimId} (Flash Sale 10%)\n";
-    
+
     // Test 3: OlapFactService
     echo "\n3. Testing OlapFactService...\n";
     $facts = app(OlapFactService::class);
-    
+
     // Insert a test fact
     $factId = $facts->insertFact([
         'business_id' => $business->id,
@@ -111,7 +111,7 @@ if ($business) {
         // margin calculated automatically
     ]);
     echo "   ✓ Fact inserted: ID {$factId}\n";
-    
+
     // Get the fact
     $fact = $facts->getFactById($factId);
     echo "   ✓ Fact retrieved:\n";
@@ -119,11 +119,11 @@ if ($business) {
     echo "      - COGS: Rp " . number_format($fact->cogs_amount, 2) . "\n";
     echo "      - Margin: Rp " . number_format($fact->gross_margin_amount, 2) . "\n";
     echo "      - Margin %: " . number_format($fact->gross_margin_percent, 2) . "%\n";
-    
+
     // Clean up test data
     $facts->deleteFact($factId);
     echo "   ✓ Test fact deleted (cleanup)\n";
-    
+
 } else {
     echo "   ⚠ No businesses found in database. Skipping dimension tests.\n";
 }

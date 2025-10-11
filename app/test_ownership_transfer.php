@@ -2,7 +2,7 @@
 
 /**
  * Test Script: Business Ownership Transfer
- * 
+ *
  * Tests automatic ownership transfer when business owner deletes account
  * Hierarchy: business-owner -> administrator -> staff
  * Excluded: business-investigator
@@ -31,7 +31,7 @@ $ownershipService = app(BusinessOwnershipService::class);
 // Helper function to create test user
 function createTestUser($name, $email, $roleName) {
     $role = Role::where('name', $roleName)->first();
-    
+
     $user = User::create([
         'name' => $name,
         'email' => $email,
@@ -40,7 +40,7 @@ function createTestUser($name, $email, $roleName) {
         'is_active' => true,
         'setup_completed' => true,
     ]);
-    
+
     return $user;
 }
 
@@ -69,12 +69,12 @@ echo "════════════════════════�
 
 try {
     DB::beginTransaction();
-    
+
     // Create users
     $owner1 = createTestUser('Owner One', 'owner1@ownership-test.com', 'business-owner');
     $admin1 = createTestUser('Admin One', 'admin1@ownership-test.com', 'administrator');
     $staff1 = createTestUser('Staff One', 'staff1@ownership-test.com', 'staff');
-    
+
     // Create business
     $business1 = Business::create([
         'user_id' => $owner1->id,
@@ -83,32 +83,32 @@ try {
         'description' => 'Test business for ownership transfer',
     ]);
     $business1->generatePublicId();
-    
+
     // Add users to business
     $business1->addUser($admin1);
     $business1->addUser($staff1);
-    
+
     echo "✓ Created business with Owner, Admin, and Staff\n";
     echo "  Business: {$business1->business_name}\n";
     echo "  Current Owner: {$owner1->name} (ID: {$owner1->id})\n";
-    
+
     // Test transfer
     $result = $ownershipService->transferOwnership($business1, $owner1, 'Test transfer to admin');
-    
+
     $business1->refresh();
     $admin1->refresh();
-    
+
     if ($result['success'] && $business1->user_id === $admin1->id && $admin1->isBusinessOwner()) {
-        displayTestResult('Ownership transferred to Administrator', true, 
+        displayTestResult('Ownership transferred to Administrator', true,
             "New owner: {$admin1->name}, Role: {$admin1->userRole->display_name}");
     } else {
-        displayTestResult('Ownership transferred to Administrator', false, 
+        displayTestResult('Ownership transferred to Administrator', false,
             "Expected admin to be new owner. Result: " . json_encode($result));
     }
-    
+
     DB::rollBack();
     echo "\n";
-    
+
 } catch (\Exception $e) {
     DB::rollBack();
     displayTestResult('Transfer to Administrator', false, $e->getMessage());
@@ -124,12 +124,12 @@ echo "════════════════════════�
 
 try {
     DB::beginTransaction();
-    
+
     // Create users
     $owner2 = createTestUser('Owner Two', 'owner2@ownership-test.com', 'business-owner');
     $staff2 = createTestUser('Staff Two', 'staff2@ownership-test.com', 'staff');
     $investigator2 = createTestUser('Investigator Two', 'investigator2@ownership-test.com', 'business-investigator');
-    
+
     // Create business
     $business2 = Business::create([
         'user_id' => $owner2->id,
@@ -137,24 +137,24 @@ try {
         'industry' => 'Retail',
     ]);
     $business2->generatePublicId();
-    
+
     // Add users (NO ADMIN)
     $business2->addUser($staff2);
     $business2->addUser($investigator2);
-    
+
     echo "✓ Created business with Owner, Staff, and Investigator (NO ADMIN)\n";
     echo "  Business: {$business2->business_name}\n";
     echo "  Current Owner: {$owner2->name}\n";
-    
+
     // Test transfer
     $result = $ownershipService->transferOwnership($business2, $owner2, 'Test transfer to staff');
-    
+
     $business2->refresh();
     $staff2->refresh();
     $investigator2->refresh();
-    
-    if ($result['success'] && 
-        $business2->user_id === $staff2->id && 
+
+    if ($result['success'] &&
+        $business2->user_id === $staff2->id &&
         $staff2->isBusinessOwner() &&
         !$investigator2->isBusinessOwner()) {
         displayTestResult('Ownership transferred to Staff (skipped Investigator)', true,
@@ -163,10 +163,10 @@ try {
         displayTestResult('Ownership transferred to Staff', false,
             "Expected staff to be new owner, not investigator. Result: " . json_encode($result));
     }
-    
+
     DB::rollBack();
     echo "\n";
-    
+
 } catch (\Exception $e) {
     DB::rollBack();
     displayTestResult('Transfer to Staff', false, $e->getMessage());
@@ -182,12 +182,12 @@ echo "════════════════════════�
 
 try {
     DB::beginTransaction();
-    
+
     // Create users
     $owner3 = createTestUser('Owner Three', 'owner3@ownership-test.com', 'business-owner');
     $investigator3a = createTestUser('Investigator 3A', 'investigator3a@ownership-test.com', 'business-investigator');
     $investigator3b = createTestUser('Investigator 3B', 'investigator3b@ownership-test.com', 'business-investigator');
-    
+
     // Create business
     $business3 = Business::create([
         'user_id' => $owner3->id,
@@ -195,18 +195,18 @@ try {
         'industry' => 'Consulting',
     ]);
     $business3->generatePublicId();
-    
+
     // Add only investigators
     $business3->addUser($investigator3a);
     $business3->addUser($investigator3b);
-    
+
     echo "✓ Created business with Owner and ONLY Investigators\n";
     echo "  Business: {$business3->business_name}\n";
     echo "  Current Owner: {$owner3->name}\n";
-    
+
     // Test transfer
     $result = $ownershipService->transferOwnership($business3, $owner3, 'Test no successor');
-    
+
     if (!$result['success'] && $result['new_owner'] === null) {
         displayTestResult('No eligible successor found', true,
             "Message: {$result['message']}");
@@ -214,10 +214,10 @@ try {
         displayTestResult('No eligible successor found', false,
             "Expected failure, but got: " . json_encode($result));
     }
-    
+
     DB::rollBack();
     echo "\n";
-    
+
 } catch (\Exception $e) {
     DB::rollBack();
     displayTestResult('No successor test', false, $e->getMessage());
@@ -233,14 +233,14 @@ echo "════════════════════════�
 
 try {
     DB::beginTransaction();
-    
+
     // Create users
     $owner4 = createTestUser('Owner Four', 'owner4@ownership-test.com', 'business-owner');
     $staff4a = createTestUser('Staff 4A', 'staff4a@ownership-test.com', 'staff');
     $staff4b = createTestUser('Staff 4B', 'staff4b@ownership-test.com', 'staff');
     $admin4 = createTestUser('Admin Four', 'admin4@ownership-test.com', 'administrator');
     $staff4c = createTestUser('Staff 4C', 'staff4c@ownership-test.com', 'staff');
-    
+
     // Create business
     $business4 = Business::create([
         'user_id' => $owner4->id,
@@ -248,26 +248,26 @@ try {
         'industry' => 'Manufacturing',
     ]);
     $business4->generatePublicId();
-    
+
     // Add users - staff first, admin in middle (to test priority not insertion order)
     $business4->addUser($staff4a);
     $business4->addUser($staff4b);
     $business4->addUser($admin4);
     $business4->addUser($staff4c);
-    
+
     echo "✓ Created business with Owner, 3 Staff, 1 Admin\n";
     echo "  Business: {$business4->business_name}\n";
     echo "  Current Owner: {$owner4->name}\n";
     echo "  Users: Staff A, Staff B, Admin (inserted 3rd), Staff C\n";
-    
+
     // Test transfer
     $result = $ownershipService->transferOwnership($business4, $owner4, 'Test priority');
-    
+
     $business4->refresh();
     $admin4->refresh();
-    
-    if ($result['success'] && 
-        $business4->user_id === $admin4->id && 
+
+    if ($result['success'] &&
+        $business4->user_id === $admin4->id &&
         $admin4->isBusinessOwner()) {
         displayTestResult('Admin prioritized over Staff', true,
             "Admin correctly chosen despite being 3rd user added. New owner: {$admin4->name}");
@@ -275,10 +275,10 @@ try {
         displayTestResult('Admin prioritized over Staff', false,
             "Expected admin to be chosen. Result: " . json_encode($result));
     }
-    
+
     DB::rollBack();
     echo "\n";
-    
+
 } catch (\Exception $e) {
     DB::rollBack();
     displayTestResult('Priority test', false, $e->getMessage());
@@ -294,12 +294,12 @@ echo "════════════════════════�
 
 try {
     DB::beginTransaction();
-    
+
     // Create users
     $owner5 = createTestUser('Owner Five', 'owner5@ownership-test.com', 'business-owner');
     $admin5 = createTestUser('Admin Five', 'admin5@ownership-test.com', 'administrator');
     $staff5 = createTestUser('Staff Five', 'staff5@ownership-test.com', 'staff');
-    
+
     // Create business
     $business5 = Business::create([
         'user_id' => $owner5->id,
@@ -307,12 +307,12 @@ try {
         'industry' => 'Services',
     ]);
     $business5->generatePublicId();
-    
+
     $business5->addUser($admin5);
     $business5->addUser($staff5);
-    
+
     echo "✓ Created business for helper method tests\n";
-    
+
     // Test getEligibleSuccessor()
     $successor = $business5->getEligibleSuccessor();
     if ($successor && $successor->id === $admin5->id) {
@@ -321,7 +321,7 @@ try {
     } else {
         displayTestResult('getEligibleSuccessor() returns correct user', false);
     }
-    
+
     // Test hasEligibleSuccessor()
     $hasSuccessor = $business5->hasEligibleSuccessor();
     if ($hasSuccessor === true) {
@@ -329,7 +329,7 @@ try {
     } else {
         displayTestResult('hasEligibleSuccessor() returns true', false);
     }
-    
+
     // Test getEligibleSuccessors() - should return array with priorities
     $successors = $business5->getEligibleSuccessors();
     $successorCount = count($successors);
@@ -339,7 +339,7 @@ try {
     } else {
         displayTestResult('getEligibleSuccessors() returns sorted array', false);
     }
-    
+
     // Test transferOwnershipTo()
     $result = $business5->transferOwnershipTo($admin5, 'Manual test transfer');
     if ($result['success']) {
@@ -347,10 +347,10 @@ try {
     } else {
         displayTestResult('transferOwnershipTo() method works', false);
     }
-    
+
     DB::rollBack();
     echo "\n";
-    
+
 } catch (\Exception $e) {
     DB::rollBack();
     displayTestResult('Helper methods test', false, $e->getMessage());
@@ -366,11 +366,11 @@ echo "════════════════════════�
 
 try {
     DB::beginTransaction();
-    
+
     // Create users
     $owner6 = createTestUser('Owner Six', 'owner6@ownership-test.com', 'business-owner');
     $admin6 = createTestUser('Admin Six', 'admin6@ownership-test.com', 'administrator');
-    
+
     // Create business
     $business6 = Business::create([
         'user_id' => $owner6->id,
@@ -378,29 +378,29 @@ try {
         'industry' => 'Healthcare',
     ]);
     $business6->generatePublicId();
-    
+
     $business6->addUser($admin6);
-    
+
     echo "✓ Created business for activity log test\n";
-    
+
     // Count logs before transfer
     $logsBefore = DB::table('activity_logs')
         ->where('business_id', $business6->id)
         ->where('type', 'ownership_transfer')
         ->count();
-    
+
     // Perform transfer
     $result = $ownershipService->transferOwnership($business6, $owner6, 'Activity log test');
-    
+
     // Count logs after transfer
     $logsAfter = DB::table('activity_logs')
         ->where('business_id', $business6->id)
         ->where('type', 'ownership_transfer')
         ->count();
-    
+
     $business6->refresh();
-    
-    if ($logsAfter > $logsBefore && 
+
+    if ($logsAfter > $logsBefore &&
         $business6->transferred_from_user_id == $owner6->id &&
         $business6->transfer_reason == 'Activity log test') {
         displayTestResult('Activity log created on transfer', true,
@@ -410,10 +410,10 @@ try {
     } else {
         displayTestResult('Activity log and tracking', false);
     }
-    
+
     DB::rollBack();
     echo "\n";
-    
+
 } catch (\Exception $e) {
     DB::rollBack();
     displayTestResult('Activity log test', false, $e->getMessage());
