@@ -20,10 +20,10 @@ class UsersController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
+
         // Get user's business
         $business = $this->getUserBusiness($user);
-        
+
         if (!$business) {
             return redirect()->route('dashboard')->with('error', 'No business found');
         }
@@ -275,12 +275,12 @@ class UsersController extends Controller
         $business = Business::whereHas('users', function($query) use ($user) {
             $query->where('user_id', $user->id);
         })->first();
-        
+
         // Fallback to owned business
         if (!$business) {
             $business = Business::where('user_id', $user->id)->first();
         }
-        
+
         return $business;
     }
 

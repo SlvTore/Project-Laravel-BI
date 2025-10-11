@@ -120,6 +120,30 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
+        // Check if user is a business owner - handle ownership transfer
+        if ($user->isBusinessOwner()) {
+            $ownershipService = app(\App\Services\BusinessOwnershipService::class);
+            $transferResult = $ownershipService->handleOwnerDeletion($user);
+
+            // Log the transfer results
+            \Illuminate\Support\Facades\Log::info('Account deletion - ownership transfer', [
+                'user_id' => $user->id,
+                'user_email' => $user->email,
+                'businesses_transferred' => $transferResult['businesses_transferred'],
+                'businesses_without_successor' => $transferResult['businesses_deleted'],
+                'details' => $transferResult['details'],
+            ]);
+
+            // If some businesses couldn't be transferred, warn the user
+            // But still allow deletion to proceed (businesses become orphaned)
+            if ($transferResult['businesses_deleted'] > 0) {
+                \Illuminate\Support\Facades\Log::warning('Some businesses have no eligible successors', [
+                    'user_id' => $user->id,
+                    'count' => $transferResult['businesses_deleted'],
+                ]);
+            }
+        }
+
         Auth::logout();
 
         $user->delete();

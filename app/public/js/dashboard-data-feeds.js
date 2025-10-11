@@ -2242,6 +2242,120 @@ function openSalesImportModal() {
     }
 }
 
+// Customer CRUD helpers
+function openCustomerModal() {
+    const nameInput = document.getElementById('customerName');
+    const currentName = nameInput?.value?.trim() || '';
+    const currentId = nameInput?.dataset.customerId || '';
+
+    document.getElementById('customerId').value = currentId;
+    document.getElementById('customerFormName').value = currentName;
+    document.getElementById('customerFormPhone').value = '';
+    document.getElementById('customerFormEmail').value = '';
+
+    const delBtn = document.getElementById('deleteCustomerBtn');
+    delBtn.classList.toggle('d-none', !currentId);
+
+    if (currentId) {
+        loadCustomerDetail(currentId);
+    }
+
+    const modalEl = document.getElementById('customerManageModal');
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+}
+
+async function loadCustomerDetail(id) {
+    try {
+        const res = await fetch(`/api/customers/${id}`, { headers: { 'Accept': 'application/json' } });
+        const payload = await res.json();
+        if (!res.ok || payload.success === false) throw new Error(payload.message || 'Gagal memuat data pelanggan');
+        const c = payload.customer;
+        document.getElementById('customerFormName').value = c.name || '';
+        document.getElementById('customerFormPhone').value = c.phone || '';
+        document.getElementById('customerFormEmail').value = c.email || '';
+    } catch (e) {
+        console.error('Load customer detail error:', e);
+        showAlert(e.message || 'Gagal memuat data pelanggan', 'danger');
+    }
+}
+
+async function saveCustomer() {
+    const id = document.getElementById('customerId').value;
+    const name = document.getElementById('customerFormName').value.trim();
+    const phone = document.getElementById('customerFormPhone').value.trim();
+    const email = document.getElementById('customerFormEmail').value.trim();
+
+    if (!name) { showAlert('Nama pelanggan wajib diisi.', 'warning'); return; }
+
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/api/customers/${id}` : '/api/customers';
+    try {
+        const res = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({ name, phone, email })
+        });
+        const payload = await res.json();
+        if (!res.ok || payload.success === false) throw new Error(payload.message || 'Gagal menyimpan pelanggan');
+
+        // Reflect back to transaction form
+        const nameInput = document.getElementById('customerName');
+        nameInput.value = payload.customer.name;
+        nameInput.dataset.customerId = payload.customer.id;
+
+        // Close modal
+        const modalEl = document.getElementById('customerManageModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        modal?.hide();
+
+        showAlert('Pelanggan berhasil disimpan.', 'success');
+    } catch (e) {
+        console.error('Save customer error:', e);
+        showAlert(e.message || 'Gagal menyimpan pelanggan', 'danger');
+    }
+}
+
+async function deleteCustomer() {
+    const id = document.getElementById('customerId').value;
+    if (!id) return;
+    if (!confirm('Hapus pelanggan ini? Tindakan tidak dapat dibatalkan.')) return;
+    try {
+        const res = await fetch(`/api/customers/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        });
+        const payload = await res.json();
+        if (!res.ok || payload.success === false) throw new Error(payload.message || 'Gagal menghapus pelanggan');
+
+        // Clear selection on transaction form
+        const nameInput = document.getElementById('customerName');
+        nameInput.value = '';
+        delete nameInput.dataset.customerId;
+
+        const modalEl = document.getElementById('customerManageModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        modal?.hide();
+
+        showAlert('Pelanggan berhasil dihapus.', 'success');
+    } catch (e) {
+        console.error('Delete customer error:', e);
+        showAlert(e.message || 'Gagal menghapus pelanggan', 'danger');
+    }
+}
+
+// Expose to window for inline handlers
+window.openCustomerModal = openCustomerModal;
+window.saveCustomer = saveCustomer;
+window.deleteCustomer = deleteCustomer;
+
 // Download universal template
 function downloadUniversalTemplate(format) {
     console.log('Downloading universal template:', format);
@@ -2336,14 +2450,21 @@ async function processSalesImport() {
             throw new Error(message);
         }
 
-        const resultData = payload?.data || {};
-        const newFeedId = resultData.data_feed_id || resultData.id || null;
-        const initialStage = (resultData.status || 'queued').toLowerCase();
+    const resultData = payload?.data || {};
+    const newFeedId = resultData.data_feed_id || resultData.id || null;
+    const initialStage = (resultData.status || 'queued').toLowerCase();
 
         showAlert(payload.message || 'Data feed berhasil diantrikan untuk diproses.', 'success');
 
     // Refresh dashboard data to reflect the newly imported sales
-    loadRecentTransactions();
+    // If a new feed was created, apply the upload filter so the transactions
+    // section focuses on rows linked to this feed and becomes visible instantly.
+    if (newFeedId) {
+        // Will set window.currentUploadFilterId and trigger loadRecentTransactions({ page: 1 })
+        try { applyUploadFilter(newFeedId); } catch (_) { /* no-op if function not yet bound */ }
+    } else {
+        loadRecentTransactions();
+    }
     loadIncomeOverview();
     loadExistingProducts(); // Refresh product cards to show new products
     if (typeof refreshUploadsList === 'function') { refreshUploadsList(); }

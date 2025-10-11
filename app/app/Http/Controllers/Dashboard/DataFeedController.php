@@ -597,11 +597,19 @@ class DataFeedController extends Controller
                     ],
                 ]),
             ]);
+            // Refresh metrics for business after transform (single source of truth)
+            try {
+                $sync = app(\App\Services\DataWarehouseSyncService::class);
+                $refreshReport = $sync->refreshBusinessMetrics($feed->business_id);
+            } catch (\Throwable $e) {
+                $refreshReport = ['error' => $e->getMessage()];
+            }
             return response()->json([
                 'success' => true,
-                'message' => 'Transform completed',
+                'message' => 'Transform completed & metrics refreshed',
                 'rows' => $rows,
                 'metrics' => $summary,
+                'metric_refresh' => $refreshReport,
             ]);
         } catch (\Exception $e) {
             return response()->json([

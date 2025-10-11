@@ -546,7 +546,10 @@
 <!-- Add Record Modal removed per request -->
 
     <!-- AI Business Assistant Card -->
-    <div class="datatable-container mt-2 ms-5">
+    <div class="datatable-container mt-2 ms-5"
+         data-metric-id="{{ $businessMetric->id }}"
+         data-metric-name="{{ $businessMetric->metric_name }}"
+         data-business-name="{{ $businessMetric->business->business_name ?? 'Business' }}">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="mb-0 text-white">
                 <i class="fas fa-robot me-2"></i>AI Business Assistant
@@ -1370,6 +1373,7 @@
 @push('scripts')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="{{ asset('js/ai-chat.js') }}"></script>
 
 <script>
 let trendChart, summaryChart;
@@ -2479,6 +2483,7 @@ function resetForm() {
 // AI Chat functionality
 let chatMessages = [];
 
+
 $(document).ready(function() {
     initializeAIChat();
 });
@@ -2536,6 +2541,8 @@ function initializeAIChat() {
 function sendAIMessage(question) {
     if (!question.trim()) return;
 
+    console.log('Sending AI message:', question);
+
     // Add user message to chat
     addMessage('user', question);
 
@@ -2557,31 +2564,63 @@ function sendAIMessage(question) {
             _token: '{{ csrf_token() }}'
         },
         success: function(response) {
+            console.log('AI Response received:', response);
             hideTypingIndicator();
 
             if (response.success) {
                 addMessage('ai', response.response);
                 updateAIStatus('online');
             } else {
-                addMessage('ai', 'Maaf, terjadi kesalahan: ' + (response.error || 'Tidak dapat memproses pertanyaan Anda.'));
+                console.error('AI returned error:', response.error);
+                addMessage('ai', '❌ Maaf, terjadi kesalahan: ' + (response.error || 'Tidak dapat memproses pertanyaan Anda.'));
                 updateAIStatus('error');
             }
         },
-        error: function(xhr) {
+        error: function(xhr, status, error) {
+            console.error('AJAX Error:', {
+                status: xhr.status,
+                statusText: xhr.statusText,
+                responseText: xhr.responseText,
+                error: error
+            });
+
             hideTypingIndicator();
             updateAIStatus('error');
 
             let errorMessage = 'Maaf, terjadi kesalahan saat menghubungi AI assistant.';
 
-            if (xhr.status === 429) {
-                errorMessage = 'Terlalu banyak permintaan. Silakan coba lagi dalam beberapa saat.';
-            } else if (xhr.status === 500) {
-                errorMessage = 'Terjadi kesalahan server. Silakan coba lagi nanti.';
-            } else if (xhr.status === 403) {
-                errorMessage = 'API key tidak valid atau akses ditolak.';
+            // Try to parse error response
+            try {
+                const response = JSON.parse(xhr.responseText);
+                if (response.error) {
+                    errorMessage = '❌ ' + response.error;
+                }
+            } catch (e) {
+                // Use default error handling based on status code
+                if (xhr.status === 0) {
+                    errorMessage = '❌ Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+                } else if (xhr.status === 404) {
+                    errorMessage = '❌ Endpoint AI tidak ditemukan. Route mungkin tidak terdaftar.';
+                } else if (xhr.status === 429) {
+                    errorMessage = '❌ Terlalu banyak permintaan. Silakan coba lagi dalam beberapa saat.';
+                } else if (xhr.status === 500) {
+                    errorMessage = '❌ Terjadi kesalahan server. Silakan coba lagi nanti atau periksa log Laravel.';
+                } else if (xhr.status === 403) {
+                    errorMessage = '❌ API key tidak valid atau akses ditolak. Periksa GEMINI_API_KEY di .env';
+                } else if (xhr.status === 400) {
+                    errorMessage = '❌ Permintaan tidak valid. Pastikan pertanyaan Anda sudah benar.';
+                } else {
+                    errorMessage = `❌ Error ${xhr.status}: ${xhr.statusText}`;
+                }
             }
 
             addMessage('ai', errorMessage);
+
+            // Show debug info in console
+            console.log('Debug Info:');
+            console.log('- Metric ID:', '{{ $businessMetric->id }}');
+            console.log('- Route URL:', '{{ route("dashboard.metrics.ai-chat", $businessMetric->id) }}');
+            console.log('- CSRF Token:', '{{ csrf_token() }}');
         },
         complete: function() {
             // Re-enable send button
@@ -2779,10 +2818,21 @@ function sendAIMessage(question) {
             hideTypingIndicator();
             let errorMessage = 'Maaf, terjadi kesalahan saat menghubungi AI assistant.';
 
-            if (xhr.status === 429) {
-                errorMessage = 'Terlalu banyak permintaan. Silakan coba lagi dalam beberapa saat.';
-            } else if (xhr.status === 500) {
-                errorMessage = 'Terjadi kesalahan server. Silakan coba lagi nanti.';
+            // Try to parse error response
+            try {
+                const response = JSON.parse(xhr.responseText);
+                if (response.error) {
+                    errorMessage = response.error;
+                }
+            } catch (e) {
+                // Use default error handling
+                if (xhr.status === 429) {
+                    errorMessage = 'Terlalu banyak permintaan. Silakan coba lagi dalam beberapa saat.';
+                } else if (xhr.status === 500) {
+                    errorMessage = 'Terjadi kesalahan server. Silakan coba lagi nanti.';
+                } else if (xhr.status === 400 || xhr.status === 403) {
+                    errorMessage = 'API key tidak valid atau sudah kedaluwarsa. Silakan perbarui GEMINI_API_KEY di .env';
+                }
             }
 
             addMessage('ai', errorMessage);

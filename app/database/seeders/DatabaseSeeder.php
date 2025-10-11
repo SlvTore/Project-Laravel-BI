@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         // Seed core lookups
         $this->call([
             MetricTypeSeeder::class,
+            PermissionSeeder::class,
         ]);
 
         // Optionally create a test user

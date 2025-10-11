@@ -23,7 +23,25 @@ class ExtendOlapSchemaForAllMetrics extends Migration
 		if (Schema::hasTable('fact_sales')) {
 			Schema::table('fact_sales', function (Blueprint $table) {
 				$table->index(['business_id', 'date_id', 'product_id'], 'idx_fs_biz_date_product');
+				// Add extended OLAP measure columns if they do not exist (idempotent for production & test env)
+				if (!Schema::hasColumn('fact_sales', 'gross_revenue')) {
+					$table->decimal('gross_revenue', 18, 2)->nullable()->after('total_amount');
+				}
+				if (!Schema::hasColumn('fact_sales', 'cogs_amount')) {
+					$table->decimal('cogs_amount', 18, 2)->nullable()->after('gross_revenue');
+				}
+				if (!Schema::hasColumn('fact_sales', 'gross_margin_amount')) {
+					$table->decimal('gross_margin_amount', 18, 2)->nullable()->after('cogs_amount');
+				}
+				if (!Schema::hasColumn('fact_sales', 'gross_margin_percent')) {
+					$table->decimal('gross_margin_percent', 9, 4)->nullable()->after('gross_margin_amount');
+				}
 			});
+		}
+
+		// Skip complex view creation in unsupported drivers (e.g., SQLite during tests) or when base columns are missing
+		if (DB::getDriverName() === 'sqlite') {
+			return; // views will not be used in unit tests; service layer logic can be tested directly
 		}
 
 		$this->createOrReplaceViews();
@@ -69,35 +87,41 @@ class ExtendOlapSchemaForAllMetrics extends Migration
 
 	protected function createOrReplaceViews(): void
 	{
-		DB::statement('DROP VIEW IF EXISTS vw_sales_unified');
-		DB::unprepared(<<<SQL
-		CREATE VIEW vw_sales_unified AS
-		SELECT
-			f.id AS fact_sales_id,
-			f.business_id,
-			d.date AS sales_date,
-			p.id AS product_dim_id,
-			p.name AS product_name,
-			p.category AS product_category,
-			c.id AS customer_dim_id,
-			c.name AS customer_name,
-			ch.id AS channel_dim_id,
-			ch.name AS channel_name,
-			f.quantity,
-			f.unit_price,
-			f.discount,
-			f.subtotal,
-			f.total_amount,
-			f.gross_revenue,
-			f.cogs_amount,
-			f.gross_margin_amount,
-			f.gross_margin_percent
-		FROM fact_sales f
-		JOIN dim_date d ON d.id = f.date_id
-		LEFT JOIN dim_product p ON p.id = f.product_id
-		LEFT JOIN dim_customer c ON c.id = f.customer_id
-		LEFT JOIN dim_channel ch ON ch.id = f.channel_id;
-		SQL);
+		if (Schema::hasTable('fact_sales') &&
+			Schema::hasColumn('fact_sales', 'gross_revenue') &&
+			Schema::hasColumn('fact_sales', 'cogs_amount') &&
+			Schema::hasColumn('fact_sales', 'gross_margin_amount') &&
+			Schema::hasColumn('fact_sales', 'gross_margin_percent')) {
+			DB::statement('DROP VIEW IF EXISTS vw_sales_unified');
+			DB::unprepared(<<<SQL
+			CREATE VIEW vw_sales_unified AS
+			SELECT
+				f.id AS fact_sales_id,
+				f.business_id,
+				d.date AS sales_date,
+				p.id AS product_dim_id,
+				p.name AS product_name,
+				p.category AS product_category,
+				c.id AS customer_dim_id,
+				c.name AS customer_name,
+				ch.id AS channel_dim_id,
+				ch.name AS channel_name,
+				f.quantity,
+				f.unit_price,
+				f.discount,
+				f.subtotal,
+				f.total_amount,
+				f.gross_revenue,
+				f.cogs_amount,
+				f.gross_margin_amount,
+				f.gross_margin_percent
+			FROM fact_sales f
+			JOIN dim_date d ON d.id = f.date_id
+			LEFT JOIN dim_product p ON p.id = f.product_id
+			LEFT JOIN dim_customer c ON c.id = f.customer_id
+			LEFT JOIN dim_channel ch ON ch.id = f.channel_id;
+			SQL);
+		}
 
 		DB::statement('DROP VIEW IF EXISTS vw_sales_daily');
 		DB::unprepared(<<<SQL

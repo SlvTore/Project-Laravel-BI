@@ -646,6 +646,11 @@
                                     </button>
                                 </div>
                                 <div id="customerSuggestions" class="dropdown-menu w-100 mt-1" style="display: none; max-height: 250px; overflow-y: auto; background: rgba(30,30,30,0.95); border: 1px solid rgba(255,255,255,0.15);"></div>
+                                <div class="text-end mt-2">
+                                    <button type="button" class="btn btn-outline-info btn-sm" onclick="openCustomerModal()">
+                                        <i class="bi bi-person-gear me-1"></i> Kelola Pelanggan
+                                    </button>
+                                </div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label text-white-50 small text-uppercase d-flex justify-content-between align-items-center">
@@ -744,6 +749,53 @@
         </div>
     </div>
 </div>
+
+<!-- Customer Manage Modal -->
+<div class="modal fade" id="customerManageModal" tabindex="-1" aria-labelledby="customerManageModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: rgba(24,24,24,0.95); color: #f8f9fa; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08);">
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <h5 class="modal-title fw-semibold text-white" id="customerManageModalLabel">
+                        <i class="bi bi-person-vcard me-2 text-info"></i>
+                        Kelola Pelanggan
+                    </h5>
+                    <p class="mb-0 text-white-50 small">Tambah atau ubah data pelanggan tanpa meninggalkan form transaksi.</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <form id="customerForm" onsubmit="event.preventDefault(); saveCustomer()">
+                    @csrf
+                    <input type="hidden" id="customerId">
+                    <div class="mb-3">
+                        <label class="form-label text-white-50 small text-uppercase">Nama Pelanggan</label>
+                        <input type="text" id="customerFormName" class="form-control bg-dark text-white border-secondary" placeholder="Nama pelanggan" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-white-50 small text-uppercase">Nomor Telepon</label>
+                        <input type="text" id="customerFormPhone" class="form-control bg-dark text-white border-secondary" placeholder="08xxxxxxxxxx">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-white-50 small text-uppercase">Email</label>
+                        <input type="email" id="customerFormEmail" class="form-control bg-dark text-white border-secondary" placeholder="email@contoh.com">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 pt-0 d-flex justify-content-between">
+                <button type="button" id="deleteCustomerBtn" class="btn btn-outline-danger d-none" onclick="deleteCustomer()">
+                    <i class="bi bi-trash me-1"></i> Hapus
+                </button>
+                <div class="ms-auto">
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" form="customerForm" class="btn btn-primary">
+                        <i class="bi bi-save me-1"></i> Simpan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
 
 <!-- Clean Warehouse Confirmation Modal -->
 <div class="modal fade" id="cleanWarehouseModal" tabindex="-1" aria-labelledby="cleanWarehouseModalLabel" aria-hidden="true" data-bs-backdrop="static">

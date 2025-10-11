@@ -9,70 +9,84 @@ use App\Models\SalesTransaction;
 use App\Models\StagingSalesItem;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use App\Services\Olap\OlapDimensionService;
+use App\Services\Olap\OlapFactService;
+use App\Services\Olap\OlapETLService;
 
+/**
+ * Orchestrates OLAP warehouse operations
+ * Delegates to specialized services for better maintainability
+ * 
+ * @deprecated Consider using specialized services directly:
+ * - OlapDimensionService for dimension management
+ * - OlapFactService for fact operations
+ * - OlapETLService for staging transformations
+ */
 class OlapWarehouseService
 {
+    public function __construct(
+        private OlapDimensionService $dimensionService,
+        private OlapFactService $factService,
+        private OlapETLService $etlService
+    ) {}
+
+    /**
+     * @deprecated Use OlapDimensionService::getOrCreateDateDimension()
+     */
     public function ensureDateDim(string $date): int
     {
-        $row = DB::table('dim_date')->where('date', $date)->first();
-        if ($row) return (int)$row->id;
-
-        $dt = \Carbon\Carbon::parse($date);
-        return (int) DB::table('dim_date')->insertGetId([
-            'date' => $dt->toDateString(),
-            'day' => (int)$dt->day,
-            'month' => (int)$dt->month,
-            'year' => (int)$dt->year,
-            'quarter' => (int)$dt->quarter,
-            'month_name' => $dt->format('F'),
-            'day_name' => $dt->format('l'),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        return $this->dimensionService->getOrCreateDateDimension($date)->id;
     }
 
+    /**
+     * @deprecated Use OlapDimensionService::getOrCreateProductDimension()
+     */
     public function ensureProductDim(int $businessId, ?Product $product, string $fallbackName, ?string $unit = null, ?string $category = null): int
     {
-        $nk = $product?->id;
-        $existing = DB::table('dim_product')
-            ->where('business_id', $businessId)
-            ->when($nk, fn($q) => $q->where('product_nk', $nk))
-            ->where('name', $product?->name ?? $fallbackName)
-            ->first();
-        if ($existing) return (int)$existing->id;
-
-        return (int) DB::table('dim_product')->insertGetId([
-            'business_id' => $businessId,
-            'product_nk' => $nk,
-            'name' => $product?->name ?? $fallbackName,
-            'category' => $category ?? $product?->category,
-            'unit' => $unit ?? $product?->unit,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        return $this->dimensionService->getOrCreateProductDimension(
+            $businessId,
+            $product?->id,
+            $product?->name ?? $fallbackName,
+            $category ?? $product?->category
+        )->id;
     }
 
+    /**
+     * @deprecated Use OlapDimensionService::getOrCreateCustomerDimension()
+     */
     public function ensureCustomerDim(int $businessId, ?Customer $customer, ?string $fallbackName): ?int
     {
-        if (!$customer && !$fallbackName) return null;
+        if (!$customer && !$fallbackName) {
+            return $this->dimensionService->getOrCreateCustomerDimension(
+                $businessId,
+                null,
+                'Unknown',
+                null,
+                null
+            )->id;
+        }
 
-        $nk = $customer?->id;
-        $existing = DB::table('dim_customer')
-            ->where('business_id', $businessId)
-            ->when($nk, fn($q) => $q->where('customer_nk', $nk))
-            ->where('name', $customer?->customer_name ?? $fallbackName)
-            ->first();
-        if ($existing) return (int)$existing->id;
+        return $this->dimensionService->getOrCreateCustomerDimension(
+            $businessId,
+            $customer?->id,
+            $customer?->customer_name ?? $fallbackName,
+            $customer?->customer_type ?? null,
+            $customer?->phone
+        )->id;
+    }
 
-        return (int) DB::table('dim_customer')->insertGetId([
-            'business_id' => $businessId,
-            'customer_nk' => $nk,
-            'name' => $customer?->customer_name ?? $fallbackName,
-            'phone' => $customer?->phone,
-            'email' => $customer?->email,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+    /**
+     * @deprecated Use OlapDimensionService::getOrCreateCustomerDimension() with null values
+     */
+    public function ensureUnknownCustomer(int $businessId): int
+    {
+        return $this->dimensionService->getOrCreateCustomerDimension(
+            $businessId,
+            null,
+            'Unknown',
+            null,
+            null
+        )->id;
     }
 
     public function loadFactsFromTransactions(int $businessId): array
@@ -154,84 +168,22 @@ class OlapWarehouseService
         return $this->finalizeSummary($summary);
     }
 
+
+    /**
+     * Load facts from staging tables using ETL service
+     * 
+     * @deprecated Use OlapETLService::loadFactsFromStaging() directly
+     */
     public function loadFactsFromStaging(DataFeed $feed): array
     {
-        $items = StagingSalesItem::where('data_feed_id', $feed->id)->get();
+        $stats = $this->etlService->loadFactsFromStaging($feed->id);
 
-        if ($items->isEmpty()) {
-            return [
-                'records' => 0,
-                'gross_revenue' => 0,
-                'cogs_amount' => 0,
-                'gross_margin_amount' => 0,
-            ];
-        }
-
-        DB::table('fact_sales')->where('data_feed_id', $feed->id)->delete();
-
-        $productCostMap = $this->buildProductCostMap(
-            $items->pluck('product_id')->filter()->unique()->values()->all()
-        );
-
-        $summary = [
-            'records' => 0,
-            'gross_revenue' => 0.0,
-            'cogs_amount' => 0.0,
-            'gross_margin_amount' => 0.0,
+        return [
+            'records' => $stats['inserted'],
+            'gross_revenue' => 0, // Stats no longer tracked here - use repository queries
+            'cogs_amount' => 0,
+            'gross_margin_amount' => 0,
         ];
-
-        foreach ($items as $s) {
-            $dateId = $this->ensureDateDim(\Carbon\Carbon::parse($s->transaction_date)->toDateString());
-            $product = $this->resolveProductModelFromMap($productCostMap, $s->product_id);
-            $productDimId = $this->ensureProductDim($feed->business_id, $product, $s->product_name, $s->unit_at_transaction);
-
-            // Handle customer dimension
-            $customerDimId = null;
-            if ($s->customer_id) {
-                $customer = Customer::find($s->customer_id);
-                $customerDimId = $this->ensureCustomerDim($feed->business_id, $customer, $customer->customer_name ?? 'Unknown Customer');
-            }
-
-            $metrics = $this->calculateRowMetrics(
-                (float) $s->quantity,
-                (float) $s->selling_price_at_transaction,
-                (float) ($s->discount_per_item ?? 0),
-                $this->resolveUnitCostFromMap($productCostMap, $s->product_id)
-            );
-
-            DB::table('fact_sales')->insert([
-                'business_id' => $feed->business_id,
-                'date_id' => $dateId,
-                'product_id' => $productDimId,
-                'customer_id' => $customerDimId,
-                'channel_id' => null,
-                'data_feed_id' => $feed->id,
-                'sales_transaction_id' => null,
-                'sales_transaction_item_id' => null,
-                'quantity' => $metrics['quantity'],
-                'unit_price' => $metrics['unit_price'],
-                'discount' => $metrics['discount'],
-                'subtotal' => $metrics['subtotal'],
-                'tax_amount' => (float) ($s->tax_amount ?? 0),
-                'shipping_cost' => (float) ($s->shipping_cost ?? 0),
-                'total_amount' => $metrics['total_amount'] + (float) ($s->tax_amount ?? 0) + (float) ($s->shipping_cost ?? 0),
-                'gross_revenue' => $metrics['gross_revenue'],
-                'cogs_amount' => $metrics['cogs_amount'],
-                'gross_margin_amount' => $metrics['gross_margin_amount'],
-                'gross_margin_percent' => $metrics['gross_margin_percent'],
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            $summary['records']++;
-            $summary['gross_revenue'] += $metrics['gross_revenue'];
-            $summary['cogs_amount'] += $metrics['cogs_amount'];
-            $summary['gross_margin_amount'] += $metrics['gross_margin_amount'];
-        }
-
-        StagingSalesItem::where('data_feed_id', $feed->id)->delete();
-
-        return $this->finalizeSummary($summary);
     }
 
     /**

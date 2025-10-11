@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\WeatherService;
 use App\Services\NewsService;
 use App\Services\GeminiAIService;
+use App\Services\MetricFormattingService;
 use App\Traits\LogsActivity;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -40,6 +41,9 @@ class MainDashboardController extends Controller
         $metrics = collect();
         if ($business) {
             $metrics = $business->metrics()->where('is_active', true)->take(6)->get()->map(function($metric) use ($aggregator) {
+                // Use MetricFormattingService for consistent enrichment
+                $metric = MetricFormattingService::enrichMetricWithOlapData($metric);
+
                 $mapping = $this->mapMetricToOlap($metric->metric_name);
                 if ($mapping) {
                     try {
@@ -47,32 +51,11 @@ class MainDashboardController extends Controller
                         $series = $this->getDailySeries($mapping, $aggregator, $metric->business_id);
                         $metric->chart_labels = $series['labels'] ?? [];
                         $metric->chart_data = $series['values'] ?? [];
-
-                        // Monthly aggregates
-                        if ($mapping['type'] === 'top_products') {
-                            [$current, $previous] = $this->getTopProductMonthlyTotals($metric->business_id);
-                        } elseif ($mapping['type'] === 'margin') {
-                            [$current, $previous] = $this->getMonthlyAggregate($mapping['view'], $mapping['column'], $metric->business_id, 'avg');
-                        } else {
-                            [$current, $previous] = $this->getMonthlyAggregate($mapping['view'], $mapping['column'], $metric->business_id, 'sum');
-                        }
-                        $metric->current_value = $current;
-                        $metric->previous_value = $previous;
                     } catch (\Throwable $e) {
                         // fall back silently
                     }
                 }
 
-                $metric->formatted_value = $this->formatMetricValue($metric->current_value, $metric->unit);
-                $prevValue = $metric->previous_value ?? 0;
-                if ($prevValue > 0) {
-                    $changePercent = round((($metric->current_value - $prevValue) / $prevValue) * 100, 1);
-                    $metric->formatted_change = ($changePercent >= 0 ? '+' : '') . $changePercent . '%';
-                    $metric->change_status = $changePercent > 0 ? 'increase' : ($changePercent < 0 ? 'decrease' : 'stable');
-                } else {
-                    $metric->formatted_change = $metric->current_value > 0 ? '+100%' : '0%';
-                    $metric->change_status = 'increase';
-                }
                 return $metric;
             });
         }

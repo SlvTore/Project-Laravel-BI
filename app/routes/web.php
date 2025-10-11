@@ -186,6 +186,9 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
         Route::prefix('api/customers')->group(function () {
             Route::get('/search', [App\Http\Controllers\Dashboard\CustomerController::class, 'search'])->name('api.customers.search');
             Route::post('/', [App\Http\Controllers\Dashboard\CustomerController::class, 'store'])->name('api.customers.store');
+            Route::get('/{id}', [App\Http\Controllers\Dashboard\CustomerController::class, 'show'])->name('api.customers.show');
+            Route::put('/{id}', [App\Http\Controllers\Dashboard\CustomerController::class, 'update'])->name('api.customers.update');
+            Route::delete('/{id}', [App\Http\Controllers\Dashboard\CustomerController::class, 'destroy'])->name('api.customers.destroy');
         });
 
         // Manual sales input

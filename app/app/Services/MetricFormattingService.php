@@ -28,15 +28,18 @@ class MetricFormattingService
                 [$current, $previous] = self::getMonthlyAggregate($config['view'], $config['column'], $metric->business_id, 'sum');
             }
 
-            // Override values with OLAP data
-            $metric->current_value = $current ?? 0;
-            $metric->previous_value = $previous ?? 0;
+            // Override values with OLAP data - ensure we have actual numbers
+            $metric->current_value = (float)($current ?? 0);
+            $metric->previous_value = (float)($previous ?? 0);
 
-            // Force recalculation of change percentage
-            $metric->setRawAttributes($metric->getAttributes());
+            // Force Laravel to recognize these as changed attributes
+            $metric->syncOriginal();
 
         } catch (\Throwable $e) {
-            Log::error("OLAP enrichment failed for metric {$metric->metric_name}: " . $e->getMessage());
+            Log::error("OLAP enrichment failed for metric {$metric->metric_name}: " . $e->getMessage(), [
+                'business_id' => $metric->business_id,
+                'trace' => $e->getTraceAsString()
+            ]);
         }
 
         return $metric;
@@ -73,24 +76,25 @@ class MetricFormattingService
         }
 
         $latest = Carbon::parse($latestDate);
-        $previousPeriod = $latest->copy()->subMonth();
 
         // Current period: last 30 days from latest date
         $currentStart = $latest->copy()->subDays(29);
-        $current = DB::table($view)
+
+        $currentQuery = DB::table($view)
             ->where('business_id', $businessId)
-            ->whereBetween('sales_date', [$currentStart->format('Y-m-d'), $latest->format('Y-m-d')])
-            ->when($agg === 'avg', fn($q) => $q->avg($column))
-            ->when($agg === 'sum', fn($q) => $q->sum($column));
+            ->whereBetween('sales_date', [$currentStart->format('Y-m-d'), $latest->format('Y-m-d')]);
+
+        $current = $agg === 'avg' ? $currentQuery->avg($column) : $currentQuery->sum($column);
 
         // Previous period: 30 days before current period
         $previousStart = $currentStart->copy()->subDays(30);
         $previousEnd = $currentStart->copy()->subDay();
-        $previous = DB::table($view)
+
+        $previousQuery = DB::table($view)
             ->where('business_id', $businessId)
-            ->whereBetween('sales_date', [$previousStart->format('Y-m-d'), $previousEnd->format('Y-m-d')])
-            ->when($agg === 'avg', fn($q) => $q->avg($column))
-            ->when($agg === 'sum', fn($q) => $q->sum($column));
+            ->whereBetween('sales_date', [$previousStart->format('Y-m-d'), $previousEnd->format('Y-m-d')]);
+
+        $previous = $agg === 'avg' ? $previousQuery->avg($column) : $previousQuery->sum($column);
 
         return [(float)($current ?? 0), (float)($previous ?? 0)];
     }

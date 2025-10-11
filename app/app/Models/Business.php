@@ -25,6 +25,9 @@ class Business extends Model
         'invitation_code',
         'logo_path',
         'dashboard_display_name',
+        'transferred_from_user_id',
+        'ownership_transferred_at',
+        'transfer_reason',
     ];
 
     protected function casts(): array
@@ -33,6 +36,7 @@ class Business extends Model
             'founded_date' => 'date',
             'initial_revenue' => 'decimal:2',
             'goals' => 'array',
+            'ownership_transferred_at' => 'datetime',
         ];
     }
 
@@ -131,5 +135,77 @@ class Business extends Model
                     ->where('period_date', '>=', now()->subMonths($months))
                     ->orderBy('period_date')
                     ->get();
+    }
+
+    /**
+     * Get eligible successor for business ownership transfer
+     * Follows hierarchy: Administrator > Staff
+     * Excludes: Business Investigator
+     * 
+     * @param User|null $excludeUser
+     * @return User|null
+     */
+    public function getEligibleSuccessor(?User $excludeUser = null): ?User
+    {
+        $ownershipService = app(\App\Services\BusinessOwnershipService::class);
+        
+        $currentOwner = $excludeUser ?? $this->owner;
+        
+        if (!$currentOwner) {
+            return null;
+        }
+
+        return $ownershipService->findEligibleSuccessor($this, $currentOwner);
+    }
+
+    /**
+     * Check if business has eligible successors for ownership transfer
+     * 
+     * @param User|null $excludeUser
+     * @return bool
+     */
+    public function hasEligibleSuccessor(?User $excludeUser = null): bool
+    {
+        return $this->getEligibleSuccessor($excludeUser) !== null;
+    }
+
+    /**
+     * Get all eligible successors with their priorities
+     * 
+     * @param User|null $excludeUser
+     * @return array
+     */
+    public function getEligibleSuccessors(?User $excludeUser = null): array
+    {
+        $ownershipService = app(\App\Services\BusinessOwnershipService::class);
+        
+        $currentOwner = $excludeUser ?? $this->owner;
+        
+        if (!$currentOwner) {
+            return [];
+        }
+
+        return $ownershipService->getEligibleSuccessors($this, $currentOwner);
+    }
+
+    /**
+     * Transfer business ownership to another user
+     * 
+     * @param User $newOwner
+     * @param string $reason
+     * @return array
+     */
+    public function transferOwnershipTo(User $newOwner, string $reason = 'Manual transfer'): array
+    {
+        $ownershipService = app(\App\Services\BusinessOwnershipService::class);
+        
+        if (!$this->owner) {
+            return [
+                'success' => false,
+                'message' => 'Business has no current owner',
+            ];
+        }
+
+        return $ownershipService->transferOwnership($this, $this->owner, $reason);
     }
 }

@@ -9,6 +9,7 @@ use App\Models\Views\SalesDailyView;
 use App\Models\SalesData;
 use App\Models\ProductSales;
 use App\Models\Customer;
+use App\Models\Business;
 use App\Models\ActivityLog;
 use App\Services\GeminiAIService;
 use App\Services\DataIntegrityService;
@@ -34,7 +35,15 @@ class MetricRecordsController extends Controller
     private function authorizeMetricAccess(BusinessMetric $businessMetric)
     {
         $user = Auth::user();
-        $userBusinessIds = $user->businesses()->pluck('business_id')->toArray();
+        // Get business IDs that the user has access to via direct query
+        $userBusinessIds = DB::table('business_user')
+            ->where('user_id', $user->id)
+            ->pluck('business_id')
+            ->toArray();
+
+        // Also include businesses owned by the user
+        $ownedBusinessIds = Business::where('user_id', $user->id)->pluck('id')->toArray();
+        $userBusinessIds = array_merge($userBusinessIds, $ownedBusinessIds);
 
         // Debug: Show what's happening
         if (empty($userBusinessIds)) {
@@ -644,7 +653,15 @@ class MetricRecordsController extends Controller
 
         try {
             // Get user's business IDs
-            $userBusinessIds = Auth::user()->businesses()->pluck('business_id')->toArray();
+            $user = Auth::user();
+            $userBusinessIds = DB::table('business_user')
+                ->where('user_id', $user->id)
+                ->pluck('business_id')
+                ->toArray();
+
+            // Also include businesses owned by the user
+            $ownedBusinessIds = Business::where('user_id', $user->id)->pluck('id')->toArray();
+            $userBusinessIds = array_merge($userBusinessIds, $ownedBusinessIds);
 
             // Get records with their business metrics
             $records = MetricRecord::with('businessMetric')
@@ -967,6 +984,16 @@ class MetricRecordsController extends Controller
     {
         $metric = $businessMetric->metric_name;
         $businessId = $businessMetric->business_id;
+        // Pagination & limit safeguards
+        $request = request();
+        $page = max(1, (int)$request->input('w_page', 1));
+        $perPage = (int)$request->input('w_per_page', 30);
+        if ($perPage > 200) { // enforce upper bound
+            $perPage = 200;
+        } elseif ($perPage < 5) {
+            $perPage = 30; // sensible default
+        }
+        $offset = ($page - 1) * $perPage;
 
         // Use flexible date range - get latest available data or last 30 days
         $from = Carbon::now()->subDays(30)->toDateString();
@@ -995,10 +1022,13 @@ class MetricRecordsController extends Controller
         try {
             switch ($metric) {
                 case 'Total Penjualan': {
-                    $daily = DB::table('vw_sales_daily')
+                    $dailyBase = DB::table('vw_sales_daily')
                         ->where('business_id', $businessId)
-                        ->where('sales_date', '>=', $from)
-                        ->orderBy('sales_date')
+                        ->where('sales_date', '>=', $from);
+                    $totalDaily = (clone $dailyBase)->count();
+                    $daily = $dailyBase->orderBy('sales_date')
+                        ->offset($offset)
+                        ->limit($perPage)
                         ->get();
                     $topProducts = DB::table('vw_sales_product_daily')
                         ->where('business_id', $businessId)
@@ -1017,6 +1047,12 @@ class MetricRecordsController extends Controller
                         'available' => true,
                         'type' => 'sales',
                         'daily' => $daily,
+                        'pagination' => [
+                            'total' => $totalDaily,
+                            'page' => $page,
+                            'per_page' => $perPage,
+                            'total_pages' => (int)ceil($totalDaily / $perPage)
+                        ],
                         'top' => $topProducts,
                         'monthly' => [
                             'total_revenue' => (float)($monthly->total_revenue ?? 0),
@@ -1026,11 +1062,12 @@ class MetricRecordsController extends Controller
                     ];
                 }
                 case 'Biaya Pokok Penjualan (COGS)': {
-                    $daily = DB::table('vw_cogs_daily')
+                    $dailyBase = DB::table('vw_cogs_daily')
                         ->where('business_id', $businessId)
-                        ->where('sales_date', '>=', $from)
-                        ->orderBy('sales_date')
-                        ->get();
+                        ->where('sales_date', '>=', $from);
+                    $totalDaily = (clone $dailyBase)->count();
+                    $daily = $dailyBase->orderBy('sales_date')
+                        ->offset($offset)->limit($perPage)->get();
                     $monthly = DB::table('vw_cogs_daily')
                         ->where('business_id', $businessId)
                         ->where('sales_date', '>=', $monthStart)
@@ -1040,17 +1077,24 @@ class MetricRecordsController extends Controller
                         'available' => true,
                         'type' => 'cogs',
                         'daily' => $daily,
+                        'pagination' => [
+                            'total' => $totalDaily,
+                            'page' => $page,
+                            'per_page' => $perPage,
+                            'total_pages' => (int)ceil($totalDaily / $perPage)
+                        ],
                         'monthly' => [
                             'total_cogs' => (float)($monthly->total_cogs ?? 0),
                         ],
                     ];
                 }
                 case 'Margin Keuntungan (Profit Margin)': {
-                    $daily = DB::table('vw_margin_daily')
+                    $dailyBase = DB::table('vw_margin_daily')
                         ->where('business_id', $businessId)
-                        ->where('sales_date', '>=', $from)
-                        ->orderBy('sales_date')
-                        ->get();
+                        ->where('sales_date', '>=', $from);
+                    $totalDaily = (clone $dailyBase)->count();
+                    $daily = $dailyBase->orderBy('sales_date')
+                        ->offset($offset)->limit($perPage)->get();
                     $monthly = DB::table('vw_margin_daily')
                         ->where('business_id', $businessId)
                         ->where('sales_date', '>=', $monthStart)
@@ -1060,6 +1104,12 @@ class MetricRecordsController extends Controller
                         'available' => true,
                         'type' => 'margin',
                         'daily' => $daily,
+                        'pagination' => [
+                            'total' => $totalDaily,
+                            'page' => $page,
+                            'per_page' => $perPage,
+                            'total_pages' => (int)ceil($totalDaily / $perPage)
+                        ],
                         'monthly' => [
                             'total_margin' => (float)($monthly->total_margin ?? 0),
                         ],
@@ -1092,6 +1142,12 @@ class MetricRecordsController extends Controller
                         'available' => true,
                         'type' => 'new_customers',
                         'daily' => $daily,
+                        'pagination' => [
+                            'total' => count($daily), // view row count post-range; simple
+                            'page' => 1,
+                            'per_page' => count($daily),
+                            'total_pages' => 1
+                        ],
                         'monthly' => [
                             'new_customers' => (int)($monthly->new_customers ?? 0),
                         ],
@@ -1125,6 +1181,12 @@ class MetricRecordsController extends Controller
                         'available' => true,
                         'type' => 'returning_customers',
                         'daily' => $daily,
+                        'pagination' => [
+                            'total' => count($daily),
+                            'page' => 1,
+                            'per_page' => count($daily),
+                            'total_pages' => 1
+                        ],
                         'monthly' => [
                             'returning_customers' => (int)($monthly->returning_customers ?? 0),
                         ],
@@ -1133,11 +1195,12 @@ class MetricRecordsController extends Controller
                 }
                 case 'Penjualan Produk Terlaris': {
                     // Provide aggregate of top products over 30 days and daily breakdown (already captured in sales_product view)
-                    $daily = DB::table('vw_sales_product_daily')
+                    $dailyBase = DB::table('vw_sales_product_daily')
                         ->where('business_id', $businessId)
-                        ->where('sales_date', '>=', $from)
-                        ->orderBy('sales_date')
-                        ->get();
+                        ->where('sales_date', '>=', $from);
+                    $totalDaily = (clone $dailyBase)->count();
+                    $daily = $dailyBase->orderBy('sales_date')
+                        ->offset($offset)->limit($perPage)->get();
                     $topProducts = DB::table('vw_sales_product_daily')
                         ->where('business_id', $businessId)
                         ->where('sales_date', '>=', $from)
@@ -1150,6 +1213,12 @@ class MetricRecordsController extends Controller
                         'available' => true,
                         'type' => 'top_products',
                         'daily' => $daily,
+                        'pagination' => [
+                            'total' => $totalDaily,
+                            'page' => $page,
+                            'per_page' => $perPage,
+                            'total_pages' => (int)ceil($totalDaily / $perPage)
+                        ],
                         'top' => $topProducts,
                     ];
                 }
@@ -1354,7 +1423,16 @@ class MetricRecordsController extends Controller
     public function getDailyData($businessId, Request $request)
     {
         // Check access to business
-        $userBusinessIds = auth()->user()->businesses()->pluck('businesses.id')->toArray();
+        $user = Auth::user();
+        $userBusinessIds = DB::table('business_user')
+            ->where('user_id', $user->id)
+            ->pluck('business_id')
+            ->toArray();
+
+        // Also include businesses owned by the user
+        $ownedBusinessIds = Business::where('user_id', $user->id)->pluck('id')->toArray();
+        $userBusinessIds = array_merge($userBusinessIds, $ownedBusinessIds);
+
         if (!in_array($businessId, $userBusinessIds)) {
             abort(403, 'Unauthorized access to business data.');
         }
@@ -1401,38 +1479,97 @@ class MetricRecordsController extends Controller
             if (empty($question)) {
                 return response()->json([
                     'success' => false,
-                    'error' => 'Question is required'
+                    'error' => 'Pertanyaan tidak boleh kosong'
                 ], 400);
             }
 
-            // Get recent data for context
-            $recentData = MetricRecord::where('business_metric_id', $id)
+            Log::info('AI Chat Request', [
+                'metric_id' => $id,
+                'metric_name' => $businessMetric->metric_name,
+                'question' => $question
+            ]);
+
+            // Enrich metric dengan OLAP data untuk current & previous values
+            $enrichedMetric = MetricFormattingService::enrichMetricWithOlapData($businessMetric);
+
+            // Get recent records from MetricRecord (manual entries)
+            $recentRecords = MetricRecord::where('business_metric_id', $id)
                 ->orderBy('record_date', 'desc')
                 ->limit(10)
                 ->get(['record_date', 'value', 'notes'])
+                ->map(function($record) {
+                    return [
+                        'date' => $record->record_date->format('Y-m-d'),
+                        'value' => number_format($record->value, 0, ',', '.'),
+                        'notes' => $record->notes
+                    ];
+                })
                 ->toArray();
 
-            // Get statistics
-            $statistics = $this->getMetricStatistics($businessMetric);
+            // Get OLAP statistics
+            $statistics = $this->getStatistics($enrichedMetric);
 
-            // Prepare context for AI
+            // Get daily data from warehouse for trending
+            $dailyTrend = $this->getDailyTrendForAI($enrichedMetric);
+
+            // Prepare comprehensive context for AI
             $context = [
-                'metric_name' => $businessMetric->metric_name,
-                'business_name' => $businessMetric->business->business_name ?? 'Business',
-                'recent_data' => $recentData,
-                'statistics' => $statistics
+                'metric_name' => $enrichedMetric->metric_name,
+                'metric_category' => $enrichedMetric->category ?? 'General',
+                'metric_unit' => $enrichedMetric->unit ?? '',
+                'business_name' => $enrichedMetric->business->business_name ?? 'Business',
+                'business_id' => $enrichedMetric->business_id,
+
+                // Current state
+                'current_value' => $enrichedMetric->current_value,
+                'previous_value' => $enrichedMetric->previous_value,
+                'change_percentage' => $enrichedMetric->change_percentage,
+                'formatted_value' => $enrichedMetric->formatted_value,
+                'formatted_change' => $enrichedMetric->formatted_change,
+
+                // Statistics from OLAP
+                'statistics' => $statistics,
+
+                // Historical data
+                'recent_records' => $recentRecords,
+                'daily_trend' => $dailyTrend,
+
+                // Metadata
+                'data_source' => 'OLAP Warehouse + Manual Records',
+                'analysis_period' => '30 hari terakhir'
             ];
+
+            Log::info('AI Context Prepared', [
+                'has_current_value' => $enrichedMetric->current_value > 0,
+                'has_statistics' => !empty($statistics),
+                'records_count' => count($recentRecords),
+                'trend_days' => count($dailyTrend)
+            ]);
 
             $aiService = new GeminiAIService();
             $result = $aiService->generateBusinessInsight($question, $context);
 
+            if ($result['success']) {
+                Log::info('AI Response Success', [
+                    'response_length' => strlen($result['response'])
+                ]);
+            } else {
+                Log::error('AI Response Failed', [
+                    'error' => $result['error']
+                ]);
+            }
+
             return response()->json($result);
 
         } catch (\Exception $e) {
-            Log::error('AI Chat Error: ' . $e->getMessage());
+            Log::error('AI Chat Error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'success' => false,
-                'error' => 'Internal server error'
+                'error' => 'Terjadi kesalahan: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -1463,5 +1600,57 @@ class MetricRecordsController extends Controller
                 'end' => $records->first()->record_date ?? null
             ]
         ];
+    }
+
+    /**
+     * Get daily trend data from warehouse for AI context
+     */
+    private function getDailyTrendForAI(BusinessMetric $metric)
+    {
+        $mapping = $this->mapMetricToOlap($metric->metric_name);
+
+        if (!$mapping) {
+            return [];
+        }
+
+        try {
+            $endDate = Carbon::now();
+            $startDate = $endDate->copy()->subDays(30);
+
+            $data = DB::table($mapping['view'])
+                ->where('business_id', $metric->business_id)
+                ->whereBetween('sales_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->orderBy('sales_date', 'asc')
+                ->get(['sales_date', $mapping['column']])
+                ->map(function($row) use ($mapping) {
+                    return [
+                        'date' => Carbon::parse($row->sales_date)->format('Y-m-d'),
+                        'value' => (float)$row->{$mapping['column']}
+                    ];
+                })
+                ->toArray();
+
+            return $data;
+
+        } catch (\Exception $e) {
+            Log::warning("Failed to get daily trend for AI: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Map metric name to OLAP view configuration
+     */
+    private function mapMetricToOlap(string $metricName): ?array
+    {
+        return match($metricName) {
+            'Total Penjualan' => ['view' => 'vw_sales_daily', 'column' => 'total_gross_revenue'],
+            'Biaya Pokok Penjualan (COGS)' => ['view' => 'vw_cogs_daily', 'column' => 'total_cogs'],
+            'Margin Keuntungan (Profit Margin)' => ['view' => 'vw_margin_daily', 'column' => 'total_margin'],
+            'Penjualan Produk Terlaris' => ['view' => 'vw_sales_product_daily', 'column' => 'total_quantity'],
+            'Jumlah Pelanggan Baru' => ['view' => 'vw_new_customers_daily', 'column' => 'new_customers'],
+            'Jumlah Pelanggan Setia' => ['view' => 'vw_returning_customers_daily', 'column' => 'returning_customers'],
+            default => null,
+        };
     }
 }

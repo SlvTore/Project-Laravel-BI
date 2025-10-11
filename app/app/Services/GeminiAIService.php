@@ -28,14 +28,15 @@ class GeminiAIService
     {
         try {
             if (empty($this->apiKey)) {
+                Log::warning('Gemini API key not configured');
                 return [
                     'success' => false,
-                    'error' => 'API key not configured'
+                    'error' => 'API key tidak dikonfigurasi. Silakan tambahkan GEMINI_API_KEY di file .env'
                 ];
             }
 
             $systemPrompt = $this->buildSystemPrompt($context);
-            $fullPrompt = $systemPrompt . "\n\nUser Question: " . $prompt;
+            $fullPrompt = $systemPrompt . "\n\nPertanyaan User: " . $prompt;
 
             $requestBody = [
                 'contents' => [
@@ -72,15 +73,18 @@ class GeminiAIService
             ];
 
             Log::info('Making Gemini API request', [
-                'url' => $this->baseUrl . '?key=' . substr($this->apiKey, 0, 10) . '...',
-                'prompt_length' => strlen($fullPrompt)
+                'url' => $this->baseUrl,
+                'prompt_length' => strlen($fullPrompt),
+                'has_api_key' => !empty($this->apiKey),
+                'context_keys' => array_keys($context)
             ]);
 
             $response = $this->client->post($this->baseUrl . '?key=' . $this->apiKey, [
                 'json' => $requestBody,
                 'headers' => [
                     'Content-Type' => 'application/json',
-                ]
+                ],
+                'timeout' => 60
             ]);
 
             $body = json_decode($response->getBody(), true);
@@ -101,29 +105,34 @@ class GeminiAIService
                 Log::error('Gemini API returned error', ['error' => $body['error']]);
                 return [
                     'success' => false,
-                    'error' => $body['error']['message'] ?? 'API returned an error'
+                    'error' => $body['error']['message'] ?? 'API mengembalikan error'
                 ];
             }
 
             return [
                 'success' => false,
-                'error' => 'No valid response generated'
+                'error' => 'Tidak ada respons valid yang dihasilkan'
             ];
 
         } catch (RequestException $e) {
             $errorMessage = $e->getMessage();
             $statusCode = $e->getResponse() ? $e->getResponse()->getStatusCode() : 'unknown';
+            $responseBody = null;
+
+            if ($e->getResponse()) {
+                $responseBody = $e->getResponse()->getBody()->getContents();
+            }
 
             Log::error('Gemini API Request Error', [
                 'message' => $errorMessage,
                 'status_code' => $statusCode,
-                'response_body' => $e->getResponse() ? $e->getResponse()->getBody()->getContents() : null
+                'response_body' => $responseBody
             ]);
 
             if ($statusCode == 403) {
                 return [
                     'success' => false,
-                    'error' => 'API key tidak valid atau tidak memiliki akses'
+                    'error' => 'API key tidak valid atau tidak memiliki akses. Periksa GEMINI_API_KEY di .env'
                 ];
             } elseif ($statusCode == 429) {
                 return [
@@ -133,13 +142,18 @@ class GeminiAIService
             } elseif ($statusCode == 404) {
                 return [
                     'success' => false,
-                    'error' => 'Model API tidak ditemukan'
+                    'error' => 'Model API tidak ditemukan. Periksa GEMINI_MODEL di .env'
+                ];
+            } elseif ($statusCode == 400) {
+                return [
+                    'success' => false,
+                    'error' => 'Permintaan tidak valid. API key mungkin salah atau sudah kedaluwarsa'
                 ];
             }
 
             return [
                 'success' => false,
-                'error' => 'Gagal terhubung ke layanan AI: ' . $statusCode
+                'error' => 'Gagal terhubung ke layanan AI (Status: ' . $statusCode . ')'
             ];
         } catch (\Exception $e) {
             Log::error('General AI Service Error', [
@@ -149,7 +163,7 @@ class GeminiAIService
 
             return [
                 'success' => false,
-                'error' => 'Terjadi kesalahan sistem'
+                'error' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
             ];
         }
     }
@@ -158,40 +172,122 @@ class GeminiAIService
     {
         $metricName = $context['metric_name'] ?? 'Unknown Metric';
         $businessName = $context['business_name'] ?? 'Business';
-        $recentData = $context['recent_data'] ?? [];
+        $currentValue = $context['current_value'] ?? 0;
+        $previousValue = $context['previous_value'] ?? 0;
+        $changePercentage = $context['change_percentage'] ?? 0;
         $statistics = $context['statistics'] ?? [];
+        $recentRecords = $context['recent_records'] ?? [];
+        $dailyTrend = $context['daily_trend'] ?? [];
 
-        $prompt = "You are a Business Intelligence AI Assistant for '{$businessName}'.
+        $prompt = "Anda adalah AI Business Intelligence Assistant profesional untuk '{$businessName}'.
 
-CONTEXT:
-- Current Metric: {$metricName}
-- Your role: Provide data-driven insights and decision-making recommendations
-- Focus: Help interpret trends, identify opportunities, and suggest actionable business strategies
+KONTEKS BISNIS:
+- Metric yang dianalisis: {$metricName}
+- Kategori: " . ($context['metric_category'] ?? 'General') . "
+- Unit: " . ($context['metric_unit'] ?? '') . "
+- Sumber Data: " . ($context['data_source'] ?? 'Data Warehouse') . "
+- Periode Analisis: " . ($context['analysis_period'] ?? '30 hari') . "
 
-RECENT DATA SUMMARY:";
+DATA TERKINI:
+- Nilai Sekarang: " . number_format($currentValue, 0, ',', '.') . "
+- Nilai Sebelumnya: " . number_format($previousValue, 0, ',', '.') . "
+- Perubahan: " . ($changePercentage > 0 ? '+' : '') . number_format($changePercentage, 2) . "%
+- Status: " . ($changePercentage > 0 ? 'Meningkat' : ($changePercentage < 0 ? 'Menurun' : 'Stabil')) . "
 
-        if (!empty($recentData)) {
-            $prompt .= "\n" . json_encode($recentData, JSON_PRETTY_PRINT);
-        }
+";
 
+        // Add statistics if available
         if (!empty($statistics)) {
-            $prompt .= "\n\nSTATISTICS:\n" . json_encode($statistics, JSON_PRETTY_PRINT);
+            $prompt .= "STATISTIK:\n";
+            foreach ($statistics as $key => $value) {
+                if (is_numeric($value)) {
+                    $prompt .= "- " . ucwords(str_replace('_', ' ', $key)) . ": " . number_format($value, 2, ',', '.') . "\n";
+                } elseif (is_array($value)) {
+                    $prompt .= "- " . ucwords(str_replace('_', ' ', $key)) . ": " . json_encode($value) . "\n";
+                } else {
+                    $prompt .= "- " . ucwords(str_replace('_', ' ', $key)) . ": " . $value . "\n";
+                }
+            }
+            $prompt .= "\n";
         }
 
-        $prompt .= "\n\nGUIDELINES:
-1. Always provide specific, actionable recommendations
-2. Reference the actual data when making suggestions
-3. Consider industry best practices for {$metricName}
-4. Be concise but comprehensive
-5. Focus on business decision-making impact
-6. Use Indonesian language for responses
-7. Format responses with clear structure (bullets, numbers when appropriate)
+        // Add trend data if available
+        if (!empty($dailyTrend)) {
+            $trendCount = count($dailyTrend);
+            $firstValue = $dailyTrend[0]['value'] ?? 0;
+            $lastValue = $dailyTrend[$trendCount - 1]['value'] ?? 0;
+            $avgValue = array_sum(array_column($dailyTrend, 'value')) / $trendCount;
 
-RESPONSE STYLE:
-- Start with key insights
-- Provide 2-3 specific recommendations
-- Include potential risks or considerations
-- End with next steps or questions to explore";
+            $prompt .= "TREN HARIAN (30 hari terakhir):\n";
+            $prompt .= "- Total Data Points: {$trendCount} hari\n";
+            $prompt .= "- Nilai Awal: " . number_format($firstValue, 0, ',', '.') . "\n";
+            $prompt .= "- Nilai Akhir: " . number_format($lastValue, 0, ',', '.') . "\n";
+            $prompt .= "- Rata-rata: " . number_format($avgValue, 0, ',', '.') . "\n";
+            $prompt .= "- Pertumbuhan: " . ($firstValue > 0 ? number_format((($lastValue - $firstValue) / $firstValue) * 100, 2) : 0) . "%\n\n";
+        }
+
+        // Add recent manual records if available
+        if (!empty($recentRecords)) {
+            $prompt .= "RECORDS TERBARU:\n";
+            foreach (array_slice($recentRecords, 0, 5) as $record) {
+                $prompt .= "- " . $record['date'] . ": " . $record['value'];
+                if (!empty($record['notes'])) {
+                    $prompt .= " (Catatan: " . $record['notes'] . ")";
+                }
+                $prompt .= "\n";
+            }
+            $prompt .= "\n";
+        }
+
+        $prompt .= "TUGAS ANDA:
+- Berikan analisis data-driven yang spesifik dan actionable
+- Referensikan data aktual saat memberikan insights
+- Pertimbangkan best practices industri untuk {$metricName}
+- Fokus pada pengambilan keputusan bisnis yang praktis
+- Identifikasi pola, tren, dan anomali penting
+- Berikan rekomendasi konkret dengan justifikasi
+
+GAYA RESPONS:
+1. Gunakan Bahasa Indonesia yang profesional dan mudah dipahami
+2. Mulai dengan key insight utama (1-2 kalimat) dengan emoji yang relevan
+3. Berikan analisis mendalam dengan poin-poin terstruktur menggunakan markdown
+4. Sertakan 2-3 rekomendasi spesifik dan actionable
+5. Sebutkan potensi risiko atau pertimbangan penting
+6. Akhiri dengan langkah-langkah konkret atau pertanyaan untuk eksplorasi lebih lanjut
+7. WAJIB gunakan format markdown untuk readability:
+   - **Bold** untuk poin penting
+   - *Italic* untuk penekanan
+   - Numbered lists (1. 2. 3.) untuk urutan langkah
+   - Bullet points (- atau *) untuk daftar item
+   - Emoji untuk visual appeal (📈📊💡⚠️✅❌🎯)
+8. Berikan contoh numerik spesifik jika relevan
+9. Pisahkan paragraf dengan line breaks untuk readability
+
+CONTOH FORMAT RESPONS:
+📊 **Analisis Tren:**
+Metric menunjukkan peningkatan **15%** dalam 30 hari terakhir.
+
+**Insight Utama:**
+1. Pertumbuhan konsisten sejak minggu ke-2
+2. Nilai tertinggi tercatat pada tanggal X
+3. Volatilitas rendah menunjukkan stabilitas
+
+💡 **Rekomendasi:**
+- Pertahankan strategi current
+- Tingkatkan investasi pada channel yang berkinerja baik
+- Monitor kompetitor untuk mempertahankan momentum
+
+⚠️ **Perhatian:**
+Pastikan sustainability dengan diversifikasi.
+
+HINDARI:
+- Informasi yang terlalu generik atau tidak spesifik
+- Asumsi tanpa dasar data
+- Jargon yang terlalu teknis tanpa penjelasan
+- Rekomendasi yang tidak praktis atau sulit diimplementasikan
+- Respons tanpa formatting markdown
+
+Jawab pertanyaan user dengan mengacu pada konteks data di atas.";
 
         return $prompt;
     }

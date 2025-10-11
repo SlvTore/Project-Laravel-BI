@@ -30,9 +30,21 @@ class Role extends Model
         return $this->hasMany(User::class, 'role_id');
     }
 
+    // Relationship to normalized permission rows (avoid naming collision with legacy JSON column "permissions")
+    public function permissionItems()
+    {
+        return $this->belongsToMany(Permission::class, 'permission_role');
+    }
+
     public function hasPermission($permission)
     {
-        return in_array('all', $this->permissions ?? []) ||
-               in_array($permission, $this->permissions ?? []);
+        // Pivot-based first
+        if ($this->relationLoaded('permissionItems') || method_exists($this, 'permissionItems')) {
+            $pivotCodes = $this->permissionItems->pluck('code')->all();
+            if (in_array('*.*', $pivotCodes, true)) return true;
+            if (in_array($permission, $pivotCodes, true)) return true;
+        }
+        // Legacy JSON fallback
+        return in_array('all', $this->permissions ?? []) || in_array($permission, $this->permissions ?? []);
     }
 }

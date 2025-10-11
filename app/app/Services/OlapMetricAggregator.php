@@ -152,15 +152,16 @@ class OlapMetricAggregator
     public function dailyRevenue(int $businessId, int $days = 30): array
     {
         $from = Carbon::now()->subDays($days)->toDateString();
+        // NOTE: View alias uses total_revenue not total_gross_revenue. Fixing mismatch.
         $rows = DB::table('vw_sales_daily')
             ->where('business_id', $businessId)
             ->where('sales_date', '>=', $from)
             ->orderBy('sales_date')
-            ->get(['sales_date','total_gross_revenue']);
+            ->get(['sales_date','total_revenue']);
 
         return [
             'labels' => $rows->pluck('sales_date')->map(fn($d) => Carbon::parse($d)->format('d M')),
-            'values' => $rows->pluck('total_gross_revenue')->map(fn($v) => (float)$v),
+            'values' => $rows->pluck('total_revenue')->map(fn($v) => (float)$v),
             'dates' => $rows->pluck('sales_date')->map(fn($d) => Carbon::parse($d)->format('Y-m-d')),
         ];
     }
