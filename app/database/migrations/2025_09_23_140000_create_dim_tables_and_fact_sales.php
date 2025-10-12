@@ -26,7 +26,8 @@ return new class extends Migration
         Schema::create('dim_product', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('business_id');
-            $table->unsignedBigInteger('product_nk')->nullable(); // natural key -> products.id
+            // natural key can be product id or a hashed/name key; store as string to support non-numeric values like 'UNKNOWN'
+            $table->string('product_nk', 64)->nullable();
             $table->string('name');
             $table->string('category')->nullable();
             $table->string('unit', 32)->nullable();
@@ -38,21 +39,15 @@ return new class extends Migration
         Schema::create('dim_customer', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('business_id');
-            $table->unsignedBigInteger('customer_nk')->nullable(); // natural key -> customers.id
+            // natural key can be customer id or a hashed/name key; store as string to support non-numeric values like 'UNKNOWN'
+            $table->string('customer_nk', 64)->nullable();
             $table->string('name');
             $table->string('phone')->nullable();
             $table->string('email')->nullable();
+            $table->string('customer_type', 32)->default('unknown'); // B2B, B2C, wholesale, retail, etc.
             $table->timestamps();
             $table->index(['business_id', 'customer_nk'], 'idx_dc_biz_nk');
-        });
-
-        // dim_channel (optional)
-        Schema::create('dim_channel', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('business_id');
-            $table->string('name');
-            $table->timestamps();
-            $table->unique(['business_id', 'name'], 'uk_dc_biz_name');
+            $table->index('customer_type'); // For customer segmentation queries
         });
 
         // fact_sales (grain: transaction item)
@@ -62,7 +57,6 @@ return new class extends Migration
             $table->unsignedBigInteger('date_id');
             $table->unsignedBigInteger('product_id')->nullable();
             $table->unsignedBigInteger('customer_id')->nullable();
-            $table->unsignedBigInteger('channel_id')->nullable();
             $table->unsignedBigInteger('sales_transaction_id')->nullable();
             $table->unsignedBigInteger('sales_transaction_item_id')->nullable();
 
@@ -86,7 +80,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('fact_sales');
-        Schema::dropIfExists('dim_channel');
         Schema::dropIfExists('dim_customer');
         Schema::dropIfExists('dim_product');
         Schema::dropIfExists('dim_date');

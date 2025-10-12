@@ -7,6 +7,7 @@ use App\Models\SalesTransaction;
 use App\Models\SalesTransactionItem;
 use App\Models\Customer;
 use App\Models\Product;
+use App\Services\DataFeedService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -73,11 +74,21 @@ class SalesTransactionController extends Controller
                 if ($itemsCount > 2) {
                     $itemsSummary .= ' +' . ($itemsCount - 2) . ' lainnya';
                 }
+                // Build human-readable location string if present
+                $locationParts = [];
+                if (!empty($transaction->kecamatan)) $locationParts[] = $transaction->kecamatan;
+                if (!empty($transaction->kota)) $locationParts[] = $transaction->kota;
+                if (!empty($transaction->provinsi)) $locationParts[] = $transaction->provinsi;
+                $location = count($locationParts) ? implode(', ', $locationParts) : null;
                 return [
                     'id' => $transaction->id,
                     'transaction_date' => optional($transaction->transaction_date)->format('d/m/Y H:i'),
                     'transaction_date_iso' => optional($transaction->transaction_date)->toDateTimeString(),
                     'customer_name' => optional($transaction->customer)->customer_name,
+                    'provinsi' => $transaction->provinsi,
+                    'kota' => $transaction->kota,
+                    'kecamatan' => $transaction->kecamatan,
+                    'location' => $location,
                     'items_count' => $itemsCount,
                     'items_summary' => $itemsSummary,
                     'total_amount' => (float)$transaction->total_amount,
@@ -335,6 +346,11 @@ class SalesTransactionController extends Controller
         $request->validate([
             'transaction_date' => 'required|date',
             'customer_name' => 'required|string|max:255',
+            'customer_phone' => 'nullable|string|max:20',
+            'customer_email' => 'nullable|email|max:255',
+            'provinsi' => 'required|string|max:255',
+            'kota' => 'required|string|max:255',
+            'kecamatan' => 'required|string|max:255',
             'items' => 'required|array|min:1',
             'items.*.product_name' => 'required|string',
             'items.*.quantity' => 'required|numeric|min:0.01',
@@ -420,6 +436,9 @@ class SalesTransactionController extends Controller
                 'total_amount' => $totalAmount,
                 'status' => 'completed',
                 'notes' => $request->notes,
+                'provinsi' => $request->provinsi,
+                'kota' => $request->kota,
+                'kecamatan' => $request->kecamatan,
             ]);
 
             // Create transaction items
@@ -436,6 +455,39 @@ class SalesTransactionController extends Controller
             }
 
             DB::commit();
+
+            // Also feed to DataFeedService for analytics
+            $dataFeedService = app(DataFeedService::class);
+
+            // Process each item as separate row for analytics
+            foreach ($items as $item) {
+                $payload = [
+                    'transaction_date' => $request->transaction_date,
+                    'customer_name' => $request->customer_name,
+                    'customer_email' => $request->customer_email ?? '',
+                    'customer_phone' => $request->customer_phone ?? '',
+                    'provinsi' => $request->provinsi,
+                    'kota' => $request->kota,
+                    'kecamatan' => $request->kecamatan,
+                    'product_name' => $item['product_name'],
+                    'product_category' => Product::find($item['product_id'])->category ?? 'General',
+                    'quantity' => $item['quantity'],
+                    'unit' => 'Pcs',
+                    'selling_price' => $item['selling_price'],
+                    'discount' => $item['discount'],
+                    'tax_amount' => $taxAmount,
+                    'shipping_cost' => $shippingCost,
+                    'payment_method' => 'Manual Entry',
+                    'notes' => $request->notes ?? '',
+                    'product_cost_price' => Product::find($item['product_id'])->cost_price ?? 0,
+                ];
+
+                try {
+                    $dataFeedService->processManualSalesInput($payload);
+                } catch (\Exception $e) {
+                    Log::warning('Failed to process manual transaction in DataFeed: ' . $e->getMessage());
+                }
+            }
 
             return response()->json([
                 'success' => true,

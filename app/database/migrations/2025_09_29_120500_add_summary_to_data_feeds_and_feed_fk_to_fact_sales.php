@@ -21,7 +21,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('fact_sales', 'data_feed_id')) {
                     $table->foreignId('data_feed_id')
                         ->nullable()
-                        ->after('channel_id')
+                        ->after('customer_id')
                         ->constrained('data_feeds')
                         ->nullOnDelete();
                 }

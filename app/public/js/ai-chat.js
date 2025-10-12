@@ -197,32 +197,32 @@ function formatAIResponse(text) {
     text = escapeHtml(text);
 
     // Convert markdown headers (must be done before other formatting)
-    text = text.replace(/^### (.*?)$/gm, '<h5 class="mt-3 mb-2 fw-bold text-white">$1</h5>');
-    text = text.replace(/^## (.*?)$/gm, '<h4 class="mt-3 mb-2 fw-bold text-white">$1</h4>');
-    text = text.replace(/^# (.*?)$/gm, '<h3 class="mt-3 mb-2 fw-bold text-white">$1</h3>');
+    text = text.replace(/^### (.*?)$/gm, '<h5 class="mt-3 mb-2 fw-bold" style="color: rgba(255,255,255,0.95);">$1</h5>');
+    text = text.replace(/^## (.*?)$/gm, '<h4 class="mt-3 mb-2 fw-bold" style="color: rgba(255,255,255,0.95);">$1</h4>');
+    text = text.replace(/^# (.*?)$/gm, '<h3 class="mt-3 mb-2 fw-bold" style="color: rgba(255,255,255,0.95);">$1</h3>');
 
     // Convert bold text (**text**)
-    text = text.replace(/\*\*([^\*]+)\*\*/g, '<strong class="text-warning">$1</strong>');
+    text = text.replace(/\*\*([^\*]+)\*\*/g, '<strong style="color: rgba(255,255,255,1);">$1</strong>');
 
     // Convert italic text (*text*)
-    text = text.replace(/\*([^\*]+)\*/g, '<em class="text-info">$1</em>');
+    text = text.replace(/\*([^\*]+)\*/g, '<em style="color: rgba(255,255,255,0.9);">$1</em>');
 
     // Convert code blocks (```code```)
-    text = text.replace(/```([\s\S]*?)```/g, '<pre class="bg-dark p-2 rounded mt-2 mb-2" style="color: #00ff00;"><code>$1</code></pre>');
+    text = text.replace(/```([\s\S]*?)```/g, '<pre class="p-2 rounded mt-2 mb-2" style="background: rgba(0,0,0,0.4); color: #7cb947; overflow-x: auto;"><code>$1</code></pre>');
 
     // Convert inline code (`code`)
-    text = text.replace(/`([^`]+)`/g, '<code class="bg-dark px-2 py-1 rounded text-success">$1</code>');
+    text = text.replace(/`([^`]+)`/g, '<code class="px-2 py-1 rounded" style="background: rgba(0,0,0,0.4); color: #7cb947;">$1</code>');
 
     // Convert numbered lists (1. 2. 3.)
     text = text.replace(/^(\d+)\.\s+(.*)$/gm, function(match, num, content) {
-        return '<div class="ms-3 mb-2"><span class="badge bg-primary me-2">' + num + '</span><span>' + content + '</span></div>';
+        return '<div class="ms-3 mb-2" style="color: rgba(255,255,255,0.95);"><span class="badge bg-primary me-2">' + num + '</span><span>' + content + '</span></div>';
     });
 
     // Convert bullet points (- or *)
-    text = text.replace(/^[\-\*]\s+(.*)$/gm, '<div class="ms-3 mb-2"><i class="fas fa-chevron-right text-success me-2"></i>$1</div>');
+    text = text.replace(/^[\-\*]\s+(.*)$/gm, '<div class="ms-3 mb-2" style="color: rgba(255,255,255,0.95);"><i class="fas fa-chevron-right text-success me-2"></i>$1</div>');
 
     // Convert links [text](url)
-    text = text.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '<a href="$2" target="_blank" class="text-primary text-decoration-underline">$1 <i class="fas fa-external-link-alt fa-xs"></i></a>');
+    text = text.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '<a href="$2" target="_blank" class="text-decoration-underline" style="color: #7cb947;">$1 <i class="fas fa-external-link-alt fa-xs"></i></a>');
 
     // Convert emoji icons to FontAwesome
     text = text.replace(/📈/g, '<i class="fas fa-chart-line text-success"></i>');
@@ -237,12 +237,12 @@ function formatAIResponse(text) {
     text = text.replace(/📉/g, '<i class="fas fa-chart-line-down text-danger"></i>');
 
     // Convert line breaks (double for paragraphs, single for breaks)
-    text = text.replace(/\n\n+/g, '</p><p class="mb-2">');
+    text = text.replace(/\n\n+/g, '</p><p class="mb-2" style="color: rgba(255,255,255,0.95);">');
     text = text.replace(/\n/g, '<br>');
 
-    // Wrap in paragraph if not already wrapped
+    // Wrap in paragraph if not already wrapped with white text
     if (!text.startsWith('<h') && !text.startsWith('<div') && !text.startsWith('<p')) {
-        text = '<p class="mb-2">' + text + '</p>';
+        text = '<p class="mb-2" style="color: rgba(255,255,255,0.95);">' + text + '</p>';
     }
 
     return text;
@@ -272,13 +272,18 @@ function showTypingIndicator() {
 }
 
 function hideTypingIndicator() {
-    $('#typingIndicator').remove();
+    const $ti = $('#typingIndicator');
+    if ($ti.length) {
+        $ti.css({ transition: 'opacity 180ms ease, transform 180ms ease', opacity: 0, transform: 'translateY(6px)'});
+        setTimeout(() => $ti.remove(), 200);
+    }
 }
 
 function scrollToBottom() {
     const chatContainer = $('#chatMessages');
     if (chatContainer.length) {
-        chatContainer.scrollTop(chatContainer[0].scrollHeight);
+        // Smooth scroll shim if native smooth not supported
+        chatContainer.stop().animate({ scrollTop: chatContainer[0].scrollHeight }, 200);
     }
 }
 

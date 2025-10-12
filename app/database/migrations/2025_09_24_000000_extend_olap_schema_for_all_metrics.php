@@ -45,18 +45,6 @@ class ExtendOlapSchemaForAllMetrics extends Migration
 		}
 
 		$this->createOrReplaceViews();
-
-		if (Schema::hasTable('dim_channel') && Schema::hasTable('businesses')) {
-			$businessIds = DB::table('businesses')->pluck('id');
-			foreach ($businessIds as $businessId) {
-				foreach (['Online', 'Offline'] as $channel) {
-					DB::table('dim_channel')->updateOrInsert(
-						['business_id' => $businessId, 'name' => $channel],
-						['updated_at' => now(), 'created_at' => now()]
-					);
-				}
-			}
-		}
 	}
 
 	/**
@@ -104,8 +92,6 @@ class ExtendOlapSchemaForAllMetrics extends Migration
 				p.category AS product_category,
 				c.id AS customer_dim_id,
 				c.name AS customer_name,
-				ch.id AS channel_dim_id,
-				ch.name AS channel_name,
 				f.quantity,
 				f.unit_price,
 				f.discount,
@@ -118,8 +104,7 @@ class ExtendOlapSchemaForAllMetrics extends Migration
 			FROM fact_sales f
 			JOIN dim_date d ON d.id = f.date_id
 			LEFT JOIN dim_product p ON p.id = f.product_id
-			LEFT JOIN dim_customer c ON c.id = f.customer_id
-			LEFT JOIN dim_channel ch ON ch.id = f.channel_id;
+			LEFT JOIN dim_customer c ON c.id = f.customer_id;
 			SQL);
 		}
 

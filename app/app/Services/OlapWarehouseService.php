@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use App\Services\Olap\OlapDimensionService;
 use App\Services\Olap\OlapFactService;
 use App\Services\Olap\OlapETLService;
+use App\Services\Olap\OlapLocationService;
 
 /**
  * Orchestrates OLAP warehouse operations
@@ -27,7 +28,8 @@ class OlapWarehouseService
     public function __construct(
         private OlapDimensionService $dimensionService,
         private OlapFactService $factService,
-        private OlapETLService $etlService
+        private OlapETLService $etlService,
+        private OlapLocationService $locationService
     ) {}
 
     /**
@@ -123,6 +125,21 @@ class OlapWarehouseService
             $dateId = $this->ensureDateDim(optional($tx->transaction_date)->toDateString());
             $customerDimId = $this->ensureCustomerDim($businessId, $tx->customer, null);
 
+            // Get or create location dimension from transaction
+            $locationId = null;
+            if (!empty($tx->location_id)) {
+                // Location already mapped
+                $locationId = $tx->location_id;
+            } elseif (!empty($tx->kecamatan) || !empty($tx->kota) || !empty($tx->provinsi)) {
+                // Map location from raw data
+                $locationId = $this->locationService->ensureLocationDim(
+                    $businessId,
+                    $tx->kecamatan ?? 'Unknown',
+                    $tx->kota ?? 'Unknown',
+                    $tx->provinsi ?? 'Unknown'
+                );
+            }
+
             foreach ($tx->items as $item) {
                 $product = $this->resolveProductModelFromMap($productCostMap, $item->product_id);
                 $productDimId = $this->ensureProductDim($businessId, $product, $item->product_name);
@@ -139,7 +156,7 @@ class OlapWarehouseService
                     'date_id' => $dateId,
                     'product_id' => $productDimId,
                     'customer_id' => $customerDimId,
-                    'channel_id' => null,
+                    'location_id' => $locationId,
                     'data_feed_id' => null,
                     'sales_transaction_id' => $tx->id,
                     'sales_transaction_item_id' => $item->id,

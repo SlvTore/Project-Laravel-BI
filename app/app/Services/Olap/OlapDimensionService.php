@@ -61,7 +61,8 @@ class OlapDimensionService
             return $this->getUnknownProductDimension($businessId);
         }
 
-        $naturalKey = $productId ? "PROD_{$productId}" : "NAME_" . md5($productName);
+    // Use numeric product ID as NK when available for compatibility with views joining products.id
+    $naturalKey = $productId ? (string)$productId : ("NAME_" . md5($productName));
 
         $existing = DB::table('dim_product')
             ->where('business_id', $businessId)
@@ -84,8 +85,6 @@ class OlapDimensionService
             'name' => $product->name ?? $productName ?? 'Unknown Product',
             'category' => $product->category ?? null,
             'unit' => $product->unit ?? null,
-            'cost_price' => $product->cost_price ?? null,
-            'selling_price' => $product->selling_price ?? null,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -106,7 +105,8 @@ class OlapDimensionService
             return $this->getUnknownCustomerDimension($businessId);
         }
 
-        $naturalKey = $customerId ? "CUST_{$customerId}" : "NAME_" . md5($customerName);
+    // Use numeric customer ID as NK when available
+    $naturalKey = $customerId ? (string)$customerId : ("NAME_" . md5($customerName));
 
         $existing = DB::table('dim_customer')
             ->where('business_id', $businessId)
@@ -130,39 +130,6 @@ class OlapDimensionService
             'email' => $customer->email ?? null,
             'phone' => $customer->phone ?? null,
             'customer_type' => $customer->customer_type ?? 'unknown',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-    }
-
-    /**
-     * Get or create channel dimension record
-     *
-     * @param int $businessId
-     * @param string|null $channelName
-     * @return int Channel dimension ID
-     */
-    public function getOrCreateChannelDimension(int $businessId, ?string $channelName = null): int
-    {
-        if (!$channelName) {
-            return $this->getDefaultChannelDimension($businessId);
-        }
-
-        $naturalKey = 'CHANNEL_' . strtoupper(str_replace(' ', '_', $channelName));
-
-        $existing = DB::table('dim_channel')
-            ->where('business_id', $businessId)
-            ->where('channel_nk', $naturalKey)
-            ->first();
-
-        if ($existing) {
-            return $existing->id;
-        }
-
-        return DB::table('dim_channel')->insertGetId([
-            'business_id' => $businessId,
-            'channel_nk' => $naturalKey,
-            'name' => $channelName,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -204,7 +171,6 @@ class OlapDimensionService
     {
         $this->getUnknownProductDimension($businessId);
         $this->getUnknownCustomerDimension($businessId);
-        $this->getDefaultChannelDimension($businessId);
         $this->getNoPromotionDimension($businessId);
     }
 
@@ -257,32 +223,6 @@ class OlapDimensionService
             'customer_nk' => 'UNKNOWN',
             'name' => 'Unknown Customer',
             'customer_type' => 'unknown',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-    }
-
-    /**
-     * Get or create default channel dimension
-     *
-     * @param int $businessId
-     * @return int
-     */
-    private function getDefaultChannelDimension(int $businessId): int
-    {
-        $existing = DB::table('dim_channel')
-            ->where('business_id', $businessId)
-            ->where('channel_nk', 'DEFAULT')
-            ->first();
-
-        if ($existing) {
-            return $existing->id;
-        }
-
-        return DB::table('dim_channel')->insertGetId([
-            'business_id' => $businessId,
-            'channel_nk' => 'DEFAULT',
-            'name' => 'Direct',
             'created_at' => now(),
             'updated_at' => now(),
         ]);

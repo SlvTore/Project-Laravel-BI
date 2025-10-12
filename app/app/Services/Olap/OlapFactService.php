@@ -33,13 +33,10 @@ class OlapFactService
 
         // Set defaults for optional dimension IDs
         $factData['customer_id'] = $factData['customer_id'] ??
-            $this->dimensionService->getOrCreateCustomerDimension($factData['business_id'], null, 'Unknown', null, null)->id;
-
-        $factData['channel_id'] = $factData['channel_id'] ??
-            $this->dimensionService->getOrCreateChannelDimension($factData['business_id'], 'DIRECT', 'Direct Sales')->id;
+            $this->dimensionService->getOrCreateCustomerDimension($factData['business_id'], null, 'Unknown');
 
         $factData['promotion_id'] = $factData['promotion_id'] ??
-            $this->dimensionService->getOrCreatePromotionDimension($factData['business_id'], 'NONE', 'No Promotion')->id;
+            $this->dimensionService->getOrCreatePromotionDimension($factData['business_id'], null);
 
         // Calculate derived fields if not provided
         if (!isset($factData['gross_margin_amount']) && isset($factData['cogs_amount'])) {
@@ -74,13 +71,10 @@ class OlapFactService
         foreach ($factsData as $fact) {
             // Set defaults for optional dimension IDs
             $fact['customer_id'] = $fact['customer_id'] ??
-                $this->dimensionService->getOrCreateCustomerDimension($fact['business_id'], null, 'Unknown', null, null)->id;
-
-            $fact['channel_id'] = $fact['channel_id'] ??
-                $this->dimensionService->getOrCreateChannelDimension($fact['business_id'], 'DIRECT', 'Direct Sales')->id;
+                $this->dimensionService->getOrCreateCustomerDimension($fact['business_id'], null, 'Unknown');
 
             $fact['promotion_id'] = $fact['promotion_id'] ??
-                $this->dimensionService->getOrCreatePromotionDimension($fact['business_id'], 'NONE', 'No Promotion')->id;
+                $this->dimensionService->getOrCreatePromotionDimension($fact['business_id'], null);
 
             // Calculate derived fields
             if (!isset($fact['gross_margin_amount']) && isset($fact['cogs_amount'])) {

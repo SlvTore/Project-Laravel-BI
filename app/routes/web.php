@@ -64,6 +64,8 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
         Route::get('/dashboard/metrics/{businessMetric}/records', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'show'])->name('dashboard.metrics.records.show');
         Route::get('/dashboard/metrics/{businessMetric}/records/edit', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'editPage'])->name('dashboard.metrics.records.edit');
         Route::get('/dashboard/metrics/{businessMetric}/records/stats', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'getTableStats'])->name('dashboard.metrics.records.stats');
+        Route::get('/dashboard/metrics/{businessMetric}/statistics', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'getStatisticsApi'])->name('dashboard.metrics.statistics');
+    Route::get('/dashboard/metrics/{businessMetric}/chart-data', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'getChartDataApi'])->name('dashboard.metrics.chart-data');
         Route::post('/dashboard/metrics/{businessMetric}/records', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'store'])->name('dashboard.metrics.records.store');
         Route::get('/dashboard/metrics/records/{record}', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'getRecord'])->name('dashboard.metrics.records.get');
         Route::put('/dashboard/metrics/records/{record}', [App\Http\Controllers\Dashboard\MetricRecordsController::class, 'update'])->name('dashboard.metrics.records.update');
@@ -199,6 +201,9 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
     Route::post('/dashboard/data-feeds/preview', [App\Http\Controllers\Dashboard\DataFeedController::class, 'preview'])->name('dashboard.data-feeds.preview');
     Route::post('/dashboard/data-feeds/commit', [App\Http\Controllers\Dashboard\DataFeedController::class, 'commit'])->name('dashboard.data-feeds.commit');
     Route::post('/dashboard/data-feeds/auto-create-products', [App\Http\Controllers\Dashboard\DataFeedController::class, 'autoCreateProducts'])->name('dashboard.data-feeds.auto-create-products');
+
+    // Universal CSV template (with location columns)
+    Route::get('/api/data-feeds/universal-template', [App\Http\Controllers\Dashboard\DataFeedController::class, 'downloadUniversalTemplate'])->name('api.data-feeds.universal-template');
     Route::get('/api/data-feeds/universal-template', [App\Http\Controllers\Dashboard\DataFeedController::class, 'downloadUniversalTemplate'])->name('api.data-feeds.universal-template');
 
         // Product Catalog CRUD
@@ -229,6 +234,12 @@ Route::middleware(['auth', 'setup.completed'])->group(function () {
     Route::get('/dashboard/metrics/kpi', [App\Http\Controllers\Dashboard\OlapMetricsController::class, 'kpi'])->name('dashboard.metrics.kpi');
     Route::get('/dashboard/metrics/top-products', [App\Http\Controllers\Dashboard\OlapMetricsController::class, 'topProducts'])->name('dashboard.metrics.top-products');
     Route::get('/dashboard/metrics/trend', [App\Http\Controllers\Dashboard\OlapMetricsController::class, 'trend'])->name('dashboard.metrics.trend');
+
+    // OLAP Location Drill-Down endpoints
+    Route::get('/dashboard/olap/location/hierarchy', [App\Http\Controllers\Dashboard\OlapLocationController::class, 'hierarchy'])->name('dashboard.olap.location.hierarchy');
+    Route::get('/dashboard/olap/location/drill-down', [App\Http\Controllers\Dashboard\OlapLocationController::class, 'drillDown'])->name('dashboard.olap.location.drilldown');
+    Route::get('/dashboard/olap/location/trend', [App\Http\Controllers\Dashboard\OlapLocationController::class, 'trend'])->name('dashboard.olap.location.trend');
+    Route::get('/dashboard/olap/location/top', [App\Http\Controllers\Dashboard\OlapLocationController::class, 'top'])->name('dashboard.olap.location.top');
 
         // Production Costs Management
         Route::post('/dashboard/products/{product}/production-costs', [App\Http\Controllers\Dashboard\DataFeedController::class, 'storeProductionCost'])->name('dashboard.products.production-costs.store');

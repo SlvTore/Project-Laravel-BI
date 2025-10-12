@@ -11,6 +11,7 @@ use App\Models\SalesTransactionItem;
 use App\Models\StagingCost;
 use App\Models\StagingSalesItem;
 use App\Services\Exceptions\DataFeedCommitException;
+use App\Services\Olap\OlapLocationService;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\UploadedFile;
@@ -46,6 +47,18 @@ class DataFeedService
                 throw new Exception('Business context not found');
             }
 
+            // Get or create location dimension
+            $locationId = null;
+            if (!empty($payload['provinsi']) || !empty($payload['kota']) || !empty($payload['kecamatan'])) {
+                $olapLocationService = app(OlapLocationService::class);
+                $locationId = $olapLocationService->ensureLocationDim(
+                    $business->id,
+                    $payload['kecamatan'] ?? 'Unknown',
+                    $payload['kota'] ?? 'Unknown',
+                    $payload['provinsi'] ?? 'Unknown'
+                );
+            }
+
             // Create DataFeed record
             $dataFeed = DataFeed::create([
                 'business_id' => $business->id,
@@ -71,7 +84,7 @@ class DataFeedService
                     continue;
                 }
 
-                // Create staging record
+                // Create staging record with location
                 StagingSalesItem::create([
                     'data_feed_id' => $dataFeed->id,
                     'product_id' => $product->id,
@@ -81,7 +94,11 @@ class DataFeedService
                     'selling_price_at_transaction' => $item['price'],
                     'discount_per_item' => $item['discount'] ?? 0,
                     'transaction_date' => $payload['transaction_date'] ?? now(),
-                    'notes' => $payload['notes']
+                    'notes' => $payload['notes'],
+                    'provinsi' => $payload['provinsi'] ?? 'Unknown',
+                    'kota' => $payload['kota'] ?? 'Unknown',
+                    'kecamatan' => $payload['kecamatan'] ?? 'Unknown',
+                    'location_id' => $locationId
                 ]);
 
                 $recordCount++;
@@ -257,9 +274,10 @@ class DataFeedService
             $headers = $headerRow;
         }
 
-        // Expected universal CSV headers
+        // Expected universal CSV headers (now with location support)
         $expectedHeaders = [
             'transaction_date', 'customer_name', 'customer_email', 'customer_phone',
+            'provinsi', 'kota', 'kecamatan', // Location hierarchy
             'product_name', 'product_category', 'quantity', 'unit', 'selling_price',
             'discount', 'tax_amount', 'shipping_cost', 'payment_method', 'notes',
             'product_cost_price', 'material_name', 'material_quantity',
@@ -343,7 +361,7 @@ class DataFeedService
                 $issues[] = ['type' => 'warning', 'message' => 'Quantity harus lebih dari 0'];
             }
 
-            // Format row for display with all universal CSV fields
+            // Format row for display with all universal CSV fields (including location)
             $rows[] = [
                 'row_index' => $rowIndex,
                 'valid' => $isValid,
@@ -354,6 +372,9 @@ class DataFeedService
                     'customer_name' => $rowData['customer_name'] ?? '',
                     'customer_email' => $rowData['customer_email'] ?? '',
                     'customer_phone' => $rowData['customer_phone'] ?? '',
+                    'provinsi' => $rowData['provinsi'] ?? 'Unknown',
+                    'kota' => $rowData['kota'] ?? 'Unknown',
+                    'kecamatan' => $rowData['kecamatan'] ?? 'Unknown',
                     'product_name' => $rowData['product_name'] ?? '',
                     'product_category' => $rowData['product_category'] ?? '',
                     'quantity' => $quantity,
@@ -1377,30 +1398,34 @@ class DataFeedService
             $processedCount = 0;
             $customers = [];
             $products = [];
+            $olapLocationService = app(OlapLocationService::class);
 
             while (($row = fgetcsv($handle)) !== false) {
-                if (count($row) < 19) continue; // Skip incomplete rows
+                if (count($row) < 22) continue; // Updated to include location fields (19 + 3 = 22)
 
                 $data = [
                     'transaction_date' => $row[0],
                     'customer_name' => $row[1],
                     'customer_email' => $row[2],
                     'customer_phone' => $row[3],
-                    'product_name' => $row[4],
-                    'product_category' => $row[5],
-                    'quantity' => floatval($row[6]),
-                    'unit' => $row[7],
-                    'selling_price' => floatval($row[8]),
-                    'discount' => floatval($row[9]),
-                    'tax_amount' => floatval($row[10]),
-                    'shipping_cost' => floatval($row[11]),
-                    'payment_method' => $row[12],
-                    'notes' => $row[13],
-                    'product_cost_price' => floatval($row[14]),
-                    'material_name' => $row[15],
-                    'material_quantity' => floatval($row[16]),
-                    'material_unit' => $row[17],
-                    'material_cost_per_unit' => floatval($row[18])
+                    'provinsi' => $row[4] ?? 'Unknown',
+                    'kota' => $row[5] ?? 'Unknown',
+                    'kecamatan' => $row[6] ?? 'Unknown',
+                    'product_name' => $row[7],
+                    'product_category' => $row[8],
+                    'quantity' => floatval($row[9]),
+                    'unit' => $row[10],
+                    'selling_price' => floatval($row[11]),
+                    'discount' => floatval($row[12]),
+                    'tax_amount' => floatval($row[13]),
+                    'shipping_cost' => floatval($row[14]),
+                    'payment_method' => $row[15],
+                    'notes' => $row[16],
+                    'product_cost_price' => floatval($row[17]),
+                    'material_name' => $row[18],
+                    'material_quantity' => floatval($row[19]),
+                    'material_unit' => $row[20],
+                    'material_cost_per_unit' => floatval($row[21])
                 ];
 
                 // Skip empty rows
@@ -1444,6 +1469,14 @@ class DataFeedService
                 if (isset($products[$productKey])) {
                     $product = $products[$productKey];
 
+                    // Map location using OlapLocationService
+                    $locationId = $olapLocationService->ensureLocationDim(
+                        $business->id,
+                        $data['kecamatan'],
+                        $data['kota'],
+                        $data['provinsi']
+                    );
+
                     $stagingData = [
                         'data_feed_id' => $dataFeed->id,
                         'product_id' => $product->id,
@@ -1457,7 +1490,11 @@ class DataFeedService
                         'shipping_cost' => $data['shipping_cost'],
                         'payment_method' => $data['payment_method'],
                         'transaction_date' => Carbon::parse($data['transaction_date'])->format('Y-m-d'),
-                        'notes' => $data['notes']
+                        'notes' => $data['notes'],
+                        'provinsi' => $data['provinsi'],
+                        'kota' => $data['kota'],
+                        'kecamatan' => $data['kecamatan'],
+                        'location_id' => $locationId
                     ];
 
                     StagingSalesItem::create($stagingData);
@@ -1505,7 +1542,11 @@ class DataFeedService
                                 'shipping_cost' => $data['shipping_cost'],
                                 'total_amount' => $totalAmount,
                                 'status' => 'completed',
-                                'notes' => $data['notes']
+                                'notes' => $data['notes'],
+                                'provinsi' => $data['provinsi'],
+                                'kota' => $data['kota'],
+                                'kecamatan' => $data['kecamatan'],
+                                'location_id' => $locationId
                             ]);
                         } else {
                             // Update existing transaction aggregates (accumulate)
@@ -1518,6 +1559,13 @@ class DataFeedService
                             // Ensure linkage to feed (in case pre-existing without)
                             if (!$salesTransaction->data_feed_id) {
                                 $salesTransaction->data_feed_id = $dataFeed->id;
+                            }
+                            // Update location data if present
+                            if (!empty($data['provinsi']) || !empty($data['kota']) || !empty($data['kecamatan'])) {
+                                $salesTransaction->provinsi = $data['provinsi'];
+                                $salesTransaction->kota = $data['kota'];
+                                $salesTransaction->kecamatan = $data['kecamatan'];
+                                $salesTransaction->location_id = $locationId;
                             }
                             $salesTransaction->save();
                         }

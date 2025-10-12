@@ -304,7 +304,7 @@ function renderPreviewRows(rows) {
 
     if (!rows || rows.length === 0) {
         console.log('No rows to display, showing empty message');
-        tbody.innerHTML = '<tr id="previewEmptyRow"><td colspan="19" class="text-center text-white-50 py-4">File berhasil dibaca namun contoh data kosong.</td></tr>';
+        tbody.innerHTML = '<tr id="previewEmptyRow"><td colspan="22" class="text-center text-white-50 py-4">File berhasil dibaca namun contoh data kosong.</td></tr>';
         return;
     }
 
@@ -329,6 +329,9 @@ function renderPreviewRows(rows) {
             <td style="padding: 0.25rem;">${normalized.customer_name || '-'}</td>
             <td style="padding: 0.25rem;">${normalized.customer_email || '-'}</td>
             <td style="padding: 0.25rem;">${normalized.customer_phone || '-'}</td>
+            <td style="padding: 0.25rem;">${normalized.provinsi || '-'}</td>
+            <td style="padding: 0.25rem;">${normalized.kota || '-'}</td>
+            <td style="padding: 0.25rem;">${normalized.kecamatan || '-'}</td>
             <td style="padding: 0.25rem;">
                 <div class="fw-semibold">${normalized.product_name || '-'}</div>
                 ${original.product_name && original.product_name !== normalized.product_name ? `<small class="text-white-50">Asli: ${original.product_name}</small>` : ''}
@@ -1360,6 +1363,9 @@ function displayRecentTransactions(transactions) {
                 <div class="text-sm font-medium">${transaction.customer_name}</div>
             </td>
             <td class="px-4 py-3">
+                <div class="text-sm">${transaction.location || [transaction.kecamatan, transaction.kota, transaction.provinsi].filter(Boolean).join(', ') || '-'}</div>
+            </td>
+            <td class="px-4 py-3">
                 <div class="text-sm">${transaction.items_summary}</div>
                 <div class="text-xs text-muted-foreground">${transaction.items_count} item${transaction.items_count > 1 ? 's' : ''}</div>
             </td>
@@ -2175,11 +2181,17 @@ function updateTransactionTotals() {
 
             // Decide create vs update
             const editId = form.getAttribute('data-edit-id');
-            const url = editId ? `/api/sales-transactions/${editId}` : '/api/sales-transactions';
-            const method = editId ? 'PUT' : 'POST';
-            // Make API call
+            let url = '/api/sales-transactions';
+
+            // For update, use POST with _method=PUT (Laravel doesn't parse FormData for PUT)
+            if (editId) {
+                url = `/api/sales-transactions/${editId}`;
+                formData.append('_method', 'PUT');
+            }
+
+            // Make API call (always use POST, Laravel will handle _method)
             fetch(url, {
-                method: method,
+                method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },

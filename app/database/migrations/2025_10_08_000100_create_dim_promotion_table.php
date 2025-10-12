@@ -17,6 +17,8 @@ return new class extends Migration {
             $table->decimal('discount_value', 10, 2)->nullable();
             $table->string('discount_type', 20)->nullable(); // percent|amount
             $table->decimal('discount_percent', 5, 2)->default(0);
+            $table->decimal('discount_amount', 10, 2)->default(0); // Fixed discount amount
+            $table->string('promotion_type', 50)->default('none'); // none, seasonal, clearance, bundle, etc.
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
             $table->text('description')->nullable();
@@ -26,13 +28,14 @@ return new class extends Migration {
             // Indexes
             $table->index(['business_id', 'promotion_nk']);
             $table->index(['is_active', 'type']);
+            $table->index('promotion_type'); // For promotion type filtering
         });
 
         // Add promotion_id to fact_sales
         if (Schema::hasTable('fact_sales')) {
             Schema::table('fact_sales', function (Blueprint $table) {
                 if (!Schema::hasColumn('fact_sales', 'promotion_id')) {
-                    $table->foreignId('promotion_id')->nullable()->after('channel_id')->constrained('dim_promotion')->onDelete('set null');
+                    $table->foreignId('promotion_id')->nullable()->after('customer_id')->constrained('dim_promotion')->onDelete('set null');
                 }
             });
         }

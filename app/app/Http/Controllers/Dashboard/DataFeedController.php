@@ -451,6 +451,63 @@ class DataFeedController extends Controller
         ]);
     }
 
+    /**
+     * Download universal CSV template with location columns
+     */
+    public function downloadUniversalTemplate(Request $request)
+    {
+        $format = strtolower($request->get('format', 'csv'));
+        if ($format !== 'csv') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya format CSV yang didukung untuk saat ini.'
+            ], 400);
+        }
+
+        $headers = [
+            'transaction_date', 'customer_name', 'customer_email', 'customer_phone',
+            'provinsi', 'kota', 'kecamatan',
+            'product_name', 'product_category', 'quantity', 'unit', 'selling_price',
+            'discount', 'tax_amount', 'shipping_cost', 'payment_method', 'notes',
+            'product_cost_price', 'material_name', 'material_quantity', 'material_unit', 'material_cost_per_unit'
+        ];
+
+        $samples = [
+            [
+                '2024-01-15', 'John Doe', 'john@example.com', '081234567890',
+                'DKI Jakarta', 'Jakarta Selatan', 'Kebayoran Baru',
+                'Nasi Goreng Spesial', 'Makanan', '2', 'Porsi', '25000', '0', '2500', '5000',
+                'Cash', 'Pesanan untuk acara kantor', '18000', 'Beras', '0.5', 'Kg', '12000'
+            ],
+            [
+                '2024-01-16', 'Jane Smith', 'jane@example.com', '087654321098',
+                'Jawa Barat', 'Bandung', 'Cicendo',
+                'Kopi Arabica Premium', 'Minuman', '1', 'Cup', '15000', '1000', '0', '0',
+                'Transfer', 'Kopi pagi', '8000', 'Kopi Arabica', '20', 'Gram', '500'
+            ],
+            [
+                '2024-01-17', 'Ahmad Rahman', 'ahmad@example.com', '089876543210',
+                'Jawa Timur', 'Surabaya', 'Gubeng',
+                'Kaos Polos Cotton', 'Fashion', '3', 'Pcs', '85000', '10000', '0', '15000',
+                'Cash', 'Ukuran M L XL', '45000', 'Kain Cotton', '0.5', 'Meter', '60000'
+            ],
+        ];
+
+        $filename = 'universal_data_template_' . date('Y-m-d') . '.csv';
+
+        return response()->stream(function () use ($headers, $samples) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, $headers);
+            foreach ($samples as $row) {
+                fputcsv($handle, $row);
+            }
+            fclose($handle);
+        }, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
     public function storeProductionCost(Request $request, Product $product)
     {
         try {
@@ -632,145 +689,7 @@ class DataFeedController extends Controller
         ]);
     }
 
-    // Download universal template
-    public function downloadUniversalTemplate(Request $request)
-    {
-        $format = $request->input('format', 'csv');
 
-        if ($format !== 'csv') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only CSV format is supported for universal template'
-            ], 400);
-        }
-
-        $templatePath = storage_path('templates/universal_data_template.csv');
-
-        // Always create/update the template with fresh data
-        $headers = [
-            'transaction_date',
-            'customer_name',
-            'customer_email',
-            'customer_phone',
-            'product_name',
-            'product_category',
-            'quantity',
-            'unit',
-            'selling_price',
-            'discount',
-            'tax_amount',
-            'shipping_cost',
-            'payment_method',
-            'notes',
-            'product_cost_price',
-            'material_name',
-            'material_quantity',
-            'material_unit',
-            'material_cost_per_unit'
-        ];
-
-        $sampleData = [
-            [
-                '2024-01-15',
-                'John Doe',
-                'john@example.com',
-                '081234567890',
-                'Nasi Goreng Spesial',
-                'Makanan',
-                '2',
-                'Porsi',
-                '25000',
-                '0',
-                '2500',
-                '5000',
-                'Cash',
-                'Pesanan untuk acara kantor',
-                '18000',
-                'Beras',
-                '0.5',
-                'Kg',
-                '12000'
-            ],
-            [
-                '2024-01-15',
-                'John Doe',
-                'john@example.com',
-                '081234567890',
-                'Nasi Goreng Spesial',
-                'Makanan',
-                '2',
-                'Porsi',
-                '25000',
-                '0',
-                '2500',
-                '5000',
-                'Cash',
-                'Pesanan untuk acara kantor',
-                '18000',
-                'Ayam',
-                '0.3',
-                'Kg',
-                '35000'
-            ],
-            [
-                '2024-01-16',
-                'Jane Smith',
-                'jane@example.com',
-                '087654321098',
-                'Kopi Arabica Premium',
-                'Minuman',
-                '1',
-                'Cup',
-                '15000',
-                '1000',
-                '0',
-                '0',
-                'Transfer',
-                'Kopi pagi',
-                '8000',
-                'Kopi Arabica',
-                '20',
-                'Gram',
-                '500'
-            ],
-            [
-                '2024-01-17',
-                'Ahmad Rahman',
-                'ahmad@example.com',
-                '089876543210',
-                'Kaos Polos Cotton',
-                'Fashion',
-                '3',
-                'Pcs',
-                '85000',
-                '10000',
-                '0',
-                '15000',
-                'Cash',
-                'Ukuran M L XL',
-                '45000',
-                'Kain Cotton',
-                '0.5',
-                'Meter',
-                '60000'
-            ]
-        ];
-
-        // Ensure directory exists
-        if (!file_exists(dirname($templatePath))) {
-            mkdir(dirname($templatePath), 0755, true);
-        }
-
-        $content = [];
-        $content[] = implode(',', $headers);
-        foreach ($sampleData as $row) {
-            $content[] = implode(',', $row);
-        }
-
-        file_put_contents($templatePath, implode("\n", $content));
-
-        return response()->download($templatePath, 'template_data_universal.csv');
-    }
 
     // Backfill OLAP fact_sales from existing transactions
     public function backfillFacts(Request $request)

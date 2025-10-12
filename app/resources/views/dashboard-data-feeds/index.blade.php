@@ -159,6 +159,9 @@
                                             <th style="min-width: 120px;">Customer</th>
                                             <th style="min-width: 150px;">Email</th>
                                             <th style="min-width: 110px;">Telepon</th>
+                                            <th style="min-width: 120px;">Provinsi</th>
+                                            <th style="min-width: 120px;">Kota</th>
+                                            <th style="min-width: 140px;">Kecamatan</th>
                                             <th style="min-width: 150px;">Produk</th>
                                             <th style="min-width: 80px;">Kategori</th>
                                             <th style="min-width: 50px;">Qty</th>
@@ -178,7 +181,7 @@
                                     </thead>
                                     <tbody>
                                         <tr id="previewEmptyRow">
-                                            <td colspan="19" class="text-center text-white-50 py-4">Upload file untuk melihat pratinjau data.</td>
+                                            <td colspan="22" class="text-center text-white-50 py-4">Upload file untuk melihat pratinjau data.</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -218,7 +221,7 @@
                     <div id="productCardsContainer" class="row g-4">
                         <div class="col-12" id="productCardsEmptyState">
                             <div class="text-center text-white-50 py-5 border border-dashed rounded-4" style="border-color: rgba(255,255,255,0.2) !important;">
-                                <i class="bi bi-box-seam display-5 d-block mb-3"></i>
+                                <i class="bi bi-box-seam mb-3"></i>
                                 <p class="mb-0">Belum ada kartu produk. Klik <strong>Tambah Produk</strong> untuk memulai.</p>
                             </div>
                         </div>
@@ -297,7 +300,7 @@
                         </div>
                         <div class="col-6 col-md-3 col-lg-2">
                             <label for="statusFilter" class="form-label text-white-50 small text-uppercase">Status</label>
-                            <select id="statusFilter" class="form-select bg-dark text-white border-secondary" style="border-color: rgba(255,255,255,0.2) !important;">
+                            <select id="statusFilter" class="form-select bg-dark text-dark border-secondary" style="border-color: rgba(255,255,255,0.2) !important;">
                                 <option value="">Semua</option>
                                 <option value="completed">Selesai</option>
                                 <option value="pending">Proses</option>
@@ -326,6 +329,9 @@
                                 <tr>
                                     <th scope="col" class="text-white-50 text-uppercase small sortable" data-sort-by="transaction_date">Tanggal</th>
                                     <th scope="col" class="text-white-50 text-uppercase small sortable" data-sort-by="customer_name">Pelanggan</th>
+                                    <th scope="col" class="text-white-50 text-uppercase small">
+                                        <i class="bi bi-geo-alt me-1"></i>Lokasi
+                                    </th>
                                     <th scope="col" class="text-white-50 text-uppercase small">Detail</th>
                                     <th scope="col" class="text-white-50 text-uppercase small sortable text-end" data-sort-by="total_amount">Total</th>
                                     <th scope="col" class="text-white-50 text-uppercase small">Status</th>
@@ -334,7 +340,7 @@
                             </thead>
                             <tbody id="recentTransactionsBody">
                                 <tr id="emptyTransactionsMessage">
-                                    <td colspan="6" class="text-center text-white-50 py-4">Memuat transaksi...</td>
+                                    <td colspan="7" class="text-center text-white-50 py-4">Memuat transaksi...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -652,6 +658,48 @@
                                     </button>
                                 </div>
                             </div>
+
+                            {{-- Location Fields --}}
+                            <div class="mb-3">
+                                <label class="form-label text-white-50 small text-uppercase">
+                                    <i class="bi bi-geo-alt me-1"></i>Lokasi Transaksi
+                                </label>
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <label for="provinsi" class="form-label text-white small">Provinsi</label>
+                                        <select id="provinsi" name="provinsi" class="form-select bg-dark text-white border-secondary" style="border-color: rgba(255,255,255,0.2) !important;" onchange="updateKotaOptions()">
+                                            <option value="">Pilih Provinsi</option>
+                                            <option value="DKI Jakarta">DKI Jakarta</option>
+                                            <option value="Jawa Barat">Jawa Barat</option>
+                                            <option value="Jawa Tengah">Jawa Tengah</option>
+                                            <option value="Jawa Timur">Jawa Timur</option>
+                                            <option value="Sumatera Utara">Sumatera Utara</option>
+                                            <option value="Sumatera Barat">Sumatera Barat</option>
+                                            <option value="Bali">Bali</option>
+                                            <option value="Kalimantan Timur">Kalimantan Timur</option>
+                                            <option value="Sulawesi Selatan">Sulawesi Selatan</option>
+                                            <option value="Papua">Papua</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="kota" class="form-label text-white small">Kota</label>
+                                        <select id="kota" name="kota" class="form-select bg-dark text-white border-secondary" style="border-color: rgba(255,255,255,0.2) !important;" onchange="updateKecamatanOptions()">
+                                            <option value="">Pilih Kota</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="kecamatan" class="form-label text-white small">Kecamatan</label>
+                                        <select id="kecamatan" name="kecamatan" class="form-select bg-dark text-white border-secondary" style="border-color: rgba(255,255,255,0.2) !important;">
+                                            <option value="">Pilih Kecamatan</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <small class="text-white-50">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Informasi lokasi akan digunakan untuk analisis penjualan berdasarkan wilayah
+                                </small>
+                            </div>
+
                             <div class="mb-3">
                                 <label class="form-label text-white-50 small text-uppercase d-flex justify-content-between align-items-center">
                                     <span>Item Transaksi</span>
@@ -852,6 +900,126 @@
 @endpush
 @push('scripts')
     <script src="{{ asset('js/dashboard-data-feeds.js') }}" defer></script>
+
+    <script>
+    // Location data for cascading dropdowns
+    const locationData = {
+        'DKI Jakarta': {
+            'Jakarta Pusat': ['Menteng', 'Tanah Abang', 'Senen', 'Johar Baru', 'Cempaka Putih', 'Kemayoran', 'Sawah Besar', 'Gambir'],
+            'Jakarta Selatan': ['Kebayoran Baru', 'Kebayoran Lama', 'Pesanggrahan', 'Cilandak', 'Pasar Minggu', 'Jagakarsa', 'Mampang Prapatan', 'Pancoran', 'Tebet', 'Setiabudi'],
+            'Jakarta Barat': ['Kembangan', 'Kebon Jeruk', 'Palmerah', 'Grogol Petamburan', 'Tambora', 'Tamansari', 'Cengkareng', 'Kalideres'],
+            'Jakarta Utara': ['Penjaringan', 'Pademangan', 'Tanjung Priok', 'Koja', 'Kelapa Gading', 'Cilincing'],
+            'Jakarta Timur': ['Matraman', 'Pulogadung', 'Jatinegara', 'Cakung', 'Duren Sawit', 'Kramat Jati', 'Makasar', 'Pasar Rebo', 'Ciracas', 'Cipayung']
+        },
+        'Jawa Barat': {
+            'Bandung': ['Cicendo', 'Coblong', 'Sukajadi', 'Sukasari', 'Cidadap', 'Andir', 'Regol', 'Batununggal', 'Lengkong', 'Buahbatu'],
+            'Bekasi': ['Bekasi Timur', 'Bekasi Barat', 'Bekasi Utara', 'Bekasi Selatan', 'Rawalumbu', 'Bantargebang', 'Pondok Gede', 'Jatisampurna', 'Jatiasih', 'Mustika Jaya'],
+            'Bogor': ['Bogor Tengah', 'Bogor Utara', 'Bogor Selatan', 'Bogor Timur', 'Bogor Barat', 'Tanah Sareal'],
+            'Cirebon': ['Harjamukti', 'Lemahwungkuk', 'Pekalipan', 'Kesambi', 'Kejaksan'],
+            'Depok': ['Pancoran Mas', 'Sukmajaya', 'Limo', 'Sawangan', 'Bojongsari', 'Beji', 'Cilodong', 'Cinere', 'Cipayung', 'Tapos', 'Cimanggis']
+        },
+        'Jawa Tengah': {
+            'Semarang': ['Semarang Tengah', 'Semarang Utara', 'Semarang Timur', 'Semarang Selatan', 'Semarang Barat', 'Gayamsari', 'Genuk', 'Pedurungan', 'Banyumanik', 'Gunungpati'],
+            'Solo': ['Laweyan', 'Serengan', 'Pasar Kliwon', 'Jebres', 'Banjarsari'],
+            'Yogyakarta': ['Gondokusuman', 'Jetis', 'Tegalrejo', 'Umbulharjo', 'Kotagede', 'Mergangsan', 'Bantul', 'Sleman', 'Kulon Progo', 'Gunung Kidul'],
+            'Magelang': ['Magelang Utara', 'Magelang Selatan', 'Magelang Tengah']
+        },
+        'Jawa Timur': {
+            'Surabaya': ['Gubeng', 'Tegalsari', 'Genteng', 'Bubutan', 'Simokerto', 'Pabean Cantikan', 'Semampir', 'Krembangan', 'Bulak', 'Kenjeran'],
+            'Malang': ['Klojen', 'Blimbing', 'Kedungkandang', 'Sukun', 'Lowokwaru'],
+            'Kediri': ['Mojoroto', 'Kota Kediri', 'Pesantren'],
+            'Blitar': ['Kepanjenkidul', 'Sukorejo', 'Sananwetan'],
+            'Madiun': ['Manguharjo', 'Taman', 'Kartoharjo']
+        },
+        'Sumatera Utara': {
+            'Medan': ['Medan Kota', 'Medan Baru', 'Medan Polonia', 'Medan Maimun', 'Medan Area', 'Medan Denai', 'Medan Johor', 'Medan Amplas', 'Medan Tembung', 'Medan Helvetia'],
+            'Binjai': ['Binjai Kota', 'Binjai Utara', 'Binjai Selatan', 'Binjai Barat', 'Binjai Timur']
+        },
+        'Sumatera Barat': {
+            'Padang': ['Padang Selatan', 'Padang Timur', 'Padang Barat', 'Padang Utara', 'Koto Tangah', 'Nanggalo', 'Kuranji', 'Pauh', 'Lubuk Kilangan', 'Lubuk Begalung', 'Bungus Teluk Kabung'],
+            'Bukittinggi': ['Guguk Panjang', 'Mandiangin Koto Selayan', 'Aur Birugo Tigo Baleh']
+        },
+        'Bali': {
+            'Denpasar': ['Denpasar Selatan', 'Denpasar Timur', 'Denpasar Barat', 'Denpasar Utara'],
+            'Badung': ['Kuta', 'Mengwi', 'Abiansemal', 'Petang', 'Kuta Utara', 'Kuta Selatan'],
+            'Gianyar': ['Sukawati', 'Blahbatuh', 'Gianyar', 'Tampaksiring', 'Ubud', 'Tegallalang', 'Payangan']
+        },
+        'Kalimantan Timur': {
+            'Samarinda': ['Samarinda Kota', 'Samarinda Seberang', 'Palaran', 'Samarinda Utara', 'Sungai Kunjang', 'Sambutan', 'Samarinda Ilir', 'Samarinda Ulu', 'Loa Janan Ilir', 'Sungai Pinang'],
+            'Balikpapan': ['Balikpapan Kota', 'Balikpapan Selatan', 'Balikpapan Timur', 'Balikpapan Utara', 'Balikpapan Tengah', 'Balikpapan Barat']
+        },
+        'Sulawesi Selatan': {
+            'Makassar': ['Mariso', 'Mamajang', 'Tamalate', 'Rappocini', 'Makassar', 'Ujung Pandang', 'Wajo', 'Bontoala', 'Ujung Tanah', 'Tallo'],
+            'Parepare': ['Bacukiki', 'Ujung', 'Soreang']
+        },
+        'Papua': {
+            'Jayapura': ['Jayapura Selatan', 'Jayapura Utara', 'Abepura', 'Muara Tami', 'Heram'],
+            'Sorong': ['Sorong Kota', 'Sorong Barat', 'Sorong Timur', 'Sorong Utara']
+        }
+    };
+
+    function updateKotaOptions() {
+        const provinsiSelect = document.getElementById('provinsi');
+        const kotaSelect = document.getElementById('kota');
+        const kecamatanSelect = document.getElementById('kecamatan');
+
+        // Clear existing options
+        kotaSelect.innerHTML = '<option value="">Pilih Kota</option>';
+        kecamatanSelect.innerHTML = '<option value="">Pilih Kecamatan</option>';
+
+        const selectedProvinsi = provinsiSelect.value;
+
+        if (selectedProvinsi && locationData[selectedProvinsi]) {
+            const cities = Object.keys(locationData[selectedProvinsi]);
+            cities.forEach(city => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                kotaSelect.appendChild(option);
+            });
+        }
+    }
+
+    function updateKecamatanOptions() {
+        const provinsiSelect = document.getElementById('provinsi');
+        const kotaSelect = document.getElementById('kota');
+        const kecamatanSelect = document.getElementById('kecamatan');
+
+        // Clear existing options
+        kecamatanSelect.innerHTML = '<option value="">Pilih Kecamatan</option>';
+
+        const selectedProvinsi = provinsiSelect.value;
+        const selectedKota = kotaSelect.value;
+
+        if (selectedProvinsi && selectedKota && locationData[selectedProvinsi] && locationData[selectedProvinsi][selectedKota]) {
+            const districts = locationData[selectedProvinsi][selectedKota];
+            districts.forEach(district => {
+                const option = document.createElement('option');
+                option.value = district;
+                option.textContent = district;
+                kecamatanSelect.appendChild(option);
+            });
+        }
+    }
+
+    // Add validation to form submission
+    document.addEventListener('DOMContentLoaded', function() {
+        const salesTransactionForm = document.getElementById('salesTransactionForm');
+        if (salesTransactionForm) {
+            salesTransactionForm.addEventListener('submit', function(e) {
+                const provinsi = document.getElementById('provinsi').value;
+                const kota = document.getElementById('kota').value;
+                const kecamatan = document.getElementById('kecamatan').value;
+
+                if (!provinsi || !kota || !kecamatan) {
+                    e.preventDefault();
+                    alert('Harap lengkapi semua field lokasi (Provinsi, Kota, Kecamatan)');
+                    return false;
+                }
+            });
+        }
+    });
+    </script>
 @endpush
 
 @endsection

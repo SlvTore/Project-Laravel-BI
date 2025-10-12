@@ -12,7 +12,6 @@ return new class extends Migration
         $this->addIndexIfNotExists('fact_sales', ['business_id', 'date_id'], 'idx_fact_sales_business_date');
         $this->addIndexIfNotExists('fact_sales', 'product_id', 'idx_fact_sales_product');
         $this->addIndexIfNotExists('fact_sales', 'customer_id', 'idx_fact_sales_customer');
-        $this->addIndexIfNotExists('fact_sales', 'channel_id', 'idx_fact_sales_channel');
         $this->addIndexIfNotExists('fact_sales', ['product_id', 'date_id'], 'idx_fact_sales_product_date');
         $this->addIndexIfNotExists('fact_sales', 'data_feed_id', 'idx_fact_sales_feed');
         $this->addIndexIfNotExists('dim_product', ['business_id', 'product_nk'], 'idx_dim_product_business_nk');
@@ -30,7 +29,6 @@ return new class extends Migration
             $table->dropIndex('idx_fact_sales_business_date');
             $table->dropIndex('idx_fact_sales_product');
             $table->dropIndex('idx_fact_sales_customer');
-            $table->dropIndex('idx_fact_sales_channel');
             $table->dropIndex('idx_fact_sales_product_date');
             $table->dropIndex('idx_fact_sales_feed');
         });

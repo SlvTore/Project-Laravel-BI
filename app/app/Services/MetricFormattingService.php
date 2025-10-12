@@ -51,10 +51,10 @@ class MetricFormattingService
     public static function mapMetricToOlap(string $name): ?array
     {
         return match($name) {
-            'Total Penjualan' => ['view' => 'vw_sales_daily', 'column' => 'total_gross_revenue', 'type' => 'sum'],
-            'Biaya Pokok Penjualan (COGS)' => ['view' => 'vw_cogs_daily', 'column' => 'total_cogs', 'type' => 'sum'],
-            'Margin Keuntungan (Profit Margin)' => ['view' => 'vw_margin_daily', 'column' => 'total_margin', 'type' => 'margin'],
-            'Penjualan Produk Terlaris' => ['view' => 'vw_sales_product_daily', 'column' => 'total_quantity', 'type' => 'top_products'],
+            'Total Penjualan' => ['view' => 'vw_sales_daily', 'column' => 'gross_revenue', 'type' => 'sum'],
+            'Biaya Pokok Penjualan (COGS)' => ['view' => 'vw_cogs_daily', 'column' => 'cogs', 'type' => 'sum'],
+            'Margin Keuntungan (Profit Margin)' => ['view' => 'vw_margin_daily', 'column' => 'margin', 'type' => 'margin'],
+            'Penjualan Produk Terlaris' => ['view' => 'vw_sales_product_daily', 'column' => 'quantity_sold', 'type' => 'top_products'],
             'Jumlah Pelanggan Baru' => ['view' => 'vw_new_customers_daily', 'column' => 'new_customers', 'type' => 'sum'],
             'Jumlah Pelanggan Setia' => ['view' => 'vw_returning_customers_daily', 'column' => 'returning_customers', 'type' => 'sum'],
             default => null,
@@ -69,7 +69,7 @@ class MetricFormattingService
         // Get latest available data instead of current month
         $latestDate = DB::table($view)
             ->where('business_id', $businessId)
-            ->max('sales_date');
+            ->max('date');
 
         if (!$latestDate) {
             return [0.0, 0.0];
@@ -82,7 +82,7 @@ class MetricFormattingService
 
         $currentQuery = DB::table($view)
             ->where('business_id', $businessId)
-            ->whereBetween('sales_date', [$currentStart->format('Y-m-d'), $latest->format('Y-m-d')]);
+            ->whereBetween('date', [$currentStart->format('Y-m-d'), $latest->format('Y-m-d')]);
 
         $current = $agg === 'avg' ? $currentQuery->avg($column) : $currentQuery->sum($column);
 
@@ -92,7 +92,7 @@ class MetricFormattingService
 
         $previousQuery = DB::table($view)
             ->where('business_id', $businessId)
-            ->whereBetween('sales_date', [$previousStart->format('Y-m-d'), $previousEnd->format('Y-m-d')]);
+            ->whereBetween('date', [$previousStart->format('Y-m-d'), $previousEnd->format('Y-m-d')]);
 
         $previous = $agg === 'avg' ? $previousQuery->avg($column) : $previousQuery->sum($column);
 
@@ -106,7 +106,7 @@ class MetricFormattingService
     {
         $latestDate = DB::table('vw_sales_product_daily')
             ->where('business_id', $businessId)
-            ->max('sales_date');
+            ->max('date');
 
         if (!$latestDate) {
             return [0.0, 0.0];
@@ -119,9 +119,9 @@ class MetricFormattingService
 
         // Get top product for current period
         $topProductCurrent = DB::table('vw_sales_product_daily')
-            ->select('product_name', DB::raw('SUM(total_quantity) as total_qty'))
+            ->select('product_name', DB::raw('SUM(quantity_sold) as total_qty'))
             ->where('business_id', $businessId)
-            ->whereBetween('sales_date', [$currentStart->format('Y-m-d'), $latest->format('Y-m-d')])
+            ->whereBetween('date', [$currentStart->format('Y-m-d'), $latest->format('Y-m-d')])
             ->groupBy('product_name')
             ->orderByDesc('total_qty')
             ->first();
@@ -135,8 +135,8 @@ class MetricFormattingService
             $previousData = DB::table('vw_sales_product_daily')
                 ->where('business_id', $businessId)
                 ->where('product_name', $productName)
-                ->whereBetween('sales_date', [$previousStart->format('Y-m-d'), $previousEnd->format('Y-m-d')])
-                ->sum('total_quantity');
+                ->whereBetween('date', [$previousStart->format('Y-m-d'), $previousEnd->format('Y-m-d')])
+                ->sum('quantity_sold');
             $previous = $previousData ?? 0;
         }
 

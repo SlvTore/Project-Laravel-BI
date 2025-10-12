@@ -20,6 +20,10 @@ class SalesTransaction extends Model
         'total_amount',
         'status',
         'notes',
+        'provinsi',
+        'kota',
+        'kecamatan',
+        'location_id',
     ];
 
     protected $casts = [

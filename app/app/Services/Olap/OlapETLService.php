@@ -14,7 +14,8 @@ class OlapETLService
 {
     public function __construct(
         private OlapDimensionService $dimensionService,
-        private OlapFactService $factService
+        private OlapFactService $factService,
+        private OlapLocationService $locationService
     ) {}
 
     /**
@@ -82,41 +83,61 @@ class OlapETLService
 
             try {
                 // Get or create dimensions
-                $dateId = $this->dimensionService->getOrCreateDateDimension($item->transaction_date)->id;
+                $dateId = $this->dimensionService->getOrCreateDateDimension($item->transaction_date);
 
                 $productId = $this->dimensionService->getOrCreateProductDimension(
                     $businessId,
                     $item->product_id,
-                    $item->product_name,
-                    $item->product_category
-                )->id;
+                    $item->product_name
+                );
 
                 $customerId = $this->dimensionService->getOrCreateCustomerDimension(
                     $businessId,
                     $item->customer_id,
-                    $item->customer_name,
-                    $item->customer_type,
-                    $item->customer_phone
-                )->id;
-
-                $channelId = $this->dimensionService->getOrCreateChannelDimension(
-                    $businessId,
-                    $item->channel ?? 'DIRECT',
-                    $item->channel_name ?? 'Direct Sales'
-                )->id;
+                    $item->product_name // fallback name if customer not found
+                );
 
                 $promotionId = $this->dimensionService->getOrCreatePromotionDimension(
                     $businessId,
-                    $item->promotion_code ?? 'NONE',
-                    $item->promotion_name ?? 'No Promotion',
-                    $item->promotion_discount_percent ?? 0
-                )->id;
+                    $item->promotion_code ?? null
+                );
 
-                // Calculate COGS and margin
-                $cogsAmount = $item->unit_cost * $item->quantity;
-                $marginAmount = $item->total_amount - $cogsAmount;
-                $marginPercent = $item->total_amount > 0
-                    ? ($marginAmount / $item->total_amount) * 100
+                // Get or create location dimension
+                $locationId = null;
+                if (!empty($item->location_id)) {
+                    // Location already mapped during staging
+                    $locationId = $item->location_id;
+                } elseif (!empty($item->kecamatan) || !empty($item->kota) || !empty($item->provinsi)) {
+                    // Map location from raw data
+                    $locationId = $this->locationService->ensureLocationDim(
+                        $businessId,
+                        $item->provinsi ?? 'Unknown',
+                        $item->kota ?? 'Unknown',
+                        $item->kecamatan ?? 'Unknown'
+                    );
+                } else {
+                    // No location data, create default Unknown location
+                    $locationId = $this->locationService->ensureLocationDim(
+                        $businessId,
+                        'Unknown',
+                        'Unknown',
+                        'Unknown'
+                    );
+                }
+
+                // Map staging fields to fact fields
+                $unitPrice = $item->selling_price_at_transaction ?? $item->unit_price ?? 0;
+                $discount = $item->discount_per_item ?? $item->discount_amount ?? 0;
+                $quantity = $item->quantity ?? 0;
+                $unitCost = $item->unit_cost ?? 0;
+
+                // Calculate amounts
+                $grossRevenue = ($unitPrice * $quantity);
+                $totalAmount = $grossRevenue - $discount + ($item->tax_amount ?? 0) + ($item->shipping_cost ?? 0);
+                $cogsAmount = $unitCost * $quantity;
+                $marginAmount = $totalAmount - $cogsAmount;
+                $marginPercent = $totalAmount > 0
+                    ? ($marginAmount / $totalAmount) * 100
                     : 0;
 
                 // Prepare fact record
@@ -126,18 +147,28 @@ class OlapETLService
                     'date_id' => $dateId,
                     'product_id' => $productId,
                     'customer_id' => $customerId,
-                    'channel_id' => $channelId,
                     'promotion_id' => $promotionId,
-                    'quantity' => $item->quantity,
-                    'unit_price' => $item->unit_price,
-                    'gross_revenue' => $item->total_amount,
-                    'discount_amount' => $item->discount_amount ?? 0,
-                    'net_revenue' => $item->total_amount - ($item->discount_amount ?? 0),
-                    'unit_cost' => $item->unit_cost,
+                    'location_id' => $locationId,
+                    'sales_transaction_id' => $item->sales_transaction_id ?? null,
+                    'sales_transaction_item_id' => $item->sales_transaction_item_id ?? null,
+                    'quantity' => $quantity,
+                    'unit_price' => $unitPrice,
+                    'discount' => $discount,
+                    'subtotal' => $grossRevenue - $discount,
+                    'tax_amount' => $item->tax_amount ?? 0,
+                    'shipping_cost' => $item->shipping_cost ?? 0,
+                    'total_amount' => $totalAmount,
+                    'gross_revenue' => $grossRevenue,
                     'cogs_amount' => $cogsAmount,
                     'gross_margin_amount' => $marginAmount,
                     'gross_margin_percent' => $marginPercent,
                 ];
+
+                Log::info("ETL: Prepared fact for item #{$item->id}", [
+                    'product_id' => $productId,
+                    'location_id' => $locationId,
+                    'total_amount' => $totalAmount,
+                ]);
 
             } catch (\Exception $e) {
                 $stats['errors']++;
@@ -150,8 +181,12 @@ class OlapETLService
 
         // Bulk insert facts
         if (!empty($factsToInsert)) {
+            Log::info("ETL: Bulk inserting " . count($factsToInsert) . " facts");
             $inserted = $this->factService->bulkInsertFacts($factsToInsert);
             $stats['inserted'] += $inserted;
+            Log::info("ETL: Inserted {$inserted} facts");
+        } else {
+            Log::warning("ETL: No facts to insert for batch");
         }
     }
 

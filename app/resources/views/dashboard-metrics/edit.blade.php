@@ -19,7 +19,7 @@
     </div>
 
     <!-- Statistics Cards -->
-    <div class="row mb-4 ">
+    <div class="row mb-4 stats-row">
         <div class="col-lg-3 col-md-6">
             <div class="stats-card">
                 <div class="metric-icon">
@@ -67,7 +67,7 @@
     </div>
 
     <!-- Charts Section -->
-    <div class="row mb-4">
+    <div class="row mb-4 charts-row">
         <div class="col-lg-8">
             <div class="chart-container">
                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -89,386 +89,8 @@
         </div>
     </div>
 
-        <!-- Inline, self-contained ApexCharts initializer (no jQuery required) -->
-        <script>
-        (function() {
-            if (window.__chartsInitialized) return; // prevent double init
-            window.__chartsInitialized = true;
-
-            // Data from backend (fallback-safe)
-            const CHART_DATA = {
-                values: @json($chartData['values'] ?? []),
-                dates: @json($chartData['dates'] ?? []),
-                labels: @json($chartData['labels'] ?? [])
-            };
-            const WAREHOUSE = @json($warehouseData ?? []);
-            const METRIC_NAME = @json($businessMetric->metric_name);
-
-            function fmt(val) {
-                try {
-                    if (typeof formatValue === 'function') return formatValue(val);
-                    return new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(val || 0);
-                } catch (_) { return String(val ?? ''); }
-            }
-
-            function loadApex(cb) {
-                if (window.ApexCharts) return cb();
-                const s = document.createElement('script');
-                s.src = 'https://cdn.jsdelivr.net/npm/apexcharts';
-                s.onload = cb;
-                s.onerror = function() { console.error('Failed to load ApexCharts'); };
-                document.head.appendChild(s);
-            }
-
-            let trendChart, summaryChart;
-            function renderCharts() {
-                const trendEl = document.querySelector('#trendChart');
-                const summaryEl = document.querySelector('#summaryChart');
-                if (!trendEl || !summaryEl) return;
-
-                const trendOptions = {
-                    series: [{ name: METRIC_NAME, data: CHART_DATA.values || [] }],
-                    chart: { type: 'line', height: 300, animations: { enabled: true, speed: 600 } },
-                    stroke: { curve: 'smooth', width: 3 },
-                    colors: ['#667eea'],
-                    xaxis: { categories: CHART_DATA.labels || [], title: { text: 'Tanggal' } },
-                    yaxis: { labels: { formatter: fmt }, title: { text: 'Value' } },
-                    tooltip: { y: { formatter: fmt } },
-                    grid: { borderColor: 'rgba(255,255,255,0.1)' }
-                };
-                trendChart = new ApexCharts(trendEl, trendOptions);
-                trendChart.render();
-
-                // Summary based on warehouse monthly if available; fallback to statistics
-                let series, labels, colors;
-                if (WAREHOUSE && WAREHOUSE.available && WAREHOUSE.monthly) {
-                    const rev = Number(WAREHOUSE.monthly.total_revenue || 0);
-                    const tx = Number(WAREHOUSE.monthly.transaction_count || 0);
-                    const avg = tx > 0 ? rev / tx : 0;
-                    series = [rev, avg, tx * 1000];
-                    labels = ['Total Revenue Bulan Ini', 'Rata-rata/Transaksi', 'Jumlah Transaksi (x1000)'];
-                    colors = ['#28a745', '#17a2b8', '#ffc107'];
-                } else {
-                    series = [
-                        {{ $statistics['this_month'] ?? 0 }},
-                        {{ $statistics['last_month'] ?? 0 }},
-                        Math.max(0, ({{ $statistics['avg_value'] ?? 0 }}) - ({{ $statistics['this_month'] ?? 0 }}))
-                    ];
-                    labels = ['Bulan Ini', 'Bulan Lalu', 'Lainnya'];
-                    colors = ['#28a745', '#ffc107', '#6c757d'];
-                }
-                const summaryOptions = {
-                    series, labels, colors,
-                    chart: { type: 'donut', height: 300 },
-                    legend: { position: 'bottom' },
-                    tooltip: { y: { formatter: fmt } },
-                    plotOptions: { pie: { donut: { size: '70%' } } }
-                };
-                summaryChart = new ApexCharts(summaryEl, summaryOptions);
-                summaryChart.render();
-            }
-
-            function attachPeriodButtons() {
-                // Period button functionality is handled by the main script section
-                console.log('Period buttons managed by main script - no duplicate handlers attached');
-            }
-
-            function updateChartFetch(days) {
-                // Chart update functionality is handled by the main script section
-                console.log('Chart update managed by main script');
-            }
-
-            document.addEventListener('DOMContentLoaded', function() {
-                loadApex(function() {
-                    try { renderCharts(); attachPeriodButtons(); } catch (e) { console.error(e); }
-                });
-            });
-        })();
-        </script>
-
     <!-- Warehouse Data Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="content-card p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0 text-white">
-                        <i class="fas fa-database me-2"></i>Warehouse Data
-                    </h5>
-                    <small class="text-white-50">Sumber: OLAP (dim_*/fact_sales)</small>
-                </div>
-
-                @if(!empty($warehouseData) && ($warehouseData['available'] ?? false))
-                    <div class="warehouse-data-content" id="warehouseDataContent">
-                        @php $type = $warehouseData['type'] ?? 'sales'; @endphp
-                        <div class="row g-4">
-                            <div class="border border-white rounded p-3 col-lg-8">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h6 class="text-white mb-0">
-                                        @switch($type)
-                                            @case('sales') Data Harian Penjualan (30 hari) @break
-                                            @case('cogs') Data Harian COGS (30 hari) @break
-                                            @case('margin') Data Harian Margin (30 hari) @break
-                                            @case('new_customers') Pelanggan Baru Harian (30 hari) @break
-                                            @case('returning_customers') Pelanggan Setia Harian (30 hari) @break
-                                            @case('top_products') Penjualan Produk Harian (30 hari) @break
-                                            @default Data Harian (30 hari)
-                                        @endswitch
-                                    </h6>
-                                    <button class="btn btn-sm btn-outline-light" onclick="refreshWarehouseData()" id="refreshWarehouseBtn">
-                                        <i class="fas fa-sync-alt me-1"></i> Refresh
-                                    </button>
-                                </div>
-                                <div class="table-responsive">
-                                    <table class="table table-light table-striped table-hover mb-0" id="warehouseDailyTable">
-                                        <thead>
-                                            <tr>
-                                                <th>Tanggal</th>
-                                                @if($type==='sales')
-                                                    <th class="text-end">Revenue</th>
-                                                    <th class="text-end">Transaksi</th>
-                                                    <th class="text-end">Qty</th>
-                                                @elseif($type==='cogs')
-                                                    <th class="text-end">Total COGS</th>
-                                                @elseif($type==='margin')
-                                                    <th class="text-end">Total Margin</th>
-                                                @elseif($type==='new_customers')
-                                                    <th class="text-end">Pelanggan Baru</th>
-                                                @elseif($type==='returning_customers')
-                                                    <th class="text-end">Pelanggan Setia</th>
-                                                @elseif($type==='top_products')
-                                                    <th>Produk</th>
-                                                    <th class="text-end">Revenue</th>
-                                                    <th class="text-end">Qty</th>
-                                                @endif
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @php $dailyRows = $warehouseData['daily'] ?? []; @endphp
-                                            @forelse($dailyRows as $row)
-                                                <tr class="warehouse-row" data-date="{{ $row->sales_date }}">
-                                                    <td class="fw-medium">{{ \Carbon\Carbon::parse($row->sales_date)->format('d M Y') }}</td>
-                                                    @if($type==='sales')
-                                                        <td class="text-end fw-bold text-success">Rp {{ number_format((float)($row->total_gross_revenue ?? 0),0) }}</td>
-                                                        <td class="text-end">{{ (int)($row->transaction_count ?? 0) }}</td>
-                                                        <td class="text-end">{{ (int)($row->total_quantity ?? 0) }}</td>
-                                                    @elseif($type==='cogs')
-                                                        <td class="text-end fw-bold text-danger">Rp {{ number_format((float)($row->total_cogs ?? 0),0) }}</td>
-                                                    @elseif($type==='margin')
-                                                        <td class="text-end fw-bold text-success">Rp {{ number_format((float)($row->total_margin ?? 0),0) }}</td>
-                                                    @elseif($type==='new_customers')
-                                                        <td class="text-end fw-bold">{{ (int)($row->new_customers ?? 0) }}</td>
-                                                    @elseif($type==='returning_customers')
-                                                        <td class="text-end fw-bold">{{ (int)($row->returning_customers ?? 0) }}</td>
-                                                    @elseif($type==='top_products')
-                                                        <td class="fw-medium">{{ $row->product_name }}</td>
-                                                        <td class="text-end text-success fw-bold">Rp {{ number_format((float)($row->total_revenue ?? 0),0) }}</td>
-                                                        <td class="text-end">{{ (int)($row->total_quantity ?? 0) }}</td>
-                                                    @endif
-                                                </tr>
-                                            @empty
-                                                <tr>
-                                                    <td colspan="8" class="text-center text-white-50">Tidak ada data harian.</td>
-                                                </tr>
-                                            @endforelse
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <div class="col-lg-4">
-                                @if(in_array($type,['sales','top_products']))
-                                    <div class="border border-white rounded p-2 mb-4">
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <h6 class="text-white mb-0">
-                                                @if($type==='sales') Top Produk (30 hari) @else Top Produk (Agg 30 hari) @endif
-                                            </h6>
-                                            <small class="text-white-50"><i class="fas fa-trophy me-1"></i>Revenue</small>
-                                        </div>
-                                        <div class="table-responsive">
-                                            <table class="table table-light table-sm table-hover mb-0" id="warehouseProductsTable">
-                                                <thead>
-                                                    <tr>
-                                                        <th>#</th>
-                                                        <th>Produk</th>
-                                                        <th class="text-end">Revenue</th>
-                                                        <th class="text-end">Qty</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @php $top = $warehouseData['top'] ?? []; @endphp
-                                                    @forelse($top as $index => $p)
-                                                        <tr>
-                                                            <td>
-                                                                @if($index==0)<i class="fas fa-crown text-warning"></i>
-                                                                @elseif($index==1)<i class="fas fa-medal text-secondary"></i>
-                                                                @elseif($index==2)<i class="fas fa-award text-warning"></i>
-                                                                @else {{ $index+1 }} @endif
-                                                            </td>
-                                                            <td class="fw-medium">{{ $p->product_name }}</td>
-                                                            <td class="text-end text-success fw-bold">Rp {{ number_format((float)($p->total_revenue ?? 0),0) }}</td>
-                                                            <td class="text-end">{{ (int)($p->total_qty ?? $p->total_quantity ?? 0) }}</td>
-                                                        </tr>
-                                                    @empty
-                                                        <tr><td colspan="4" class="text-center text-white-50">Belum ada data produk.</td></tr>
-                                                    @endforelse
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                @endif
-
-                                <div class="stats-card warehouse-summary">
-                                    <div class="card-title">
-                                        <i class="fas fa-calendar-check me-2"></i>Ringkasan Bulan Ini
-                                    </div>
-                                    @if($type==='sales')
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <span class="text-white-50">Total Revenue</span>
-                                            <span class="stats-value text-success">Rp {{ number_format((float)($warehouseData['monthly']['total_revenue'] ?? 0),0) }}</span>
-                                        </div>
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <span class="text-white-50">Transaksi</span>
-                                            <span class="stats-value text-info">{{ (int)($warehouseData['monthly']['transaction_count'] ?? 0) }}</span>
-                                        </div>
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <span class="text-white-50">Total Qty</span>
-                                            <span class="stats-value text-warning">{{ (int)($warehouseData['monthly']['total_quantity'] ?? 0) }}</span>
-                                        </div>
-                                    @elseif($type==='cogs')
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <span class="text-white-50">Total COGS</span>
-                                            <span class="stats-value text-danger">Rp {{ number_format((float)($warehouseData['monthly']['total_cogs'] ?? 0),0) }}</span>
-                                        </div>
-                                    @elseif($type==='margin')
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <span class="text-white-50">Total Margin</span>
-                                            <span class="stats-value text-success">Rp {{ number_format((float)($warehouseData['monthly']['total_margin'] ?? 0),0) }}</span>
-                                        </div>
-                                    @elseif($type==='new_customers')
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <span class="text-white-50">Pelanggan Baru</span>
-                                            <span class="stats-value text-primary">{{ (int)($warehouseData['monthly']['new_customers'] ?? 0) }}</span>
-                                        </div>
-                                        @if(isset($warehouseData['customers']) && count($warehouseData['customers']) > 0)
-                                            <div class="mt-3">
-                                                <h6 class="text-white-50 mb-2">
-                                                    <i class="fas fa-users me-1"></i>
-                                                    Detail Pelanggan Baru (10 Terbaru)
-                                                </h6>
-                                                <div class="table-responsive">
-                                                    <table class="table table-sm table-dark mb-0" id="newCustomersTable">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Nama</th>
-                                                                <th>Email</th>
-                                                                <th>Tgl. Bergabung</th>
-                                                                <th class="text-end">Total Belanja</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            @foreach($warehouseData['customers'] as $customer)
-                                                                <tr>
-                                                                    <td class="fw-semibold">{{ $customer->customer_name }}</td>
-                                                                    <td class="text-muted small">{{ $customer->email ?? '-' }}</td>
-                                                                    <td class="small">{{ \Carbon\Carbon::parse($customer->first_purchase_date)->format('d M Y') }}</td>
-                                                                    <td class="text-end fw-semibold text-success">
-                                                                        Rp {{ number_format($customer->total_spent, 0) }}
-                                                                    </td>
-                                                                </tr>
-                                                            @endforeach
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        @endif
-                                        @if(count($warehouseData['daily'] ?? []) === 0)
-                                            <div class="alert alert-info mt-3 mb-0">
-                                                <small><i class="fas fa-info-circle me-1"></i>
-                                                Data pelanggan baru tersedia dari periode sebelumnya. Periode aktual mungkin berbeda dari range 30 hari terakhir.
-                                                </small>
-                                            </div>
-                                        @endif
-                                    @elseif($type==='returning_customers')
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <span class="text-white-50">Pelanggan Setia</span>
-                                            <span class="stats-value text-success">{{ (int)($warehouseData['monthly']['returning_customers'] ?? 0) }}</span>
-                                        </div>
-                                        @if(isset($warehouseData['customers']) && count($warehouseData['customers']) > 0)
-                                            <div class="mt-3">
-                                                <h6 class="text-white-50 mb-2">
-                                                    <i class="fas fa-crown me-1"></i>
-                                                    Detail Pelanggan Setia (10 Teraktif)
-                                                </h6>
-                                                <div class="table-responsive">
-                                                    <table class="table table-sm table-dark mb-0" id="returningCustomersTable">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Nama</th>
-                                                                <th>Email</th>
-                                                                <th>Transaksi Terakhir</th>
-                                                                <th class="text-end">Total Transaksi</th>
-                                                                <th class="text-end">Total Belanja</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            @foreach($warehouseData['customers'] as $customer)
-                                                                <tr>
-                                                                    <td class="fw-semibold">{{ $customer->customer_name }}</td>
-                                                                    <td class="text-muted small">{{ $customer->email ?? '-' }}</td>
-                                                                    <td class="small">{{ \Carbon\Carbon::parse($customer->last_purchase_date)->format('d M Y') }}</td>
-                                                                    <td class="text-end">
-                                                                        <span class="badge bg-primary">{{ $customer->total_purchases ?? 0 }}x</span>
-                                                                    </td>
-                                                                    <td class="text-end fw-semibold text-success">
-                                                                        Rp {{ number_format($customer->total_spent, 0) }}
-                                                                    </td>
-                                                                </tr>
-                                                            @endforeach
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        @endif
-                                        @if(count($warehouseData['daily'] ?? []) === 0)
-                                            <div class="alert alert-info mt-3 mb-0">
-                                                <small><i class="fas fa-info-circle me-1"></i>
-                                                Data pelanggan setia tersedia dari periode sebelumnya. Periode aktual mungkin berbeda dari range 30 hari terakhir.
-                                                </small>
-                                            </div>
-                                        @endif
-                                    @elseif($type==='top_products')
-                                        <div class="text-white-50 small">Menampilkan agregasi penjualan produk selama 30 hari terakhir.</div>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Loading overlay for warehouse data -->
-                    <div class="warehouse-loading d-none" id="warehouseLoading">
-                        <div class="text-center text-white">
-                            <div class="spinner-border text-light mb-3" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            <p>Memperbarui data warehouse...</p>
-                        </div>
-                    </div>
-                @else
-                    <div class="alert alert-warning mb-0" role="alert">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-exclamation-triangle me-3 fa-2x"></i>
-                            <div>
-                                <strong>Data Warehouse belum tersedia untuk metrik ini.</strong>
-                                <p class="mb-2">Pastikan migrasi telah dijalankan, proses transform sudah selesai, dan lakukan backfill bila diperlukan.</p>
-                                <button class="btn btn-warning btn-sm" onclick="triggerBackfill()" id="backfillBtn">
-                                    <i class="fas fa-database me-1"></i> Jalankan Backfill
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-            </div>
-        </div>
-    </div>
+    @include('dashboard-metrics.partials.warehouse-data-section')
 
     <!-- Data Records section removed as per request -->
 
@@ -691,7 +313,16 @@
         padding: 25px;
         box-shadow: 0 5px 20px rgba(0,0,0,0.08);
         margin-bottom: 30px;
+        position: relative;
+        z-index: 1;
     }
+
+    /* Prevent section overlap and ensure stacking context */
+    .stats-row, .charts-row {
+        position: relative;
+        z-index: 0;
+    }
+    .charts-row { margin-top: 0.5rem; }
 
     .datatable-container {
         background-color: rgba(255, 255, 255, 0.1);
@@ -895,7 +526,7 @@
     .modal-input:focus {
         background: rgba(255, 255, 255, 0.15) !important;
         border-color: #7cb947 !important;
-        box-shadow: 0 0 0 0.2rem rgba(124, 185, 103, 0.25) !important;
+        box-shadow: 0 0 0 0.2rem rgba(124, 185, 103,
         color: white !important;
     }
 
@@ -1040,6 +671,41 @@
         animation: fadeInUp 0.3s ease-out;
     }
 
+    /* Statistics value update animation */
+    .stats-value-update {
+        animation: statValuePulse 0.8s ease-in-out;
+        color: #4ade80 !important;
+    }
+
+    @keyframes statValuePulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.1);
+            text-shadow: 0 0 20px rgba(74, 222, 128, 0.6);
+        }
+    }
+
+    /* Warehouse data enhanced styling */
+    .warehouse-section .card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .warehouse-section .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(102, 126, 234, 0.15) !important;
+        cursor: pointer;
+    }
+
+    /* Ensure chart inner spinners don’t overflow layout */
+    #trendChart, #summaryChart { position: relative; overflow: hidden; }
+
+
     @keyframes fadeInUp {
         from {
             opacity: 0;
@@ -1063,173 +729,275 @@
         box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25) !important;
     }
 
-    /* AI Chat Styles */
+    /* AI Chat Styles - Modern Chat Platform Design */
     .ai-chat-container {
         background: rgba(255, 255, 255, 0.05);
-        border-radius: 15px;
-        padding: 20px;
-        min-height: 400px;
+        border-radius: 20px;
+        min-height: 600px;
         display: flex;
         flex-direction: column;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     }
 
-    .chat-messages {
+    .ai-chat-container .chat-messages {
         flex: 1;
         overflow-y: auto;
-        padding-right: 10px;
-        margin-bottom: 20px;
-        max-height: 400px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        max-height: 450px;
+        background: linear-gradient(180deg, rgba(30, 30, 50, 0.3) 0%, rgba(20, 20, 40, 0.5) 100%);
+        scroll-behavior: smooth;
     }
 
-    .message {
+    .ai-chat-container .message {
         display: flex;
         gap: 12px;
-        margin-bottom: 20px;
-        animation: messageSlideIn 0.3s ease-out;
+        animation: messageSlideIn 0.3s ease-out, bubblePop 0.28s ease-out;
+        max-width: 85%;
+        align-items: flex-start;
     }
 
-    .message-avatar {
+    .ai-chat-container .ai-message {
+        align-self: flex-start;
+    }
+
+    .ai-chat-container .user-message {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+    }
+
+    .ai-chat-container .message-avatar {
         width: 40px;
         height: 40px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 18px;
+        font-size: 20px;
         flex-shrink: 0;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
     }
 
-    .ai-message .message-avatar {
-        background: linear-gradient(135deg, #7cb947 0%, #1e3c80 100%);
+    .ai-chat-container .ai-message .message-avatar {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
     }
 
-    .user-message {
-        flex-direction: row-reverse;
-    }
-
-    .user-message .message-avatar {
+    .ai-chat-container .user-message .message-avatar {
         background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         color: white;
     }
 
-    .message-content {
+    .ai-chat-container .message-content {
         background: rgba(255, 255, 255, 0.1);
-        border-radius: 15px;
-        padding: 15px;
-        max-width: 80%;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 18px 18px 18px 4px;
+        padding: 14px 18px;
+        max-width: 100%;
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+        position: relative;
     }
 
-    .user-message .message-content {
-        background: rgba(40, 167, 69, 0.2);
-        border-color: rgba(40, 167, 69, 0.3);
+    /* Bubble tails */
+    .ai-chat-container .ai-message .message-content::after {
+        content: '';
+        position: absolute;
+        left: -8px;
+        top: 14px;
+        width: 0; height: 0;
+        border-top: 8px solid transparent;
+        border-bottom: 8px solid transparent;
+        border-right: 8px solid rgba(255, 255, 255, 0.1);
+        filter: drop-shadow(0 0 2px rgba(0,0,0,0.15));
     }
 
-    .message-header {
+    .ai-chat-container .user-message .message-content {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.25) 0%, rgba(118, 75, 162, 0.25) 100%);
+        border-color: rgba(102, 126, 234, 0.3);
+        border-radius: 18px 18px 4px 18px;
+    }
+
+    .ai-chat-container .user-message .message-content::after {
+        content: '';
+        position: absolute;
+        right: -8px;
+        top: 14px;
+        width: 0; height: 0;
+        border-top: 8px solid transparent;
+        border-bottom: 8px solid transparent;
+        border-left: 8px solid rgba(102, 126, 234, 0.25);
+        filter: drop-shadow(0 0 2px rgba(0,0,0,0.15));
+    }
+
+    .ai-chat-container .message-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 8px;
     }
 
-    .message-header strong {
-        color: white;
+    .ai-chat-container .message-header strong {
+        color: rgba(255, 255, 255, 0.95);
+        font-weight: 600;
+        font-size: 0.9rem;
     }
 
-    .message-text {
-        color: #f8f9fa;
-        line-height: 1.5;
+    .ai-chat-container .message-header small {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.75rem;
+    }
+
+    .ai-chat-container .message-text {
+        color: rgba(255, 255, 255, 0.95) !important;
+        line-height: 1.7;
         white-space: pre-wrap;
+        word-wrap: break-word;
+        font-size: 0.95rem;
     }
 
-    .message-text ul {
-        margin: 8px 0;
-        padding-left: 20px;
+    .ai-chat-container .message-text p {
+        margin-bottom: 10px;
+        color: rgba(255, 255, 255, 0.95) !important;
     }
 
-    .message-text li {
-        margin-bottom: 4px;
+    .ai-chat-container .message-text p:last-child {
+        margin-bottom: 0;
     }
 
-    .quick-actions {
+    .ai-chat-container .message-text ul {
+        margin: 10px 0;
+        padding-left: 24px;
+        color: rgba(255, 255, 255, 0.95) !important;
+    }
+
+    .ai-chat-container .message-text li {
+        margin-bottom: 6px;
+        color: rgba(255, 255, 255, 0.95) !important;
+    }
+
+    .ai-chat-container .message-text strong {
+        color: rgba(255, 255, 255, 1) !important;
+        font-weight: 600;
+    }
+
+    .ai-chat-container .message-text code {
+        background: rgba(0, 0, 0, 0.4);
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
+        color: #7cb947;
+    }
+
+    .ai-chat-container .quick-actions {
         display: flex;
         gap: 8px;
         flex-wrap: wrap;
+        padding: 16px 24px;
+        background: rgba(255, 255, 255, 0.03);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
-    .quick-question {
+    .ai-chat-container .quick-question {
+        background: rgba(102, 126, 234, 0.15);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        color: rgba(255, 255, 255, 0.95);
+        padding: 8px 16px;
         border-radius: 20px;
+        font-size: 0.85rem;
         transition: all 0.3s ease;
     }
 
-    .quick-question:hover {
+    .ai-chat-container .quick-question:hover {
+        background: rgba(102, 126, 234, 0.35);
+        border-color: rgba(102, 126, 234, 0.6);
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        color: white;
     }
 
-    .chat-input-container {
-        margin-top: auto;
+    .ai-chat-container .chat-input-container {
+        padding: 20px 24px;
+        background: rgba(255, 255, 255, 0.05);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .chat-input {
+    .ai-chat-container .chat-input {
         background: rgba(255, 255, 255, 0.1) !important;
         border: 2px solid rgba(255, 255, 255, 0.2) !important;
-        border-radius: 12px !important;
+        border-radius: 25px !important;
         color: white !important;
         resize: none;
         backdrop-filter: blur(10px);
+        padding: 14px 20px !important;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        transition: all 0.2s ease;
     }
 
-    .chat-input:focus {
+    .ai-chat-container .chat-input:focus {
         background: rgba(255, 255, 255, 0.15) !important;
-        border-color: #7cb947 !important;
-        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
+        border-color: rgba(102, 126, 234, 0.6) !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15) !important;
         color: white !important;
+        outline: none;
     }
 
-    .chat-input::placeholder {
-        color: rgba(255, 255, 255, 0.6) !important;
+    .ai-chat-container .chat-input::placeholder {
+        color: rgba(255, 255, 255, 0.4) !important;
     }
 
-    .chat-input-footer {
+    .ai-chat-container .chat-input-footer {
         display: flex;
         justify-content: space-between;
-        margin-top: 4px;
-        padding: 0 4px;
+        margin-top: 8px;
+        padding: 0 8px;
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.4);
     }
 
-    .chat-send-btn {
-        width: 45px;
-        height: 45px;
+    .ai-chat-container .chat-send-btn {
+        width: 48px;
+        height: 48px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, #7cb947 0%, #1e3c80 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         border: none;
         transition: all 0.3s ease;
-    }
-
-    .chat-send-btn:hover {
-        transform: scale(1.05);
         box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        color: white;
+        font-size: 20px;
     }
 
-    .chat-send-btn:disabled {
-        opacity: 0.6;
+    .ai-chat-container .chat-send-btn:hover:not(:disabled) {
+        transform: scale(1.1) rotate(15deg);
+        box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+    }
+
+    .ai-chat-container .chat-send-btn:disabled {
+        opacity: 0.5;
         transform: none;
+        cursor: not-allowed;
     }
 
-    .ai-status .badge {
+    .ai-chat-container .ai-status .badge {
         animation: pulse 2s infinite;
+        font-size: 0.85rem;
+        padding: 6px 12px;
     }
 
     @keyframes messageSlideIn {
         from {
             opacity: 0;
-            transform: translateY(20px);
+            transform: translateY(15px);
         }
         to {
             opacity: 1;
@@ -1237,59 +1005,74 @@
         }
     }
 
+    @keyframes bubblePop {
+        0% { transform: scale(0.98); }
+        100% { transform: scale(1); }
+    }
+
     @keyframes pulse {
         0% { opacity: 1; }
-        50% { opacity: 0.5; }
+        50% { opacity: 0.6; }
         100% { opacity: 1; }
     }
 
-    .typing-indicator {
+    .ai-chat-container .typing-indicator {
         display: flex;
         align-items: center;
-        gap: 8px;
-        color: #6c757d;
-        font-style: italic;
+        gap: 12px;
+        padding: 12px 18px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 18px 18px 18px 4px;
+        max-width: 140px;
+        align-self: flex-start;
+        opacity: 0;
+        animation: typingFadeIn 0.25s ease-out forwards;
     }
 
-    .typing-dots {
+    .ai-chat-container .typing-dots {
         display: flex;
-        gap: 3px;
+        gap: 4px;
     }
 
-    .typing-dots span {
-        width: 6px;
-        height: 6px;
-        background: #6c757d;
+    .ai-chat-container .typing-dots span {
+        width: 8px;
+        height: 8px;
+        background: rgba(102, 126, 234, 0.9);
         border-radius: 50%;
         animation: typingAnimation 1.4s infinite ease-in-out;
     }
 
-    .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
-    .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
-    .typing-dots span:nth-child(3) { animation-delay: 0s; }
+    .ai-chat-container .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+    .ai-chat-container .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+    .ai-chat-container .typing-dots span:nth-child(3) { animation-delay: 0s; }
 
     @keyframes typingAnimation {
-        0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
-        40% { transform: scale(1); opacity: 1; }
+        0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+        30% { transform: translateY(-10px); opacity: 1; }
+    }
+
+    @keyframes typingFadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
     /* Scrollbar Styling */
-    .chat-messages::-webkit-scrollbar {
+    .ai-chat-container .chat-messages::-webkit-scrollbar {
         width: 6px;
     }
 
-    .chat-messages::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 3px;
+    .ai-chat-container .chat-messages::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
     }
 
-    .chat-messages::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.3);
-        border-radius: 3px;
+    .ai-chat-container .chat-messages::-webkit-scrollbar-thumb {
+        background: rgba(102, 126, 234, 0.5);
+        border-radius: 10px;
     }
 
-    .chat-messages::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.5);
+    .ai-chat-container .chat-messages::-webkit-scrollbar-thumb:hover {
+        background: rgba(102, 126, 234, 0.7);
     }
 
     /* Warehouse Data Styling */
@@ -1368,18 +1151,172 @@
     .fa-medal { color: #c0c0c0 !important; }
     .fa-award { color: #cd7f32 !important; }
 </style>
+<!-- Load AI Chat CSS as a separate file to ensure precedence and easier caching control -->
+<link rel="stylesheet" href="{{ asset('css/dashboard/ai-chat.css') }}?v={{ @filemtime(public_path('css/dashboard/ai-chat.css')) ?: time() }}">
 @endpush
 
 @push('scripts')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-<script src="{{ asset('js/ai-chat.js') }}"></script>
+<!-- ApexCharts robust loader with fallbacks and timeout -->
+<script>
+// Guard to avoid duplicate loads
+window.__apexLoading = window.__apexLoading || false;
+window.__apexReady = window.__apexReady || false;
+window.__apexReadyQueue = window.__apexReadyQueue || [];
+window.__apexFailed = false;
 
+function onApexReady(cb){
+    if (window.__apexReady) return cb();
+    if (window.__apexFailed) {
+        console.warn('ApexCharts failed to load, cannot execute callback');
+        showChartsError();
+        return;
+    }
+    window.__apexReadyQueue.push(cb);
+}
+
+function markApexReady(){
+    console.log('🎉 ApexCharts marked as ready!');
+    window.__apexReady = true;
+    const q = window.__apexReadyQueue || [];
+    console.log('📋 Processing', q.length, 'queued callbacks');
+    while (q.length) {
+        try {
+            q.shift()();
+        } catch(e){
+            console.error('❌ Error in ApexCharts ready callback:', e);
+        }
+    }
+}
+
+function markApexFailed(){
+    console.error('❌ ApexCharts failed to load from all sources');
+    window.__apexFailed = true;
+    window.__apexLoading = false;
+    showChartsError();
+}
+
+function showChartsError(){
+    const containers = ['#trendChart', '#summaryChart'];
+    containers.forEach(selector => {
+        const el = document.querySelector(selector);
+        if (el && !el.innerHTML.trim()) {
+            el.innerHTML = `
+                <div class="d-flex h-100 w-100 align-items-center justify-content-center text-center text-white-50" style="flex-direction: column; gap: 10px;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem;"></i>
+                    <div>
+                        <strong>Charts Unavailable</strong><br>
+                        <small>Unable to load ApexCharts library.<br>Please check your internet connection or disable ad blockers.</small>
+                    </div>
+                </div>
+            `;
+        }
+    });
+}
+
+function loadApexWithFallbacks(){
+    if (typeof ApexCharts !== 'undefined') {
+        console.log('✅ ApexCharts already loaded!');
+        markApexReady();
+        return;
+    }
+    if (window.__apexLoading) {
+        console.log('⏳ ApexCharts already loading...');
+        return;
+    }
+
+    console.log('🔄 Starting ApexCharts CDN loader...');
+    window.__apexLoading = true;
+
+    const cdns = [
+        'https://cdn.jsdelivr.net/npm/apexcharts@3.45.2/dist/apexcharts.min.js',
+        'https://unpkg.com/apexcharts@3.45.2/dist/apexcharts.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.45.2/apexcharts.min.js'
+    ];
+
+    let idx = 0;
+    let loadTimeout;
+
+    function tryNext(){
+        if (typeof ApexCharts !== 'undefined') {
+            clearTimeout(loadTimeout);
+            markApexReady();
+            return;
+        }
+
+        if (idx >= cdns.length) {
+            clearTimeout(loadTimeout);
+            markApexFailed();
+            return;
+        }
+
+        const src = cdns[idx++];
+        console.log(`🌐 Trying CDN ${idx}/${cdns.length}:`, src);
+
+        const s = document.createElement('script');
+        s.src = src;
+        s.async = false; // Changed to false for sequential loading
+
+        // Set timeout for each CDN attempt
+        loadTimeout = setTimeout(() => {
+            console.warn('⏱️ Timeout loading from', src);
+            s.onerror = null;
+            s.onload = null;
+            tryNext();
+        }, 10000); // 10 second timeout per CDN
+
+        s.onload = function(){
+            clearTimeout(loadTimeout);
+            // Wait a bit for global to be available
+            setTimeout(() => {
+                if (typeof ApexCharts !== 'undefined') {
+                    console.log('✅ ApexCharts loaded successfully from', src);
+                    markApexReady();
+                } else {
+                    console.warn('⚠️ Script loaded but ApexCharts global not found, trying next...');
+                    tryNext();
+                }
+            }, 100);
+        };
+
+        s.onerror = function(e){
+            clearTimeout(loadTimeout);
+            console.warn('❌ Failed to load from', src, e);
+            tryNext();
+        };
+
+        document.head.appendChild(s);
+    }
+
+    tryNext();
+
+    // Global timeout - if nothing works after 30 seconds, give up
+    setTimeout(() => {
+        if (!window.__apexReady && !window.__apexFailed) {
+            console.error('⏱️ Global timeout: ApexCharts failed to load after 30 seconds');
+            markApexFailed();
+        }
+    }, 30000);
+}
+
+// Kick off loading early
+console.log('🚀 Initializing ApexCharts loader...');
+loadApexWithFallbacks();
+</script>
+<script src="{{ asset('js/ai-chat.js') }}"></script>
 <script>
 let trendChart, summaryChart;
 const businessMetricId = {{ $businessMetric->id }};
+// Make businessMetricId globally available for tests
+window.businessMetricId = businessMetricId;
 
 $(document).ready(function() {
+    console.log('🚀 Document ready, checking dependencies...');
+    console.log('✓ jQuery version:', $.fn.jquery);
+    console.log('✓ ApexCharts loaded:', typeof ApexCharts !== 'undefined');
+    console.log('✓ toastr loaded:', typeof toastr !== 'undefined');
+    console.log('✓ businessMetricId:', businessMetricId);
+
     // Configure toastr
     toastr.options = {
         "closeButton": true,
@@ -1399,7 +1336,25 @@ $(document).ready(function() {
         "hideMethod": "fadeOut"
     };
 
-    initializeCharts();
+    // Ensure initialize only once when Apex is ready
+    if (!window.__chartsInitializedOnce) {
+        window.__chartsInitializedOnce = true;
+        console.log('📋 Registering chart initialization callback...');
+        onApexReady(() => {
+            console.log('✅ ApexCharts ready callback executing, initializing charts...');
+            initializeCharts();
+        });
+        console.log('✅ Callback registered. Queue length:', window.__apexReadyQueue.length);
+    } else {
+        console.log('⚠️ Charts already initialized once, skipping...');
+    }
+
+    // Initialize statistics cards update (if warehouse data section exists)
+    if (typeof updateStatisticsCards === 'function') {
+        // Initial update after short delay to ensure DOM is ready
+        setTimeout(updateStatisticsCards, 1000);
+    }
+
     // Bind chart period buttons (keep charts interactive)
     $('.chart-period').on('click', function() {
         $('.chart-period').removeClass('active btn-primary').addClass('btn-outline-light');
@@ -1411,22 +1366,95 @@ $(document).ready(function() {
 });
 
 function initializeCharts() {
-    // Get initial chart data or use defaults
-    const chartData = {
-        values: @json($chartData['values'] ?? []),
-        dates: @json($chartData['dates'] ?? []),
-        labels: @json($chartData['labels'] ?? [])
-    };
+    console.log('🎯 Initializing charts...');
+
+    // Double-check ApexCharts is available
+    if (typeof ApexCharts === 'undefined') {
+        console.error('❌ ApexCharts is not defined! Cannot initialize charts.');
+        showChartsError();
+        return;
+    }
+
+    try {
+        // Get initial chart data or use defaults
+        const chartData = {
+            values: @json($chartData['values'] ?? []),
+            dates: @json($chartData['dates'] ?? []),
+            labels: @json($chartData['labels'] ?? [])
+        };
+
+        console.log('📊 Chart data:', chartData);
+
+        // Verify chart elements exist
+        const trendElement = document.querySelector("#trendChart");
+        const summaryElement = document.querySelector("#summaryChart");
+
+        if (!trendElement) {
+            console.error('❌ Trend chart element (#trendChart) not found!');
+            return;
+        }
+
+        if (!summaryElement) {
+            console.error('❌ Summary chart element (#summaryChart) not found!');
+            return;
+        }
+
+        console.log('✅ Chart elements found');
 
     // Get warehouse data for enhanced charts (if available)
     const warehouseData = @json($warehouseData ?? []);
     const hasWarehouseData = warehouseData && warehouseData.available;
 
+    console.log('📦 Warehouse data available:', hasWarehouseData);
+    console.log('📦 Full warehouse data:', warehouseData);
+
+    // Prepare chart data - prioritize warehouse OLAP data
+    let trendSeriesData = chartData.values;
+    let trendLabels = chartData.labels;
+
+    if (hasWarehouseData && warehouseData.daily && warehouseData.daily.length > 0) {
+        console.log('✅ Using warehouse daily data for trend chart');
+        // Use actual warehouse data from OLAP views
+        const daily = warehouseData.daily;
+
+        // Extract values based on metric type
+        switch (warehouseData.type) {
+            case 'sales':
+                trendSeriesData = daily.map(d => parseFloat(d.gross_revenue || d.total_revenue || 0));
+                break;
+            case 'cogs':
+                trendSeriesData = daily.map(d => parseFloat(d.total_cogs || 0));
+                break;
+            case 'margin':
+                trendSeriesData = daily.map(d => parseFloat(d.total_margin || 0));
+                break;
+            case 'new_customers':
+                trendSeriesData = daily.map(d => parseInt(d.new_customers || 0));
+                break;
+            case 'returning_customers':
+                trendSeriesData = daily.map(d => parseInt(d.returning_customers || 0));
+                break;
+            default:
+                trendSeriesData = daily.map(d => parseFloat(d.value || 0));
+        }
+
+        // Format dates for labels
+        trendLabels = daily.map(d => {
+            const date = new Date(d.date || d.sales_date);
+            return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+        });
+
+        console.log('📊 Warehouse data points:', trendSeriesData.length);
+        console.log('📊 Sample values:', trendSeriesData.slice(0, 5));
+    } else {
+        console.log('⚠️ No warehouse data, using fallback chart data');
+    }
+
     // Trend Chart
     const trendOptions = {
         series: [{
             name: '{{ $businessMetric->metric_name }}',
-            data: chartData.values
+            data: trendSeriesData
         }],
         chart: {
             type: 'line',
@@ -1455,7 +1483,7 @@ function initializeCharts() {
         },
         colors: ['#667eea'],
         xaxis: {
-            categories: chartData.labels,
+            categories: trendLabels,
             title: {
                 text: 'Tanggal',
                 style: { color: '#fff' }
@@ -1490,10 +1518,26 @@ function initializeCharts() {
         }
     };
 
-    trendChart = new ApexCharts(document.querySelector("#trendChart"), trendOptions);
-    trendChart.render();
+    console.log('📈 Creating trend chart...');
+
+    // Clear any existing chart content
+    trendElement.innerHTML = '';
+
+    try {
+        trendChart = new ApexCharts(trendElement, trendOptions);
+        trendChart.render().then(() => {
+            console.log('✅ Trend chart rendered successfully');
+        }).catch(err => {
+            console.error('❌ Error rendering trend chart:', err);
+            trendElement.innerHTML = '<div class="text-center text-white-50 mt-5"><i class="fas fa-exclamation-triangle"></i><br>Error rendering chart</div>';
+        });
+    } catch (err) {
+        console.error('❌ Error creating trend chart:', err);
+        trendElement.innerHTML = '<div class="text-center text-white-50 mt-5"><i class="fas fa-exclamation-triangle"></i><br>Error creating chart</div>';
+    }
 
     // Summary Chart (Enhanced with warehouse data)
+    console.log('🍩 Preparing summary chart...');
     let summaryData, summaryLabels, summaryColors;
 
     if (hasWarehouseData && warehouseData.monthly) {
@@ -1502,9 +1546,25 @@ function initializeCharts() {
         const transactionCount = warehouseData.monthly.transaction_count || 0;
         const avgPerTransaction = transactionCount > 0 ? monthlyRevenue / transactionCount : 0;
 
-        summaryData = [monthlyRevenue, avgPerTransaction, transactionCount * 1000]; // Scale up transaction count for visibility
-        summaryLabels = ['Total Revenue Bulan Ini', 'Rata-rata per Transaksi', 'Jumlah Transaksi (x1000)'];
+        summaryData = [monthlyRevenue, avgPerTransaction, transactionCount];
+        summaryLabels = ['Total Revenue Bulan Ini', 'Rata-rata per Transaksi', 'Jumlah Transaksi'];
         summaryColors = ['#28a745', '#17a2b8', '#ffc107'];
+        console.log('📦 Using warehouse data for summary chart:', {monthlyRevenue, transactionCount, avgPerTransaction});
+    } else if (hasWarehouseData && warehouseData.type === 'cogs' && warehouseData.monthly) {
+        // COGS specific summary
+        const totalCogs = warehouseData.monthly.total_cogs || 0;
+        summaryData = [totalCogs];
+        summaryLabels = ['Total COGS Bulan Ini'];
+        summaryColors = ['#dc3545'];
+        console.log('📦 Using COGS data for summary chart:', {totalCogs});
+    } else if (hasWarehouseData && warehouseData.type === 'margin' && warehouseData.monthly) {
+        // Margin specific summary
+        const totalMargin = warehouseData.monthly.total_margin || 0;
+        const avgMarginPercent = warehouseData.monthly.avg_margin_percentage || 0;
+        summaryData = [totalMargin, avgMarginPercent * 1000]; // Scale percentage for visibility
+        summaryLabels = ['Total Margin', 'Avg Margin % (x1000)'];
+        summaryColors = ['#28a745', '#17a2b8'];
+        console.log('📦 Using margin data for summary chart:', {totalMargin, avgMarginPercent});
     } else {
         // Fallback to traditional data
         summaryData = [
@@ -1514,6 +1574,7 @@ function initializeCharts() {
         ];
         summaryLabels = ['Bulan Ini', 'Bulan Lalu', 'Lainnya'];
         summaryColors = ['#28a745', '#ffc107', '#6c757d'];
+        console.log('📊 Using fallback data for summary chart');
     }
 
     const summaryOptions = {
@@ -1586,12 +1647,36 @@ function initializeCharts() {
         }]
     };
 
-    summaryChart = new ApexCharts(document.querySelector("#summaryChart"), summaryOptions);
-    summaryChart.render();
+    console.log('📊 Summary chart data:', {summaryData, summaryLabels, summaryColors});
+
+    // Clear any existing chart content
+    summaryElement.innerHTML = '';
+
+    try {
+        summaryChart = new ApexCharts(summaryElement, summaryOptions);
+        summaryChart.render().then(() => {
+            console.log('✅ Summary chart rendered successfully');
+        }).catch(err => {
+            console.error('❌ Error rendering summary chart:', err);
+            summaryElement.innerHTML = '<div class="text-center text-white-50 mt-5"><i class="fas fa-exclamation-triangle"></i><br>Error rendering chart</div>';
+        });
+    } catch (err) {
+        console.error('❌ Error creating summary chart:', err);
+        summaryElement.innerHTML = '<div class="text-center text-white-50 mt-5"><i class="fas fa-exclamation-triangle"></i><br>Error creating chart</div>';
+    }
 
     // Update statistics cards with warehouse data
     if (hasWarehouseData) {
+        console.log('📦 Updating statistics with warehouse data');
         updateStatisticsCardsWithWarehouse(warehouseData);
+    }
+
+    console.log('✅ Charts initialization complete!');
+
+    } catch (error) {
+        console.error('❌ Fatal error in initializeCharts:', error);
+        toastr.error('Failed to initialize charts. Check console for details.');
+        showChartsError();
     }
 }
 
@@ -1613,26 +1698,30 @@ function initializeCharts() {
 
 function updateChart(days) {
     $.ajax({
-        url: '{{ route("dashboard.metrics.records.edit", $businessMetric->id) }}',
+        url: `/dashboard/metrics/${businessMetricId}/chart-data`,
+        method: 'GET',
         data: { period: days },
         success: function(response) {
-            if (response.chartData) {
-                trendChart.updateSeries([{
-                    name: '{{ $businessMetric->metric_name }}',
-                    data: response.chartData.values
-                }]);
-
-                trendChart.updateOptions({
-                    xaxis: {
-                        categories: response.chartData.labels
-                    }
-                });
-
-                // Animate statistics cards update
+            if (response && response.success && response.data) {
+                const data = response.data;
+                if (trendChart) {
+                    trendChart.updateSeries([{ name: '{{ $businessMetric->metric_name }}', data: data.values }]);
+                    trendChart.updateOptions({ xaxis: { categories: data.labels } });
+                }
                 animateStatisticsUpdate();
+            } else if (response && response.chartData) {
+                // Back-compat with older response shape
+                if (trendChart) {
+                    trendChart.updateSeries([{ name: '{{ $businessMetric->metric_name }}', data: response.chartData.values }]);
+                    trendChart.updateOptions({ xaxis: { categories: response.chartData.labels } });
+                }
+                animateStatisticsUpdate();
+            } else {
+                toastr.warning('No chart data available for the selected period');
             }
         },
-        error: function() {
+        error: function(xhr) {
+            console.error('Chart update failed', xhr?.responseText || xhr);
             toastr.error('Failed to update chart');
         }
     });
@@ -1701,7 +1790,7 @@ function animateStatisticsUpdate() {
     }, 1500);
 }
 
-function refreshWarehouseData() {
+function refreshWarehouseDataButton() {
     const refreshBtn = document.getElementById('refreshWarehouseBtn');
     const warehouseContent = document.getElementById('warehouseDataContent');
     const loading = document.getElementById('warehouseLoading');
@@ -1720,6 +1809,164 @@ function refreshWarehouseData() {
         window.location.reload();
     }, 1000);
 }
+
+// ===== WAREHOUSE DATA MANAGEMENT FUNCTIONS =====
+
+function updateWarehouseData() {
+    const dateRange = document.getElementById('dateRangeSelector')?.value || '30';
+    const groupBy = document.getElementById('groupBySelector')?.value || 'daily';
+    const perPage = document.getElementById('perPageSelector')?.value || '50';
+
+    let params = {
+        days: dateRange,
+        group_by: groupBy,
+        w_per_page: perPage,
+        w_page: 1
+    };
+
+    // Handle custom date range
+    if (dateRange === 'custom') {
+        const startDate = document.getElementById('startDate')?.value;
+        const endDate = document.getElementById('endDate')?.value;
+
+        if (startDate && endDate) {
+            params.start_date = startDate;
+            params.end_date = endDate;
+            delete params.days;
+        } else {
+            toastr.warning('Pilih tanggal mulai dan tanggal akhir');
+            return;
+        }
+    }
+
+    refreshWarehouseDataWithParams(params);
+}
+
+function changePage(page) {
+    const dateRange = document.getElementById('dateRangeSelector')?.value || '30';
+    const groupBy = document.getElementById('groupBySelector')?.value || 'daily';
+    const perPage = document.getElementById('perPageSelector')?.value || '50';
+
+    let params = {
+        days: dateRange,
+        group_by: groupBy,
+        w_per_page: perPage,
+        w_page: page
+    };
+
+    refreshWarehouseDataWithParams(params);
+}
+
+function refreshWarehouseData() {
+    updateWarehouseData();
+}
+
+function refreshWarehouseDataWithParams(params) {
+    const loading = document.getElementById('warehouseLoading');
+    if (loading) {
+        loading.classList.remove('d-none');
+        loading.classList.add('d-flex');
+    }
+
+    // Build query string
+    const queryString = new URLSearchParams(params).toString();
+    const currentUrl = window.location.pathname;
+
+    // Reload page with new parameters
+    window.location.href = `${currentUrl}?${queryString}`;
+}
+
+// Show/hide custom date inputs
+document.addEventListener('DOMContentLoaded', function() {
+    const dateRangeSelector = document.getElementById('dateRangeSelector');
+    if (dateRangeSelector) {
+        dateRangeSelector.addEventListener('change', function() {
+            const customInputs1 = document.getElementById('customDateInputs');
+            const customInputs2 = document.getElementById('customDateInputs2');
+
+            if (this.value === 'custom') {
+                if (customInputs1) customInputs1.classList.remove('d-none');
+                if (customInputs2) customInputs2.classList.remove('d-none');
+            } else {
+                if (customInputs1) customInputs1.classList.add('d-none');
+                if (customInputs2) customInputs2.classList.add('d-none');
+            }
+        });
+    }
+});
+
+// Export functions
+function exportToExcel() {
+    toastr.info('Preparing Excel export...');
+    const metricId = businessMetricId;
+    window.location.href = `/dashboard/metrics/${metricId}/export?format=excel`;
+}
+
+function exportToPDF() {
+    toastr.info('Preparing PDF export...');
+    const metricId = businessMetricId;
+    window.location.href = `/dashboard/metrics/${metricId}/export?format=pdf`;
+}
+
+function exportToCSV() {
+    toastr.info('Preparing CSV export...');
+    const metricId = businessMetricId;
+    window.location.href = `/dashboard/metrics/${metricId}/export?format=csv`;
+}
+
+// Real-time statistics update
+function updateStatisticsCards() {
+    const metricId = businessMetricId;
+
+    $.ajax({
+        url: `/dashboard/metrics/${metricId}/statistics`,
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                const stats = response.data;
+
+                // Update each stat with animation
+                updateStatValue('stat-revenue', stats.revenue, true);
+                updateStatValue('stat-transactions', stats.transactions, false);
+                updateStatValue('stat-quantity', stats.quantity, false);
+                updateStatValue('stat-cogs', stats.cogs, true);
+                updateStatValue('stat-margin', stats.margin, true);
+                updateStatValue('stat-new-customers', stats.new_customers, false);
+                updateStatValue('stat-returning-customers', stats.returning_customers, false);
+
+                // Update top-level stats cards
+                animateStatisticsUpdate();
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Failed to update statistics:', error);
+        }
+    });
+}
+
+function updateStatValue(elementId, newValue, isCurrency) {
+    const element = document.getElementById(elementId);
+    if (!element || newValue === undefined) return;
+
+    const formattedValue = isCurrency
+        ? 'Rp ' + new Intl.NumberFormat('id-ID').format(newValue)
+        : new Intl.NumberFormat('id-ID').format(newValue);
+
+    // Add animation class
+    element.classList.add('stats-value-update');
+    element.textContent = formattedValue;
+
+    setTimeout(() => {
+        element.classList.remove('stats-value-update');
+    }, 1000);
+}
+
+// Auto-refresh statistics every 30 seconds
+setInterval(function() {
+    if (document.getElementById('stat-revenue') || document.getElementById('stat-cogs')) {
+        updateStatisticsCards();
+    }
+}, 30000);
 
 function triggerBackfill() {
     const backfillBtn = document.getElementById('backfillBtn');
@@ -1875,82 +2122,11 @@ function updateStatistics() {
         },
         error: function(xhr) {
             console.error('Failed to update statistics:', xhr.responseText);
-    }
-    });
-}
-
-// addInlineRecord removed
-
-    // Determine if this is a new record or update
-    const isNewRecord = id.toString().startsWith('new_');
-    let url, method;
-
-    if (isNewRecord) {
-        // For new records, we need all required fields
-        if (!data.record_date) {
-            data.record_date = moment().format('YYYY-MM-DD');
-        }
-        if (data.value === undefined) {
-            data.value = 0;
-        }
-        if (data.notes === undefined) {
-            data.notes = '';
-        }
-
-        url = '{{ route("dashboard.metrics.records.store", $businessMetric->id) }}';
-        method = 'POST';
-    } else {
-        url = `{{ url('/dashboard/metrics/records') }}/${id}`;
-        method = 'POST';
-        data._method = 'PUT';
-    }
-
-    // Show loading state
-    $(`#save-${id}`).html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
-
-    $.ajax({
-        url: url,
-        method: method,
-        data: data,
-        success: function(response) {
-            toastr.success(response.message || 'Record saved successfully');
-
-            // Clear editing data
-            delete editingData[id];
-
-            // Hide save/cancel buttons
-            $(`#save-${id}, #cancel-${id}`).hide();
-            $(`#save-${id}`).html('<i class="fas fa-check"></i>').prop('disabled', false);
-
-            // Table disabled; call callback directly if provided
-            if (callback && typeof callback === 'function') {
-                callback();
-            }
-
-            // Update charts
-            updateChart($('.chart-period.active').data('period') || 30);
-
-            // Update statistics
-            setTimeout(updateStatistics, 500);
-        },
-        error: function(xhr) {
-            $(`#save-${id}`).html('<i class="fas fa-check"></i>').prop('disabled', false);
-
-            if (xhr.responseJSON && xhr.responseJSON.errors) {
-                const errors = xhr.responseJSON.errors;
-                let errorMessage = 'Validation errors:<br>';
-                Object.keys(errors).forEach(field => {
-                    errorMessage += `• ${field}: ${errors[field].join(', ')}<br>`;
-                });
-                toastr.error(errorMessage);
-            } else {
-                toastr.error('Failed to save record: ' + (xhr.responseJSON?.message || xhr.statusText));
-            }
-
-            // Keep editing state on error so user can fix the issue
         }
     });
 }
+
+// saveInlineEdit function removed (inline editing disabled per request)
 
 function cancelInlineEdit(id) {
     $(`.inline-edit-input[data-id="${id}"]`).each(function() {
@@ -2480,491 +2656,7 @@ function resetForm() {
     updatePreview();
 }
 
-// AI Chat functionality
-let chatMessages = [];
-
-
-$(document).ready(function() {
-    initializeAIChat();
-});
-
-function initializeAIChat() {
-    // Character counter
-    $('#aiQuestion').on('input', function() {
-        const length = $(this).val().length;
-        $('#charCount').text(length);
-
-        if (length > 450) {
-            $('#charCount').addClass('text-warning');
-        } else {
-            $('#charCount').removeClass('text-warning');
-        }
-    });
-
-    // Chat form submission
-    $('#aiChatForm').on('submit', function(e) {
-        e.preventDefault();
-        const question = $('#aiQuestion').val().trim();
-        if (question) {
-            sendAIMessage(question);
-        }
-    });
-
-    // Quick question buttons
-    $('.quick-question').on('click', function() {
-        const question = $(this).data('question');
-        sendAIMessage(question);
-    });
-
-    // Clear chat
-    $('#clearChatBtn').on('click', function() {
-        if (confirm('Hapus semua percakapan?')) {
-            clearChat();
-        }
-    });
-
-    // Keyboard shortcuts
-    $('#aiQuestion').on('keydown', function(e) {
-        if ((e.ctrlKey || e.metaKey) && e.which === 13) {
-            e.preventDefault();
-            $('#aiChatForm').submit();
-        }
-    });
-
-    // Auto-resize textarea
-    $('#aiQuestion').on('input', function() {
-        this.style.height = 'auto';
-        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-    });
-}
-
-function sendAIMessage(question) {
-    if (!question.trim()) return;
-
-    console.log('Sending AI message:', question);
-
-    // Add user message to chat
-    addMessage('user', question);
-
-    // Clear input
-    $('#aiQuestion').val('').trigger('input');
-
-    // Show typing indicator
-    showTypingIndicator();
-
-    // Disable send button
-    $('#sendBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
-
-    // Send request to AI
-    $.ajax({
-        url: '{{ route("dashboard.metrics.ai-chat", $businessMetric->id) }}',
-        method: 'POST',
-        data: {
-            question: question,
-            _token: '{{ csrf_token() }}'
-        },
-        success: function(response) {
-            console.log('AI Response received:', response);
-            hideTypingIndicator();
-
-            if (response.success) {
-                addMessage('ai', response.response);
-                updateAIStatus('online');
-            } else {
-                console.error('AI returned error:', response.error);
-                addMessage('ai', '❌ Maaf, terjadi kesalahan: ' + (response.error || 'Tidak dapat memproses pertanyaan Anda.'));
-                updateAIStatus('error');
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('AJAX Error:', {
-                status: xhr.status,
-                statusText: xhr.statusText,
-                responseText: xhr.responseText,
-                error: error
-            });
-
-            hideTypingIndicator();
-            updateAIStatus('error');
-
-            let errorMessage = 'Maaf, terjadi kesalahan saat menghubungi AI assistant.';
-
-            // Try to parse error response
-            try {
-                const response = JSON.parse(xhr.responseText);
-                if (response.error) {
-                    errorMessage = '❌ ' + response.error;
-                }
-            } catch (e) {
-                // Use default error handling based on status code
-                if (xhr.status === 0) {
-                    errorMessage = '❌ Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
-                } else if (xhr.status === 404) {
-                    errorMessage = '❌ Endpoint AI tidak ditemukan. Route mungkin tidak terdaftar.';
-                } else if (xhr.status === 429) {
-                    errorMessage = '❌ Terlalu banyak permintaan. Silakan coba lagi dalam beberapa saat.';
-                } else if (xhr.status === 500) {
-                    errorMessage = '❌ Terjadi kesalahan server. Silakan coba lagi nanti atau periksa log Laravel.';
-                } else if (xhr.status === 403) {
-                    errorMessage = '❌ API key tidak valid atau akses ditolak. Periksa GEMINI_API_KEY di .env';
-                } else if (xhr.status === 400) {
-                    errorMessage = '❌ Permintaan tidak valid. Pastikan pertanyaan Anda sudah benar.';
-                } else {
-                    errorMessage = `❌ Error ${xhr.status}: ${xhr.statusText}`;
-                }
-            }
-
-            addMessage('ai', errorMessage);
-
-            // Show debug info in console
-            console.log('Debug Info:');
-            console.log('- Metric ID:', '{{ $businessMetric->id }}');
-            console.log('- Route URL:', '{{ route("dashboard.metrics.ai-chat", $businessMetric->id) }}');
-            console.log('- CSRF Token:', '{{ csrf_token() }}');
-        },
-        complete: function() {
-            // Re-enable send button
-            $('#sendBtn').prop('disabled', false).html('<i class="fas fa-paper-plane"></i>');
-        }
-    });
-}
-
-function addMessage(type, content) {
-    const timestamp = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-    const avatar = type === 'ai' ? '<i class="fas fa-robot"></i>' : '<i class="fas fa-user"></i>';
-    const name = type === 'ai' ? 'AI Assistant' : 'Anda';
-
-    const messageHtml = `
-        <div class="message ${type}-message">
-            <div class="message-avatar">
-                ${avatar}
-            </div>
-            <div class="message-content">
-                <div class="message-header">
-                    <strong>${name}</strong>
-                    <small class="text-muted">${timestamp}</small>
-                </div>
-                <div class="message-text">${formatAIResponse(content)}</div>
-            </div>
-        </div>
-    `;
-
-    $('#chatMessages').append(messageHtml);
-    scrollToBottom();
-
-    // Store message
-    chatMessages.push({
-        type: type,
-        content: content,
-        timestamp: timestamp
-    });
-}
-
-function formatAIResponse(text) {
-    // Convert markdown-like formatting to HTML
-    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
-
-    // Convert numbered lists
-    text = text.replace(/(\d+\.\s)/g, '<br>$1');
-
-    // Convert bullet points
-    text = text.replace(/(-\s)/g, '<br>• ');
-
-    // Convert line breaks
-    text = text.replace(/\n\n/g, '<br><br>');
-    text = text.replace(/\n/g, '<br>');
-
-    return text;
-}
-
-function showTypingIndicator() {
-    const typingHtml = `
-        <div class="message ai-message" id="typingIndicator">
-            <div class="message-avatar">
-                <i class="fas fa-robot"></i>
-            </div>
-            <div class="message-content">
-                <div class="typing-indicator">
-                    <span>AI sedang mengetik</span>
-                    <div class="typing-dots">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    $('#chatMessages').append(typingHtml);
-    scrollToBottom();
-}
-
-function hideTypingIndicator() {
-    $('#typingIndicator').remove();
-}
-
-function scrollToBottom() {
-    const chatContainer = $('#chatMessages');
-    chatContainer.scrollTop(chatContainer[0].scrollHeight);
-}
-
-function clearChat() {
-    // Keep only the initial AI message
-    $('#chatMessages').find('.message').not(':first').remove();
-    chatMessages = [];
-    toastr.success('Percakapan telah dihapus');
-}
-
-// Update AI status based on connection
-function updateAIStatus(status) {
-    const statusElement = $('#aiStatus');
-    if (status === 'online') {
-        statusElement.removeClass('bg-danger bg-warning').addClass('bg-success')
-                   .html('<i class="fas fa-circle me-1"></i>Online');
-    } else if (status === 'error') {
-        statusElement.removeClass('bg-success bg-warning').addClass('bg-danger')
-                   .html('<i class="fas fa-exclamation-circle me-1"></i>Error');
-    } else {
-        statusElement.removeClass('bg-success bg-danger').addClass('bg-warning')
-                   .html('<i class="fas fa-clock me-1"></i>Connecting');
-    }
-}
-
-function initializeAIChat() {
-    // Character counter
-    $('#aiQuestion').on('input', function() {
-        const length = $(this).val().length;
-        $('#charCount').text(length);
-
-        if (length > 450) {
-            $('#charCount').addClass('text-warning');
-        } else {
-            $('#charCount').removeClass('text-warning');
-        }
-    });
-
-    // Chat form submission
-    $('#aiChatForm').on('submit', function(e) {
-        e.preventDefault();
-        const question = $('#aiQuestion').val().trim();
-        if (question) {
-            sendAIMessage(question);
-        }
-    });
-
-    // Quick question buttons
-    $('.quick-question').on('click', function() {
-        const question = $(this).data('question');
-        sendAIMessage(question);
-    });
-
-    // Clear chat
-    $('#clearChatBtn').on('click', function() {
-        if (confirm('Hapus semua percakapan?')) {
-            clearChat();
-        }
-    });
-
-    // Keyboard shortcuts
-    $('#aiQuestion').on('keydown', function(e) {
-        if ((e.ctrlKey || e.metaKey) && e.which === 13) {
-            e.preventDefault();
-            $('#aiChatForm').submit();
-        }
-    });
-
-    // Auto-resize textarea
-    $('#aiQuestion').on('input', function() {
-        this.style.height = 'auto';
-        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-    });
-}
-
-function sendAIMessage(question) {
-    if (!question.trim()) return;
-
-    // Add user message to chat
-    addMessage('user', question);
-
-    // Clear input
-    $('#aiQuestion').val('').trigger('input');
-
-    // Show typing indicator
-    showTypingIndicator();
-
-    // Disable send button
-    $('#sendBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
-
-    // Send request to AI
-    $.ajax({
-        url: '{{ route("dashboard.metrics.ai-chat", $businessMetric->id) }}',
-        method: 'POST',
-        data: {
-            question: question,
-            _token: '{{ csrf_token() }}'
-        },
-        success: function(response) {
-            hideTypingIndicator();
-
-            if (response.success) {
-                addMessage('ai', response.response);
-            } else {
-                addMessage('ai', 'Maaf, terjadi kesalahan: ' + (response.error || 'Tidak dapat memproses pertanyaan Anda.'));
-            }
-        },
-        error: function(xhr) {
-            hideTypingIndicator();
-            let errorMessage = 'Maaf, terjadi kesalahan saat menghubungi AI assistant.';
-
-            // Try to parse error response
-            try {
-                const response = JSON.parse(xhr.responseText);
-                if (response.error) {
-                    errorMessage = response.error;
-                }
-            } catch (e) {
-                // Use default error handling
-                if (xhr.status === 429) {
-                    errorMessage = 'Terlalu banyak permintaan. Silakan coba lagi dalam beberapa saat.';
-                } else if (xhr.status === 500) {
-                    errorMessage = 'Terjadi kesalahan server. Silakan coba lagi nanti.';
-                } else if (xhr.status === 400 || xhr.status === 403) {
-                    errorMessage = 'API key tidak valid atau sudah kedaluwarsa. Silakan perbarui GEMINI_API_KEY di .env';
-                }
-            }
-
-            addMessage('ai', errorMessage);
-        },
-        complete: function() {
-            // Re-enable send button
-            $('#sendBtn').prop('disabled', false).html('<i class="fas fa-paper-plane"></i>');
-        }
-    });
-}
-
-function addMessage(type, content) {
-    const timestamp = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-    const avatar = type === 'ai' ? '<i class="fas fa-robot"></i>' : '<i class="fas fa-user"></i>';
-    const name = type === 'ai' ? 'AI Assistant' : 'Anda';
-
-    const messageHtml = `
-        <div class="message ${type}-message">
-            <div class="message-avatar">
-                ${avatar}
-            </div>
-            <div class="message-content">
-                <div class="message-header">
-                    <strong>${name}</strong>
-                    <small class="text-muted">${timestamp}</small>
-                </div>
-                <div class="message-text">${formatAIResponse(content)}</div>
-            </div>
-        </div>
-    `;
-
-    $('#chatMessages').append(messageHtml);
-    scrollToBottom();
-
-    // Store message
-    chatMessages.push({
-        type: type,
-        content: content,
-        timestamp: timestamp
-    });
-}
-
-function formatAIResponse(text) {
-    // Convert markdown-like formatting to HTML
-    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
-
-    // Convert numbered lists
-    text = text.replace(/(\d+\.\s)/g, '<br>$1');
-
-    // Convert bullet points
-    text = text.replace(/(-\s)/g, '<br>• ');
-
-    // Convert line breaks
-    text = text.replace(/\n\n/g, '<br><br>');
-    text = text.replace(/\n/g, '<br>');
-
-    return text;
-}
-
-function showTypingIndicator() {
-    const typingHtml = `
-        <div class="message ai-message" id="typingIndicator">
-            <div class="message-avatar">
-                <i class="fas fa-robot"></i>
-            </div>
-            <div class="message-content">
-                <div class="typing-indicator">
-                    <span>AI sedang mengetik</span>
-                    <div class="typing-dots">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    $('#chatMessages').append(typingHtml);
-    scrollToBottom();
-}
-
-function hideTypingIndicator() {
-    $('#typingIndicator').remove();
-}
-
-function scrollToBottom() {
-    const chatContainer = $('#chatMessages');
-    chatContainer.scrollTop(chatContainer[0].scrollHeight);
-}
-
-function clearChat() {
-    // Keep only the initial AI message
-    $('#chatMessages').find('.message').not(':first').remove();
-    chatMessages = [];
-    toastr.success('Percakapan telah dihapus');
-}
-
-// Update AI status based on connection
-function updateAIStatus(status) {
-    const statusElement = $('#aiStatus');
-    if (status === 'online') {
-        statusElement.removeClass('bg-danger bg-warning').addClass('bg-success')
-                   .html('<i class="fas fa-circle me-1"></i>Online');
-    } else if (status === 'error') {
-        statusElement.removeClass('bg-success bg-warning').addClass('bg-danger')
-                   .html('<i class="fas fa-exclamation-circle me-1"></i>Error');
-    } else {
-        statusElement.removeClass('bg-success bg-danger').addClass('bg-warning')
-                   .html('<i class="fas fa-clock me-1"></i>Connecting');
-    }
-}
-
-// Export chat function (optional)
-function exportChat() {
-    const chatData = {
-        metric: '{{ $businessMetric->metric_name }}',
-        business: '{{ $businessMetric->business->business_name ?? "Business" }}',
-        timestamp: new Date().toISOString(),
-        messages: chatMessages
-    };
-
-    const dataStr = JSON.stringify(chatData, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-
-    const exportFileDefaultName = `ai_chat_${Date.now()}.json`;
-
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
-}
+// Note: AI Chat functionality is loaded from external file: public/js/ai-chat.js
+// All AI chat functions (initializeAIChat, sendAIMessage, etc.) are defined there
 </script>
 @endpush

@@ -20,14 +20,17 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Services\OlapMetricAggregator;
 use App\Services\MetricFormattingService;
+use App\Services\Olap\OlapPivotService;
 
 class MetricRecordsController extends Controller
 {
     private OlapMetricAggregator $aggregator;
+    private OlapPivotService $pivotService;
 
-    public function __construct(OlapMetricAggregator $aggregator)
+    public function __construct(OlapMetricAggregator $aggregator, OlapPivotService $pivotService)
     {
         $this->aggregator = $aggregator;
+        $this->pivotService = $pivotService;
     }
     /**
      * Check if the current user has access to the given business metric
@@ -145,6 +148,186 @@ class MetricRecordsController extends Controller
             'chartData' => $chartData,
             'recentRecords' => $recentRecords
         ]);
+    }
+
+    public function getStatisticsApi(BusinessMetric $businessMetric, Request $request)
+    {
+        try {
+            $days = (int)$request->input('days', 30);
+            $customStart = $request->input('start_date');
+            $customEnd = $request->input('end_date');
+
+            if ($customStart && $customEnd) {
+                $from = Carbon::parse($customStart);
+                $to = Carbon::parse($customEnd);
+            } else {
+                $from = Carbon::now()->subDays($days);
+                $to = Carbon::now();
+            }
+
+            $businessId = $businessMetric->business_id;
+            $statistics = [];
+
+            // Determine which view to use based on metric type
+            $metricName = $businessMetric->metric_name;
+            $viewName = null;
+
+            if (in_array($metricName, ['Total Penjualan', 'Pendapatan Kotor'])) {
+                $viewName = 'vw_sales_daily';
+            } elseif (in_array($metricName, ['Biaya Pokok Penjualan (COGS)', 'COGS'])) {
+                $viewName = 'vw_cogs_daily';
+            } elseif (in_array($metricName, ['Margin Keuntungan', 'Gross Margin'])) {
+                $viewName = 'vw_margin_daily';
+            } elseif (in_array($metricName, ['Pelanggan Baru', 'New Customers'])) {
+                $viewName = 'vw_new_customers_daily';
+            } elseif (in_array($metricName, ['Pelanggan Kembali', 'Returning Customers'])) {
+                $viewName = 'vw_returning_customers_daily';
+            }
+
+            if (!$viewName) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No warehouse data available for this metric'
+                ], 404);
+            }
+
+            // Get aggregated statistics
+            $stats = DB::table($viewName)
+                ->where('business_id', $businessId)
+                ->whereBetween('date', [$from->format('Y-m-d'), $to->format('Y-m-d')])
+                ->selectRaw('
+                    COUNT(*) as record_count,
+                    SUM(gross_revenue) as total_revenue,
+                    SUM(net_revenue) as total_net_revenue,
+                    SUM(cogs) as total_cogs,
+                    SUM(margin) as total_margin,
+                    AVG(margin_percentage) as avg_margin_percentage,
+                    SUM(quantity_sold) as total_quantity,
+                    COUNT(DISTINCT COALESCE(sales_transaction_id, id)) as transaction_count,
+                    COUNT(DISTINCT customer_id) as unique_customers
+                ')
+                ->first();
+
+            $statistics = [
+                'period' => [
+                    'from' => $from->format('Y-m-d'),
+                    'to' => $to->format('Y-m-d'),
+                    'days' => $from->diffInDays($to) + 1
+                ],
+                'revenue' => [
+                    'gross' => (float)($stats->total_revenue ?? 0),
+                    'net' => (float)($stats->total_net_revenue ?? 0),
+                    'formatted_gross' => 'Rp ' . number_format($stats->total_revenue ?? 0, 0, ',', '.'),
+                    'formatted_net' => 'Rp ' . number_format($stats->total_net_revenue ?? 0, 0, ',', '.')
+                ],
+                'costs' => [
+                    'total' => (float)($stats->total_cogs ?? 0),
+                    'formatted' => 'Rp ' . number_format($stats->total_cogs ?? 0, 0, ',', '.')
+                ],
+                'margin' => [
+                    'total' => (float)($stats->total_margin ?? 0),
+                    'percentage' => round((float)($stats->avg_margin_percentage ?? 0), 2),
+                    'formatted' => 'Rp ' . number_format($stats->total_margin ?? 0, 0, ',', '.')
+                ],
+                'quantity' => [
+                    'total' => (int)($stats->total_quantity ?? 0),
+                    'formatted' => number_format($stats->total_quantity ?? 0, 0, ',', '.')
+                ],
+                'transactions' => [
+                    'count' => (int)($stats->transaction_count ?? 0),
+                    'formatted' => number_format($stats->transaction_count ?? 0, 0, ',', '.')
+                ],
+                'customers' => [
+                    'unique' => (int)($stats->unique_customers ?? 0),
+                    'formatted' => number_format($stats->unique_customers ?? 0, 0, ',', '.')
+                ],
+                'records' => [
+                    'count' => (int)($stats->record_count ?? 0),
+                    'formatted' => number_format($stats->record_count ?? 0, 0, ',', '.')
+                ]
+            ];
+
+            // Get top products if applicable
+            if (in_array($viewName, ['vw_sales_daily', 'vw_cogs_daily', 'vw_margin_daily'])) {
+                $topProducts = DB::table($viewName)
+                    ->where('business_id', $businessId)
+                    ->whereBetween('date', [$from->format('Y-m-d'), $to->format('Y-m-d')])
+                    ->whereNotNull('product_name')
+                    ->selectRaw('
+                        product_name,
+                        SUM(gross_revenue) as total_revenue,
+                        SUM(quantity_sold) as total_quantity,
+                        COUNT(DISTINCT COALESCE(sales_transaction_id, id)) as transaction_count
+                    ')
+                    ->groupBy('product_name')
+                    ->orderByDesc('total_revenue')
+                    ->limit(5)
+                    ->get();
+
+                $statistics['top_products'] = $topProducts->map(function($product) {
+                    return [
+                        'name' => $product->product_name,
+                        'revenue' => (float)$product->total_revenue,
+                        'quantity' => (int)$product->total_quantity,
+                        'transactions' => (int)$product->transaction_count,
+                        'formatted_revenue' => 'Rp ' . number_format($product->total_revenue, 0, ',', '.')
+                    ];
+                })->toArray();
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $statistics,
+                'timestamp' => now()->toISOString()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching statistics: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching statistics: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Return chart data as JSON for the given metric and period (days)
+     */
+    public function getChartDataApi(BusinessMetric $businessMetric, Request $request)
+    {
+        try {
+            $period = (int)($request->input('period', $request->input('days', 30)));
+
+            // Reuse existing aggregator-aware method
+            $chartData = $this->getChartData($businessMetric, $period);
+
+            // Normalize to plain arrays for JSON safety
+            $dates = $chartData['dates'] ?? [];
+            $labels = $chartData['labels'] ?? [];
+            $values = $chartData['values'] ?? [];
+
+            if ($dates instanceof \Illuminate\Support\Collection) $dates = $dates->values()->all();
+            if ($labels instanceof \Illuminate\Support\Collection) $labels = $labels->values()->all();
+            if ($values instanceof \Illuminate\Support\Collection) $values = $values->values()->all();
+
+            return response()->json([
+                'success' => true,
+                'period' => $period,
+                'data' => [
+                    'dates' => array_values($dates),
+                    'labels' => array_values($labels),
+                    'values' => array_values($values),
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Error fetching chart data: ' . $e->getMessage(), [
+                'metric_id' => $businessMetric->id,
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch chart data'
+            ], 500);
+        }
     }
 
     public function getDataTablesData(BusinessMetric $businessMetric, Request $request)
@@ -626,11 +809,15 @@ class MetricRecordsController extends Controller
         // Get specific data based on metric type
         $specificData = $this->getSpecificMetricData($businessMetric);
 
+        // Get warehouse data (for summary and advanced charts)
+        $warehouseData = $this->getWarehouseData($businessMetric);
+
         return view('dashboard-metrics.edit', compact(
             'businessMetric',
             'chartData',
             'statistics',
-            'specificData'
+            'specificData',
+            'warehouseData'
         ));
     }
 
@@ -984,36 +1171,82 @@ class MetricRecordsController extends Controller
     {
         $metric = $businessMetric->metric_name;
         $businessId = $businessMetric->business_id;
-        // Pagination & limit safeguards
+
+        // Get request parameters for pagination and pivoting
         $request = request();
         $page = max(1, (int)$request->input('w_page', 1));
-        $perPage = (int)$request->input('w_per_page', 30);
-        if ($perPage > 200) { // enforce upper bound
+        $perPage = (int)$request->input('w_per_page', 50);
+        if ($perPage > 200) {
             $perPage = 200;
         } elseif ($perPage < 5) {
-            $perPage = 30; // sensible default
+            $perPage = 50;
         }
         $offset = ($page - 1) * $perPage;
 
-        // Use flexible date range - get latest available data or last 30 days
-        $from = Carbon::now()->subDays(30)->toDateString();
-        $monthStart = Carbon::now()->startOfMonth()->toDateString();
+        // Group By parameter (daily/weekly/monthly)
+        $groupBy = $request->input('group_by', 'daily');
 
-        // For customer metrics, check if we have recent data, otherwise use all available data
+        // Pivot parameters
+        $pivotBy = $request->input('pivot_by', 'date');
+        $aggregation = $request->input('aggregation', 'sum');
+        $locationFilter = [
+            'provinsi' => $request->input('filter_provinsi'),
+            'kota' => $request->input('filter_kota'),
+            'kecamatan' => $request->input('filter_kecamatan'),
+            'product_category' => $request->input('filter_product_category')
+        ];
+        $locationFilter = array_filter($locationFilter); // Remove empty values
+
+        // Use flexible date range - support custom dates or days parameter
+        $days = (int)$request->input('days', 30);
+        $customStart = $request->input('start_date');
+        $customEnd = $request->input('end_date');
+
+        if ($customStart && $customEnd) {
+            // Custom date range
+            $from = Carbon::parse($customStart);
+            $to = Carbon::parse($customEnd);
+            $monthStart = $from->copy()->startOfMonth();
+        } else {
+            // Default range based on days parameter
+            $from = Carbon::now()->subDays($days);
+            $to = Carbon::now();
+            $monthStart = Carbon::now()->startOfMonth();
+        }
+
+        // Check if we have any recent data in fact_sales
+        $latestFactDate = DB::table('fact_sales')
+            ->where('business_id', $businessId)
+            ->join('dim_date', 'fact_sales.date_id', '=', 'dim_date.id')
+            ->max('dim_date.date');
+
+        if ($latestFactDate) {
+            $latestDate = Carbon::parse($latestFactDate);
+            // If latest data is older than our default range, adjust the range
+            if ($latestDate->lt($from)) {
+                $from = $latestDate->copy()->subDays(30);
+                $to = $latestDate->copy();
+                $monthStart = $latestDate->copy()->startOfMonth();
+            }
+        }
+
+        // Generate pivot data
+        $pivotData = $this->generatePivotForMetric($businessId, $metric, $pivotBy, $aggregation, $from, $to, $locationFilter);
+
+        // For customer metrics, check if we have recent data
         $hasRecentData = true;
         if (in_array($metric, ['Jumlah Pelanggan Baru', 'Jumlah Pelanggan Setia'])) {
             $viewName = $metric === 'Jumlah Pelanggan Baru' ? 'vw_new_customers_daily' : 'vw_returning_customers_daily';
             $recentCount = DB::table($viewName)
                 ->where('business_id', $businessId)
-                ->where('sales_date', '>=', $from)
+                ->where('sales_date', '>=', $from->toDateString())
                 ->count();
 
             if ($recentCount === 0) {
-                // Use all available data if no recent data
                 $latestDate = DB::table($viewName)->where('business_id', $businessId)->max('sales_date');
                 if ($latestDate) {
-                    $from = Carbon::parse($latestDate)->subDays(30)->toDateString();
-                    $monthStart = Carbon::parse($latestDate)->startOfMonth()->toDateString();
+                    $from = Carbon::parse($latestDate)->subDays(30);
+                    $monthStart = Carbon::parse($latestDate)->startOfMonth();
                     $hasRecentData = false;
                 }
             }
@@ -1024,24 +1257,24 @@ class MetricRecordsController extends Controller
                 case 'Total Penjualan': {
                     $dailyBase = DB::table('vw_sales_daily')
                         ->where('business_id', $businessId)
-                        ->where('sales_date', '>=', $from);
+                        ->where('date', '>=', $from->toDateString());
                     $totalDaily = (clone $dailyBase)->count();
-                    $daily = $dailyBase->orderBy('sales_date')
+                    $daily = $dailyBase->orderBy('date')
                         ->offset($offset)
                         ->limit($perPage)
                         ->get();
                     $topProducts = DB::table('vw_sales_product_daily')
                         ->where('business_id', $businessId)
-                        ->where('sales_date', '>=', $from)
-                        ->select('product_name', DB::raw('SUM(total_revenue) as total_revenue'), DB::raw('SUM(total_quantity) as total_qty'))
+                        ->where('date', '>=', $from->toDateString())
+                        ->select('product_name', DB::raw('SUM(revenue) as total_revenue'), DB::raw('SUM(quantity_sold) as total_qty'))
                         ->groupBy('product_name')
-                        ->orderByDesc(DB::raw('SUM(total_revenue)'))
+                        ->orderByDesc(DB::raw('SUM(revenue)'))
                         ->limit(10)
                         ->get();
                     $monthly = DB::table('vw_sales_daily')
                         ->where('business_id', $businessId)
-                        ->where('sales_date', '>=', $monthStart)
-                        ->selectRaw('SUM(total_gross_revenue) as total_revenue, SUM(transaction_count) as transaction_count, SUM(total_quantity) as total_quantity')
+                        ->where('date', '>=', $monthStart->toDateString())
+                        ->selectRaw('SUM(gross_revenue) as total_revenue, SUM(transaction_count) as transaction_count, SUM(item_count) as total_quantity')
                         ->first();
                     return [
                         'available' => true,
@@ -1059,18 +1292,26 @@ class MetricRecordsController extends Controller
                             'transaction_count' => (int)($monthly->transaction_count ?? 0),
                             'total_quantity' => (float)($monthly->total_quantity ?? 0),
                         ],
+                        'pivot' => $pivotData,
+                        'pivot_options' => [
+                            'available_dimensions' => $this->pivotService->getAvailablePivotDimensions('sales'),
+                            'available_aggregations' => $this->pivotService->getAvailableAggregations('sales'),
+                            'current_pivot_by' => $pivotBy,
+                            'current_aggregation' => $aggregation,
+                            'filters' => $locationFilter
+                        ],
                     ];
                 }
                 case 'Biaya Pokok Penjualan (COGS)': {
                     $dailyBase = DB::table('vw_cogs_daily')
                         ->where('business_id', $businessId)
-                        ->where('sales_date', '>=', $from);
+                        ->where('date', '>=', $from);
                     $totalDaily = (clone $dailyBase)->count();
-                    $daily = $dailyBase->orderBy('sales_date')
+                    $daily = $dailyBase->orderBy('date')
                         ->offset($offset)->limit($perPage)->get();
                     $monthly = DB::table('vw_cogs_daily')
                         ->where('business_id', $businessId)
-                        ->where('sales_date', '>=', $monthStart)
+                        ->where('date', '>=', $monthStart)
                         ->selectRaw('SUM(total_cogs) as total_cogs')
                         ->first();
                     return [
@@ -1091,13 +1332,13 @@ class MetricRecordsController extends Controller
                 case 'Margin Keuntungan (Profit Margin)': {
                     $dailyBase = DB::table('vw_margin_daily')
                         ->where('business_id', $businessId)
-                        ->where('sales_date', '>=', $from);
+                        ->where('date', '>=', $from);
                     $totalDaily = (clone $dailyBase)->count();
-                    $daily = $dailyBase->orderBy('sales_date')
+                    $daily = $dailyBase->orderBy('date')
                         ->offset($offset)->limit($perPage)->get();
                     $monthly = DB::table('vw_margin_daily')
                         ->where('business_id', $businessId)
-                        ->where('sales_date', '>=', $monthStart)
+                        ->where('date', '>=', $monthStart)
                         ->selectRaw('SUM(total_margin) as total_margin')
                         ->first();
                     return [
@@ -1197,16 +1438,16 @@ class MetricRecordsController extends Controller
                     // Provide aggregate of top products over 30 days and daily breakdown (already captured in sales_product view)
                     $dailyBase = DB::table('vw_sales_product_daily')
                         ->where('business_id', $businessId)
-                        ->where('sales_date', '>=', $from);
+                        ->where('date', '>=', $from);
                     $totalDaily = (clone $dailyBase)->count();
-                    $daily = $dailyBase->orderBy('sales_date')
+                    $daily = $dailyBase->orderBy('date')
                         ->offset($offset)->limit($perPage)->get();
                     $topProducts = DB::table('vw_sales_product_daily')
                         ->where('business_id', $businessId)
-                        ->where('sales_date', '>=', $from)
-                        ->select('product_name', DB::raw('SUM(total_revenue) as total_revenue'), DB::raw('SUM(total_quantity) as total_qty'))
+                        ->where('date', '>=', $from)
+                        ->select('product_name', DB::raw('SUM(revenue) as total_revenue'), DB::raw('SUM(quantity_sold) as total_qty'))
                         ->groupBy('product_name')
-                        ->orderByDesc(DB::raw('SUM(total_revenue)'))
+                        ->orderByDesc(DB::raw('SUM(revenue)'))
                         ->limit(15)
                         ->get();
                     return [
@@ -1228,6 +1469,29 @@ class MetricRecordsController extends Controller
         }
 
         return ['available' => false];
+    }
+
+    /**
+     * Generate pivot data for specific metric
+     */
+    private function generatePivotForMetric(int $businessId, string $metric, string $pivotBy, string $aggregation, Carbon $from, Carbon $to, array $filters): array
+    {
+        $metricType = match($metric) {
+            'Total Penjualan' => 'sales',
+            'Biaya Pokok Penjualan (COGS)' => 'cogs',
+            'Margin Keuntungan (Profit Margin)' => 'margin',
+            default => 'sales'
+        };
+
+        return $this->pivotService->generatePivotData(
+            $businessId,
+            $metricType,
+            $pivotBy,
+            $aggregation,
+            $from,
+            $to,
+            $filters
+        );
     }
 
     private function handleSpecificMetricStore(Request $request, BusinessMetric $businessMetric)
