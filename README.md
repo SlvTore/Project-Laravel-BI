@@ -1,376 +1,301 @@
-# Traction Tracker - Laravel Business Intelligence Platform
+# Traction Tracker — Laravel Business Intelligence Platform
 
 <p align="center">
-    <img src="https://img.shields.io/badge/Laravel-11.x-red.svg" alt="Laravel Version">
-    <img src="https://img.shields.io/badge/PHP-8.2+-blue.svg" alt="PHP Version">
-    <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
-    <img src="https://img.shields.io/badge/AI%20Powered-Gemini-purple.svg" alt="AI Powered">
+  <img src="https://img.shields.io/badge/Laravel-11.x-red.svg" alt="Laravel Version">
+  <img src="https://img.shields.io/badge/PHP-8.2+-blue.svg" alt="PHP Version">
+  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
+  <img src="https://img.shields.io/badge/AI%20Powered-Gemini-purple.svg" alt="AI Powered">
 </p>
 
-## About Traction Tracker
-
-Traction Tracker adalah platform Business Intelligence berbasis web yang dirancang untuk membantu bisnis melacak, menganalisis, dan mengoptimalkan performa mereka. Platform ini mengintegrasikan AI Assistant untuk memberikan insights dan rekomendasi strategis berdasarkan data bisnis real-time.
-
-### ✨ Key Features
-
-- **📊 Multi-Metric Tracking**: 6 jenis metrics utama dengan form dinamis
-- **🤖 AI Business Assistant**: Integrasi Google Gemini untuk analysis mendalam
-- **📈 Real-time Analytics**: Dashboard interaktif dengan visualisasi data
-- **🎯 Smart Calculations**: Auto-computed metrics dengan cross-data relationships
-- **👥 Multi-User Support**: Role-based access dengan collaboration features
-- **📱 Responsive Design**: Akses optimal di semua device
+Traction Tracker adalah platform Business Intelligence (BI) berbasis Laravel untuk melacak, menganalisis, dan mengoptimalkan performa bisnis. Sistem ini menggabungkan OLAP (dimensional modeling) dan AI Assistant (Gemini) untuk menghadirkan insights yang cepat, terukur, dan dapat ditindaklanjuti.
 
 ---
 
-## 🚀 Alur Penggunaan Traction Tracker
+## Daftar Isi
 
-### 1. Registrasi & Setup Awal
+1. Ringkasan & Visi Produk
+2. Arsitektur Sistem (OLTP → ETL → OLAP → Aggregator → UI/AI)
+3. Alur Pengguna end‑to‑end (Landing → Wizard → Dashboard → Metric → AI)
+4. RBAC & Multi‑Tenant Security
+5. Dimensional OLAP Cubes & Materialized Views
+6. Data Pipeline & ETL (Staging, Jobs, Backfill)
+7. Aggregation Layer & API Kontrak
+8. Frontend Analytics (ApexCharts) & Data Warehouse Integration
+9. AI Business Assistant (Gemini)
+10. Best Practices (Data, Performansi, SCD, Waktu)
+11. Instalasi & Setup
+12. Troubleshooting
+13. Roadmap
+14. Lisensi & Dukungan
 
-**Langkah Pertama:**
-- Akses halaman utama di `resources/views/landing/welcome.blade.php`
-- Klik "Mulai Gratis" untuk registrasi
-- Setelah registrasi, otomatis diarahkan ke wizard setup
+---
 
-**Setup Wizard (`resources/views/wizard.blade.php`):**
+## 1) Ringkasan & Visi Produk
 
-1. **Step 1: Pilih Role**
-   - Business Owner, Manager, Mentor/Advisor, atau Data Investigator
-   - Setiap role memiliki permission berbeda (lihat `database/migrations/2025_07_25_105943_create_roles_table.php`)
+- Multi-metric tracking dengan 6 metrik utama (Penjualan, COGS, Margin, Pelanggan Baru, Pelanggan Setia, Produk Terlaris).
+- OLAP star schema untuk analitik cepat tanpa mengganggu OLTP.
+- Visualisasi interaktif via ApexCharts dengan prioritas data dari warehouse (views).
+- AI Assistant untuk analisis tren, strategi, dan rekomendasi berbasis konteks bisnis.
 
-2. **Step 2: Informasi Bisnis**
-   - Nama bisnis, industri, deskripsi
-   - Website, pendapatan awal, jumlah pelanggan awal
+---
 
-3. **Step 3: Target & Goals**
-   - Target revenue, customer, growth rate
-   - Key metrics yang ingin dipantau
+## 2) Arsitektur Sistem
 
-### 2. Dashboard Utama
+Lapisan utama:
+- OLTP (aplikasi Laravel + basis data transaksi ringan/metrics manual)
+- ETL/Jobs (transformasi → dimension/fact)
+- OLAP (star schema + materialized views)
+- Aggregation Service (query siap pakai per metric)
+- UI (Blade + ApexCharts) & AI (Gemini)
 
-**Akses Dashboard:**
-- Route utama: `/dashboard` (`routes/web.php`)
-- Menampilkan overview metrics dan quick actions
-
-### 3. Mengelola Metrics
-
-**Membuat Metrics Baru:**
-1. Akses `dashboard/metrics/create`
-2. Pilih dari 6 jenis metrics utama:
-   - **Total Penjualan** (Revenue tracking)
-   - **Cost of Goods Sold** (COGS)
-   - **Margin Keuntungan** (Auto-calculated)
-   - **Jumlah Pelanggan Baru**
-   - **Jumlah Pelanggan Setia**
-   - **Penjualan Produk Terlaris**
-
-**Form Dinamis per Metric (`METRICS_IMPLEMENTATION.md`):**
-- Setiap metric memiliki form khusus dengan field yang relevan
-- Ada formula display dan real-time calculation
-- Data disimpan di tabel yang sesuai dengan relasi antar metrics
-
-### 4. Input Data Harian
-
-**Proses Input Data:**
-1. Buka metrics yang sudah dibuat
-2. Klik "Add New Row" di halaman edit metrics
-3. Form modal akan muncul sesuai jenis metric
-4. Isi data sesuai periode (harian/mingguan/bulanan)
-5. Preview real-time menampilkan kalkulasi otomatis
-
-**Contoh Input Data:**
-```php
-// Total Penjualan
-- Total Pendapatan: Rp 5,000,000
-- Jumlah Transaksi: 50
-
-// Pelanggan Baru  
-- Jumlah Pelanggan Baru: 15
-- Sumber: Social Media
-- Biaya Akuisisi: Rp 50,000/pelanggan
+```mermaid
+flowchart LR
+  A[OLTP Inputs\nForms / Import] --> B[ETL Jobs\nQueues / Scripts]
+  B --> C[(Star Schema\nFacts & Dimensions)]
+  C --> D[Materialized Views\n(vw_* daily/monthly)]
+  D --> E[OlapMetricAggregator\nService Layer]
+  E --> F[Controllers\nMetricRecordsController]
+  F --> G[UI: Blade + ApexCharts]
+  F --> H[AI Assistant (Gemini)]
 ```
 
----
-
-## 🤖 Analisis Data dengan AI Assistant
-
-### Akses AI Chat
-- Tersedia di setiap halaman edit metrics (`resources/views/dashboard-metrics/edit.blade.php`)
-- Fitur real-time chat dengan AI business assistant
-
-### Cara Menggunakan AI
-
-**Quick Actions (Tombol Cepat):**
-- **📈 Analisis Tren**: "Analisis tren performa dalam 30 hari terakhir dan berikan rekomendasi"
-- **💡 Strategi Peningkatan**: "Berikan 3 strategi untuk meningkatkan metrik ini berdasarkan data yang ada"
-- **⚠️ Analisis Risiko**: "Identifikasi potensi risiko atau masalah dari pola data saat ini"
-- **⚖️ Benchmark Industri**: "Bandingkan performa saat ini dengan rata-rata industri"
-
-**Custom Questions:**
-```javascript
-// Contoh pertanyaan yang bisa diajukan:
-"Bagaimana tren penjualan dalam 3 bulan terakhir?"
-"Apa strategi untuk meningkatkan customer retention?"
-"Analisis margin keuntungan dan berikan rekomendasi optimasi"
-"Prediksi revenue bulan depan berdasarkan data historis"
-```
+Referensi:
+- Services: `app/app/Services/OlapMetricAggregator.php`
+- Controllers: `app/app/Http/Controllers/Dashboard/MetricRecordsController.php`
+- Views (Edit Metric + AI): `app/resources/views/dashboard-metrics/edit.blade.php`
+- AI Frontend: `app/public/js/ai-chat.js`
+- Catatan data pipeline: `docs/data-pipeline-plan.md`, `docs/transaction-table-fix.md`, `docs/table-structure-fixes.md`
 
 ---
 
-## 🗃️ Data Flow & Integration
+## 3) Alur Pengguna end‑to‑end
 
-### Struktur Data (`METRICS_IMPLEMENTATION.md`)
+1. Landing Page → Registrasi
+   - File: `resources/views/landing/welcome.blade.php`
+   - CTA “Mulai Gratis” memulai onboarding.
 
-```sql
--- Data utama disimpan di sales_data
-sales_data:
-- total_revenue (dari Total Penjualan)
-- total_cogs (dari COGS input)
-- new_customer_count (dari Pelanggan Baru)
-- total_customer_count (untuk Pelanggan Setia)
+2. Wizard Setup
+   - File: `resources/views/wizard.blade.php`
+   - Step 1: Pilih Role (Owner/Manager/Mentor/Investigator)
+   - Step 2: Profil Bisnis (industri, deskripsi, baseline)
+   - Step 3: Target & Goals (revenue, customer, growth)
 
--- Product data di product_sales
-product_sales:
-- product_name, quantity_sold, unit_price
-- revenue_generated (auto-calculated)
+3. Dashboard Utama
+   - Route: `/dashboard` (`routes/web.php`)
+   - Menampilkan ringkasan metrik dan quick actions.
 
--- Metric records untuk tracking
-metric_records:
-- business_metric_id, record_date, value
-- metadata (JSON untuk data tambahan)
-```
+4. Kelola Metric
+   - Buat: `/dashboard/metrics/create`
+   - Edit/Records: `/dashboard/metrics/{metric}/records/edit`
+   - 6 metric utama sudah memiliki form dan logika kalkulasi.
 
-### Cross-Metric Calculations
-- **Margin Keuntungan** = ((Revenue - COGS) / Revenue) × 100%
-- **Pelanggan Setia** = ((Total - Baru) / Total) × 100%
-- Semua kalkulasi real-time dan saling terintegrasi
+5. Input Data Harian
+   - Tambah baris data sesuai periode (harian/mingguan/bulanan).
+   - Validasi dan kalkulasi real-time di UI.
 
-### AI Context & Capabilities
+6. ETL → Warehouse
+   - Data mentah diproses menjadi dimensi/fakta.
+   - Views OLAP menyediakan ringkasan siap pakai untuk chart/AI.
 
-**Data yang Tersedia untuk AI (`app/Http/Controllers/Dashboard/MetricRecordsController.php`):**
-
-```php
-// AI memiliki akses ke:
-- Recent metric data (10 data terakhir)
-- Statistical analysis (avg, trend, growth)
-- Business context (industry, targets, goals)
-- Cross-metric relationships
-- Historical patterns
-```
-
-**AI Response Features:**
-- Markdown formatting support
-- Numbered lists dan bullet points
-- Real-time typing indicator
-- Error handling untuk rate limits
-- Export chat history
+7. Analytics & AI
+   - Trend chart, summary donut, kartu statistik → prioritas dari OLAP views.
+   - AI chat untuk insight, strategi, dan analisis mendalam per metric.
 
 ---
 
-## 📋 Best Practices Penggunaan
+## 4) RBAC & Multi‑Tenant Security
 
-### Input Data Konsisten
-1. Input data secara rutin (harian/mingguan)
-2. Pastikan data akurat untuk analisis yang tepat
-3. Gunakan notes field untuk context tambahan
+- Role contoh: Business Owner, Manager, Mentor/Advisor, Data Investigator.
+- Setiap user hanya mengakses bisnis/metrik yang berizin.
+- Enforcement points:
+  - Controller-level guard & policy checks (lihat `MetricRecordsController` – otorisasi berbasis relasi `business_id`).
+  - Middleware auth & role checks.
+- Audit & logging: `app/app/Models/ActivityLog.php`, `Listeners/AuthActivityListener.php`.
+- Optimasi & praktik RBAC: lihat `RBAC_OPTIMIZATION_IMPLEMENTATION.md`.
 
-### Interaksi dengan AI
-1. Mulai dengan pertanyaan spesifik tentang metric tertentu
-2. Gunakan quick actions untuk analisis standar
-3. Ajukan follow-up questions berdasarkan response AI
-4. Manfaatkan export chat untuk dokumentasi insights
-
-### Monitoring & Review
-1. Review trends secara berkala
-2. Bandingkan actual vs target
-3. Gunakan AI recommendations untuk action items
-4. Track improvement berdasarkan implementasi saran AI
+Prinsip keamanan:
+- Scoping by `business_id` pada semua query list/records.
+- Validasi server-side pada update/delete.
+- Hindari kebocoran data antar tenant.
 
 ---
 
-## 🔧 Installation & Setup
+## 5) Dimensional OLAP Cubes & Views
 
-### Requirements
-- PHP 8.2+
-- Laravel 11.x
-- MySQL 8.0+
-- Node.js 18+
-- Composer
-- Google Gemini API Key
+Star schema inti:
+- `dim_date` (grain: 1 row per tanggal)
+- `dim_product` (natural key: product_nk)
+- `dim_customer` (natural key: customer_nk)
+- `dim_channel` (opsional/future)
+- `fact_sales` (grain: per item transaksi)
 
-### Installation Steps
+Materialized/MySQL Views utama:
+- `vw_sales_daily` → sales_date, total_revenue, total_quantity, transaction_count
+- `vw_sales_product_daily` → sales_date, product_name, total_revenue, total_quantity
+- `vw_cogs_daily` → sales_date, total_cogs
+- `vw_margin_daily` → sales_date, total_margin
+- `vw_new_customers_daily` → sales_date, new_customers
+- `vw_returning_customers_daily` → sales_date, returning_customers
 
-1. **Clone Repository**
+Catatan implementasi:
+- Jika `fact_sales.cogs_amount` belum tersedia, gunakan estimasi (harga pokok dari dim_product) sebagai fallback (lihat dokumen di folder `docs/`).
+- Indeks disarankan: `(business_id, sales_date)` pada views/tabel aggregator untuk mempercepat range scan.
+
+---
+
+## 6) Data Pipeline & ETL
+
+Sumber data:
+- Input manual metric (`metric_records`) dan/atau transaksi mentah.
+
+Transformasi:
+- Jobs/queues untuk memuat dimensi dan fakta: contoh `app/app/Jobs/ProcessDataFeedJob.php`.
+- Skrip verifikasi/diagnostik: lihat root scripts `check_*.php`, `verify_*.php`, `manual_etl_trigger.php` untuk membantu during dev.
+
+Backfill & Enrichment (opsional):
+- Backfill OLAP pertama kali atau recovery.
+- Estimasi COGS bila kolom belum lengkap.
+
+Ops (opsional):
 ```bash
-git clone https://github.com/SlvTore/Project-Laravel-BI.git
-cd Project-Laravel-BI/app
+# Opsional: contoh perintah util selama pengembangan
+php artisan queue:work        # Memproses jobs ETL
+php artisan migrate --seed    # Skema & data awal
 ```
 
-2. **Install Dependencies**
-```bash
-composer install
-npm install
-```
-
-3. **Environment Setup**
-```bash
-cp .env.example .env
-php artisan key:generate
-```
-
-4. **Database Configuration**
-```env
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=project_bi
-DB_USERNAME=root
-DB_PASSWORD=
-
-# AI Configuration
-GEMINI_API_KEY=your_gemini_api_key_here
-```
-
-5. **Run Migrations**
-```bash
-php artisan migrate --seed
-```
-
-6. **Build Assets**
-```bash
-npm run build
-# or for development
-npm run dev
-```
-
-7. **Start Server**
-```bash
-php artisan serve
-```
+Lebih lanjut: `docs/data-pipeline-plan.md`, `docs/transaction-table-fix.md`, `docs/table-structure-fixes.md`.
 
 ---
 
-## 🚀 Advanced Features
+## 7) Aggregation Layer & API Kontrak
 
-### Multi-User Collaboration
-- Role-based permissions
-- Team access dengan different privilege levels
-- Shared insights dan discussions
-
-### Export & Reporting
-- Export data ke PDF/Excel
-- Scheduled reports
-- Custom dashboard views
-
-### Mobile Access
-- Responsive design untuk semua device
-- Mobile app features (planned)
-
----
-
-## 📁 Project Structure
-
-```
-app/
-├── app/
-│   ├── Http/Controllers/Dashboard/    # Controllers untuk dashboard
-│   ├── Models/                        # Eloquent models
-│   ├── Services/                      # Service classes (GeminiAI)
-│   └── ...
-├── database/
-│   ├── migrations/                    # Database schema
-│   └── seeders/                       # Data seeders
-├── resources/
-│   ├── views/dashboard-metrics/       # Metric management views
-│   └── js/                           # Frontend assets
-└── routes/
-    └── web.php                       # Application routes
-```
-
----
-
-## 🤝 Contributing
-
-Kontribusi sangat diterima! Silakan:
-
-1. Fork repository ini
-2. Buat feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open Pull Request
-
----
-
-## 📄 License
-
-Project ini dilisensikan di bawah [MIT License](https://opensource.org/licenses/MIT).
-
----
-
-## 📞 Support
-
-Untuk bantuan dan pertanyaan:
-- 📧 Email: mfadil25@outlook.com
-
----
-
-*Aplikasi ini dirancang untuk memberikan business intelligence yang comprehensive dengan AI assistance untuk decision making yang lebih baik. Data flow yang terintegrasi memungkinkan analisis mendalam dan insights actionable untuk pertumbuhan bisnis.*
-
----
-
-## 🧱 OLAP Warehouse & Metric Views (Baru)
-
-Sistem kini menggunakan lapisan OLAP untuk menyajikan data konsolidasi lintas metric. Ini mempercepat query analitik dan menyederhanakan visualisasi.
-
-### Star Schema Inti
-- dim_date (grain: 1 row per tanggal)
-- dim_product (natural key: product_nk)
-- dim_customer (natural key: customer_nk)
-- dim_channel (opsional / future)
-- fact_sales (grain: satu baris per item transaksi)
-
-### Materialized Views (MySQL Views)
-| View | Tujuan | Kolom Utama |
-|------|--------|-------------|
-| `vw_sales_daily` | Agregasi penjualan harian | sales_date, total_revenue, total_quantity, transaction_count |
-| `vw_sales_product_daily` | Penjualan per produk per hari | sales_date, product_name, total_revenue, total_quantity |
-| `vw_cogs_daily` | Estimasi COGS harian | sales_date, total_cogs |
-| `vw_margin_daily` | Margin kotor harian | sales_date, total_margin |
-| `vw_new_customers_daily` | Jumlah pelanggan baru per hari | sales_date, new_customers |
-| `vw_returning_customers_daily` | Pelanggan returning/loyal per hari | sales_date, returning_customers |
-
-> Catatan: Jika `fact_sales` belum menyimpan `cogs_amount`, view COGS & Margin menggunakan fallback estimasi (misal harga pokok dari dim_product). Tingkatkan ETL nanti untuk akurasi lebih tinggi.
-
-### Service Aggregator
-`App\Services\OlapMetricAggregator` menyediakan metode siap pakai:
+Service: `App\Services\OlapMetricAggregator`
 - `dailyRevenue(businessId, days)`
-- `topProducts(businessId, days, limit)`
 - `dailyCogs(businessId, days)`
 - `dailyMargin(businessId, days)`
 - `dailyNewCustomers(businessId, days)`
 - `dailyReturningCustomers(businessId, days)`
+- `topProducts(businessId, days, limit)`
 
-Controller (`MetricRecordsController`) akan otomatis memilih sumber OLAP sesuai nama metric. Fallback ke `metric_records` bila view belum tersedia.
-
-### Backfill & Transform
-1. Input / import transaksi mentah
-2. Jalankan transform async (queue) mengisi dim_*/fact_sales
-3. Jalankan backfill manual (pertama kali / recovery):
-```bash
-php artisan olap:backfill --business-id=1
-# Estimasi COGS jika kolom cogs_amount masih NULL di fact_sales
-php artisan olap:estimate-cogs --business-id=1
-```
-4. Views otomatis mencerminkan data terbaru setiap commit ke fact.
-
-### Memverifikasi Data
-```sql
-SELECT * FROM vw_sales_daily WHERE business_id=1 ORDER BY sales_date DESC LIMIT 5;
-SELECT * FROM vw_sales_product_daily WHERE business_id=1 AND sales_date >= CURDATE() - INTERVAL 30 DAY;
-```
-
-### Ekstensi / Roadmap
-- Tambah view churn & retention cohort
-- Simpan `cogs_amount` real di `fact_sales` (ETL enrichment)
-- Tambah incremental snapshot untuk inventory / AR aging
+Controller: `MetricRecordsController`
+- Memilih sumber dari OLAP terlebih dahulu; fallback ke `metric_records`.
+- Endpoint penting (lihat `routes/web.php`):
+  - `GET /dashboard/metrics/{metric}/chart-data` → data tren
+  - `GET /dashboard/metrics/{metric}/statistics` → statistik ringkas
+  - `POST /dashboard/metrics/{metric}/ai-chat` → integrasi AI
 
 ---
+
+## 8) Frontend Analytics (ApexCharts)
+
+- Loader ApexCharts dengan multi-CDN fallback & timeout untuk reliabilitas.
+- Trend chart memprioritaskan `warehouseData.daily` dari OLAP views; label tanggal konsisten (moment.js).
+- Summary donut memprioritaskan `warehouseData.monthly` untuk komposisi metrik per bulan.
+- Implementasi utama: `resources/views/dashboard-metrics/edit.blade.php`.
+
+---
+
+## 9) AI Business Assistant (Gemini)
+
+UI/UX:
+- Chat bubble modern (AI kiri, user kanan), tails, animasi, dan typography putih untuk keterbacaan.
+- File: `public/js/ai-chat.js` dan markup di `dashboard-metrics/edit.blade.php`.
+
+Back-end:
+- Endpoint: `POST /dashboard/metrics/{id}/ai-chat` (lihat `MetricRecordsController@askAI`).
+- Konteks AI: data tren, statistik, dan metadata bisnis terbaru.
+
+Kemampuan respons:
+- Markdown-like formatting, list, code blocks, links.
+- Typing indicator, status badge, export chat.
+
+Konfigurasi:
+- `GEMINI_API_KEY` di `.env`.
+
+---
+
+## 10) Best Practices
+
+Data & ETL:
+- Idempotent ETL: aman untuk rerun.
+- Satu sumber kebenaran (facts), gunakan views untuk konsumsi analitik.
+- Hindari kalkulasi bisnis kompleks di UI — letakkan di pipeline/aggregator.
+
+Waktu & Zona:
+- Simpan tanggal/ waktu dalam UTC; format di UI sesuai lokal.
+- Gunakan `dim_date` untuk kalender dan interval.
+
+Performansi:
+- Indeks `(business_id, date)` pada fakta & views.
+- Hindari N+1 query; gunakan aggregator/service layer.
+
+RBAC & Keamanan:
+- Selalu filter data dengan `business_id` user.
+- Validasi permintaan tulis/hapus di server-side.
+
+Penamaan & Skema:
+- Konsisten: snake_case untuk kolom, prefiks `vw_` untuk views.
+- Dokumentasikan perubahan skema di folder `docs/`.
+
+---
+
+## 11) Instalasi & Setup
+
+Persyaratan
+- PHP 8.2+, Laravel 11.x, MySQL 8.0+, Node.js 18+, Composer
+
+Langkah:
+1) Clone & masuk folder `app`
+2) `composer install` dan `npm install`
+3) Salin env + generate key
+4) Konfigurasi database & `GEMINI_API_KEY`
+5) `php artisan migrate --seed`
+6) `npm run dev` (atau `npm run build`)
+7) `php artisan serve`
+
+Catatan: perintah di atas opsional sebagai panduan dev lokal.
+
+---
+
+## 12) Troubleshooting
+
+Charts tidak tampil:
+- Periksa konsol untuk error ApexCharts/CDN. Loader sudah memiliki fallback; pastikan jaringan/CDN accessible.
+
+Data warehouse kosong:
+- Jalankan ETL/queues dan cek views `vw_*`. Lihat skrip verifikasi di root (`verify_*.php`, `check_*.php`).
+
+AI Chat error:
+- Pastikan `GEMINI_API_KEY` benar. Cek endpoint `POST /ai-chat` dan log Laravel.
+
+RBAC akses ditolak:
+- Pastikan user terkait dengan `business_id` yang sama dan role sesuai.
+
+Cache tidak memperbarui UI:
+- `php artisan view:clear` dan refresh browser (hard refresh/Incognito).
+
+---
+
+## 13) Roadmap
+
+- View churn & retention cohort.
+- Enrichment `fact_sales.cogs_amount` dari sumber resmi (ETL update).
+- Incremental snapshots (inventory, AR aging).
+- Laporan terjadwal & ekspor lanjutan.
+
+---
+
+## 14) Lisensi & Dukungan
+
+Lisensi: [MIT](https://opensource.org/licenses/MIT)
+
+Dukungan: mfadil25@outlook.com
+
+—
+
+Catatan referensi cepat:
+- OLAP Aggregator: `app/app/Services/OlapMetricAggregator.php`
+- Controller metrics: `app/app/Http/Controllers/Dashboard/MetricRecordsController.php`
+- View metrics (edit + AI): `app/resources/views/dashboard-metrics/edit.blade.php`
+- Frontend AI chat: `app/public/js/ai-chat.js`
+- Dokumen: `docs/data-pipeline-plan.md`, `docs/transaction-table-fix.md`, `docs/table-structure-fixes.md`
